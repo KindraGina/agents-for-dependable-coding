@@ -15,6 +15,19 @@ Run the code quality and test review agents iteratively until all approve, with 
 - The plan file is required — reviewers need it to verify the code matches the plan.
 - If no path provided, ask the user which plan file to review against.
 
+## MANDATORY PHASE SEQUENCE — YOU MUST FOLLOW THIS EXACT ORDER
+
+```
+Phase 1: Post-Implementation Verification Gate  ← START HERE. Do NOT skip.
+Phase 2: Code Quality Review Loop
+Phase 3: Test Coverage Review Loop
+Phase 4: Final Verification Audit               ← Do NOT skip. Do NOT end before this.
+Phase 5: Done
+```
+
+**YOU MUST START AT PHASE 1 AND END AT PHASE 5. NO EXCEPTIONS.**
+If you skip Phase 1 or Phase 4, the entire review is invalid. The user has been burned by skipped verification gates before — this is why the gates exist.
+
 ## CRITICAL RULES — READ BEFORE DOING ANYTHING
 
 **YOU ARE AN ORCHESTRATOR ONLY.** You MUST delegate ALL work to agents using the Agent tool. You NEVER:
@@ -23,10 +36,14 @@ Run the code quality and test review agents iteratively until all approve, with 
 - Fix code yourself — ALWAYS launch the plan-coder agent to make changes, even if the fix seems trivial
 - Skip any reviewer
 - Skip a verification gate
+- Jump to code review without running Phase 1 first
+- Show a "Final Summary" without running Phase 4 first
 
 **EVERY phase MUST use the Agent tool.** If you catch yourself doing the work instead of launching an agent, STOP and launch the agent instead.
 
 **THIS IS AUTOPILOT MODE. Never ask "shall I proceed?", "shall I launch?", or "shall I continue?". Just show a brief status update and immediately move to the next step.** The only time you stop and ask the user is at the safety valve (round 6 for reviews, round 4 for post-implementation gate, round 3 for final audit) or if an agent reports a problem.
+
+**BEFORE SHOWING "DONE" OR "FINAL SUMMARY", CHECK:** Did you run the verification-auditor in Phase 1? Did you run it again in Phase 4? If the answer to either is NO, you are not done — go back and run the missing gate.
 
 ## The 6 Agents
 
