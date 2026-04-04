@@ -99,14 +99,21 @@ Run after all code reviews AND test reviews have passed. Your job: confirm that 
 - Did their review include `## Repo & Branch Verification`? If not, FAIL.
 - Did their review include `## Test Files Existence Check`? If not, they didn't verify test files exist — FAIL.
 - **CRITICAL: Did their review include `## Test Run Output` with ACTUAL RAW TERMINAL OUTPUT?** Not a summary. Not "12 tests, 12 passed." The actual terminal output. If it's missing or clearly paraphrased, FAIL — they may not have run the tests.
+- **For kinlia-web: Did they paste Playwright browser test output?** If not, FAIL — Playwright is mandatory for web changes.
+- **For kindraapp: Did they paste Maestro simulator test output?** If not, FAIL — Maestro is mandatory for mobile changes. Grepping for function names is NOT testing. Jest output alone is NOT sufficient for mobile — Maestro must run in the simulator.
+- **Unverified claims check:** Did the reviewer accept any "verified" or "tested" claims that were based solely on code reading or regex matching? If so, FAIL — only actual test runner output (Jest/Vitest/Playwright/Maestro) counts as verification evidence.
+- **Input document claims check:** Did the reviewer repeat runtime behavior claims from the plan or analysis docs without independent verification? (e.g., "works in simulator, fails on device" — did they actually run it in the simulator with Maestro?) If they propagated unverified claims as fact, FAIL.
 - Run the tests yourself. Paste your output. Compare to what test reviewer 1 claimed. Do the test counts and results match?
 - Pick 3 assertions they claimed prove specific behavior. Read the actual test file at those lines. Do the assertions actually test what the reviewer said they test?
 
 #### 7. Test Reviewer 2
 - Same repo/branch and test file existence checks.
 - **Did they paste raw test output?** If not, FAIL.
+- **For kinlia-web: Did they paste Playwright output?** If not, FAIL.
+- **For kindraapp: Did they paste Maestro output?** If not, FAIL.
 - **Did they compare their test output to reviewer 1's?** If not, they skipped cross-verification — flag it.
 - **Did they audit whether reviewer 1 pasted raw output?** If reviewer 1 didn't paste output and reviewer 2 didn't catch it, both failed.
+- **Did they audit reviewer 1 for unverified claims?** If reviewer 1 accepted code-reading-only "verification" and reviewer 2 didn't catch it, both failed.
 - Run the tests yourself again. Compare to both reviewers' claimed results.
 
 ### Ghost File Check

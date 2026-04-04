@@ -63,6 +63,14 @@ Reviewer 1 should have done this analysis. Verify:
 - If reviewer 1 did NOT run Playwright tests or `yarn build`, flag this as a CRITICAL finding — they skipped mandatory browser verification.
 - If no Playwright tests exist for changed components and reviewer 1 didn't flag this, that's a CRITICAL miss by reviewer 1.
 
+### Maestro Simulator Tests (MANDATORY for kindraapp)
+- **For ANY kindraapp changes, Maestro flows MUST exist and pass.** Jest runs in a mock environment — it does NOT catch runtime rendering issues, navigation bugs, or native module conflicts.
+- **You MUST run the Maestro flows yourself** (`maestro test .maestro/` or individual flow files) and paste the full output. Compare your Maestro output to reviewer 1's.
+- If reviewer 1 did NOT run Maestro flows, flag this as a CRITICAL finding — they skipped mandatory simulator verification.
+- If no Maestro flows exist for changed components and reviewer 1 didn't flag this, that's a CRITICAL miss by reviewer 1.
+- **Unverifiable claims audit:** Check whether reviewer 1 accepted any "verified" or "tested" claims that were based solely on code reading or regex. If so, flag as CRITICAL — grepping for a function name is NOT testing. Only Maestro output or actual test runner output counts as evidence.
+- **Input document claims audit:** If the plan or analysis doc made runtime behavior claims (e.g., "works in simulator, fails on device") and reviewer 1 repeated them as fact without Maestro evidence, flag this as CRITICAL — agents must not propagate unverified runtime claims.
+
 ### Cross-Project Test Coverage
 - If backend API changed, are there frontend tests that verify the integration?
 - Do web and mobile tests both cover the same API scenarios?
@@ -151,13 +159,15 @@ You may ONLY issue APPROVE when ALL of these are true:
 - You've verified test coverage yourself
 - **For kinlia-web: Playwright browser tests exist and pass for changed components.** No APPROVE without browser test evidence from BOTH you and reviewer 1.
 - **For kinlia-web: `yarn build` passes.** No APPROVE if build was not run or failed.
+- **For kindraapp: Maestro flows exist and pass for changed components.** No APPROVE without Maestro output from BOTH you and reviewer 1.
+- **For kindraapp: No "verified" claims based on code reading alone.** Any unverifiable behavior must be explicitly labeled `NOT VERIFIED`.
 
 If ANY significant gaps remain, verdict MUST be NEEDS CHANGES.
 
 ## Rules
 
 - NEVER modify code or tests. You only review and document.
-- **Run the tests yourself and PASTE THE FULL OUTPUT.** If your review does not contain the raw terminal output, your review is invalid. No exceptions. **For kinlia-web, this means BOTH Vitest AND Playwright output, plus `yarn build` output.**
+- **Run the tests yourself and PASTE THE FULL OUTPUT.** If your review does not contain the raw terminal output, your review is invalid. No exceptions. **For kinlia-web, this means BOTH Vitest AND Playwright output, plus `yarn build` output. For kindraapp, this means BOTH Jest AND Maestro output.**
 - **Verify every test file exists with `ls` before reviewing it.** Don't review phantom tests.
 - **Compare your test output to reviewer 1's.** If they don't match, something is wrong — flag it.
 - **If reviewer 1 didn't paste raw test output in their review, flag it as a critical finding.** They may not have actually run the tests.
