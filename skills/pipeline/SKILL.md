@@ -1,0 +1,236 @@
+---
+description: Run the full plan → review → code → verify → review → verify pipeline with iterative loops. Agents review each other's work in rounds until all approve. Includes verification auditor gates to catch phantom implementations.
+---
+
+# Agent Pipeline
+
+Run the full iterative agent pipeline for a feature, bug fix, or refactor.
+
+## Usage
+
+```
+/pipeline [path to existing plan OR description of what to build/fix]
+```
+
+- If a file path is provided (e.g., `docs/plans/2026-03-12-feature.md`), skip plan creation and go straight to Phase 2 (Plan Review Loop).
+- If a description is provided, start at Phase 1 (Plan Creation).
+- If nothing is provided, ask the user what they want to build or which plan to review.
+
+## CRITICAL RULES — READ BEFORE DOING ANYTHING
+
+**YOU ARE AN ORCHESTRATOR ONLY.** You MUST delegate ALL work to agents using the Agent tool. You NEVER:
+- Read the plan yourself and summarize it
+- Analyze code yourself
+- Suggest implementation steps yourself
+- Answer questions about the plan yourself
+- Skip the review agents
+- **Fix the plan or code yourself — ALWAYS launch the plan-creator or plan-coder agent to make changes. Even if the fix seems trivial, delegate it.**
+
+**EVERY phase MUST use the Agent tool.** If you catch yourself doing the work instead of launching an agent, STOP and launch the agent instead.
+
+**HOW TO LAUNCH AGENTS:** Use the Agent tool with a prompt that tells the agent what to do and which files to read. Example:
+
+```
+Agent tool call:
+  description: "Plan reviewer round 1"
+  prompt: "You are the plan-reviewer agent. Review the plan at docs/plans/2026-03-12-feature.md. Write your review to docs/plans/2026-03-12-feature-review-1-r1.md. Follow your instructions in .claude/agents/plan-reviewer.md."
+```
+
+## The 10 Agents
+
+| Agent | Role |
+|-------|------|
+| `plan-creator` | Creates and revises the implementation plan |
+| `plan-reviewer` | First plan reviewer — checks completeness, architecture, feasibility |
+| `plan-reviewer-2` | Second plan reviewer — audits plan AND reviewer 1's feedback |
+| `plan-reviewer-3` | Third plan reviewer — audits plan AND both reviewers' feedback. Focused on production risk, deployment, real-world user impact |
+| `plan-coder` | Implements the approved plan using TDD |
+| `verification-auditor` | Verifies every agent's claims against actual code. Catches phantom implementations and hallucinated files. Runs twice: after implementation and as final audit. |
+| `code-quality-reviewer` | First code reviewer — correctness, security, quality |
+| `code-quality-reviewer-2` | Second code reviewer — audits code AND first reviewer's findings |
+| `test-reviewer` | First test reviewer — coverage, quality, correctness |
+| `test-reviewer-2` | Second test reviewer — audits tests AND first reviewer's findings |
+
+## Phase 1: Plan Creation (skip if user provided a plan path)
+
+Launch the `plan-creator` agent using the Agent tool:
+- Prompt: "You are the plan-creator agent. Create an implementation plan for: [user's description]. Write the plan to docs/plans/YYYY-MM-DD-[feature-name].md. Follow your instructions in .claude/agents/plan-creator.md."
+
+After the agent returns, show the user a brief status update and **immediately proceed to Phase 2**. Do NOT ask for permission to continue.
+
+## Phase 2: Plan Review Loop
+
+This loop repeats until ALL THREE reviewers issue an APPROVE verdict **in the same round**.
+
+**IMPORTANT: Reviewers MUST run SEQUENTIALLY, NOT in parallel.** Each reviewer depends on the previous reviewer's output. ALWAYS wait for each reviewer to finish before launching the next one.
+
+**Each round (N = 1, 2, 3, ...):**
+
+**Step 1:** Launch the `plan-reviewer` agent using the Agent tool. **WAIT for it to complete and write its file before proceeding to Step 2.**
+- Prompt: "You are the plan-reviewer agent. This is review round [N]. Review the plan at [plan-path]. Write your review to [plan-path-without-ext]-review-1-r[N].md. If round 2+, also read your previous reviews. Follow your instructions in .claude/agents/plan-reviewer.md."
+
+**Step 2 (ONLY after Step 1 is complete):** Launch the `plan-reviewer-2` agent. This agent READS reviewer 1's output, so it CANNOT run at the same time.
+- Prompt: "You are the plan-reviewer-2 agent. This is review round [N]. Review the plan at [plan-path] AND reviewer 1's feedback at [review-1-rN-path]. Write your review to [plan-path-without-ext]-review-2-r[N].md. If round 2+, also read your previous reviews. Follow your instructions in .claude/agents/plan-reviewer-2.md."
+
+**Step 3 (ONLY after Step 2 is complete):** Launch the `plan-reviewer-3` agent. This agent READS both reviewer 1's AND reviewer 2's output.
+- Prompt: "You are the plan-reviewer-3 agent. This is review round [N]. Review the plan at [plan-path], reviewer 1's feedback at [review-1-rN-path], AND reviewer 2's feedback at [review-2-rN-path]. Write your review to [plan-path-without-ext]-review-3-r[N].md. If round 2+, also read your previous reviews. Follow your instructions in .claude/agents/plan-reviewer-3.md."
+
+**Step 4:** Read all three review files yourself ONLY to extract the verdicts (APPROVE or NEEDS CHANGES). Do NOT analyze the plan yourself.
+
+**Step 5:** Show a brief status update (do NOT wait for user input, just keep going):
+- "Round N complete. Reviewer 1: [verdict]. Reviewer 2: [verdict]. Reviewer 3: [verdict]."
+- Briefly list critical/important issues from all reviews.
+- **Immediately proceed to Step 6.** Do NOT ask "shall I continue?" or "shall I launch reviewers?"
+
+**Step 6: LOOP DECISION — this is critical, do not skip this logic:**
+- If ALL THREE say APPROVE → show a brief status update and **immediately proceed to Phase 3**. Do NOT ask for permission.
+- If ANY reviewer says NEEDS CHANGES → you MUST:
+  1. Launch the `plan-creator` agent to revise (NEVER fix the plan yourself, even if the fix seems trivial):
+     - Prompt: "You are the plan-creator agent in revision mode. Read all three reviews at [review-1-path], [review-2-path], and [review-3-path]. Revise the plan at [plan-path] to address all critical and important issues. Add a 'Revision Notes — Round N' section. Follow your instructions in .claude/agents/plan-creator.md."
+  2. **GO BACK TO STEP 1 with N incremented.** Do NOT move to Phase 3. Do NOT stop. Run another FULL round of ALL THREE reviewers on the revised plan. **Even if 2 of 3 approved last round, ALL THREE must review again** — the revision may have introduced new issues.
+
+**YOU MUST KEEP LOOPING until all three reviewers APPROVE in the same round.** One round is almost never enough. Expect 2-4 rounds. Do not treat round 1 as sufficient.
+
+**Safety valve**: If you reach round 6 without all three approving, pause and ask the user how to proceed.
+
+## Phase 3: Implementation
+
+Launch the `plan-coder` agent using the Agent tool:
+- Prompt: "You are the plan-coder agent. Implement the approved plan at [plan-path]. Read all review files too. Follow TDD — write tests first, then implement. Follow your instructions in .claude/agents/plan-coder.md."
+
+After the agent returns, show a brief status update and **immediately proceed to Phase 3.5**. Do NOT ask for permission.
+
+## Phase 3.5: Post-Implementation Verification Gate
+
+**THIS IS A HARD GATE. Code review CANNOT start until this passes.**
+
+Launch the `verification-auditor` agent using the Agent tool:
+- Prompt: "You are the verification-auditor agent running in Mode 1 (Post-Implementation Verification). Verify that every plan item at [plan-path] was actually implemented in the code. Check every file exists, grep for every change, cross-reference the plan-coder's verification summary. Write your audit to [plan-path-without-ext]-verification-audit-r1.md. Follow your instructions in .claude/agents/verification-auditor.md."
+
+**Read the audit file and extract the verdict (PASS or FAIL).**
+
+**GATE DECISION:**
+- If **PASS** → show a brief status update and **immediately proceed to Phase 4**. Do NOT ask for permission.
+- If **FAIL** → you MUST:
+  1. Launch the `plan-coder` agent to fix ALL failed items (NEVER fix them yourself):
+     - Prompt: "You are the plan-coder agent in fix mode. The verification auditor found items that were NOT actually implemented. Read the audit at [verification-audit-path]. Fix ALL failed items. For each fix, run grep/read to verify your fix exists before marking it done. Follow your instructions in .claude/agents/plan-coder.md."
+  2. Launch the `verification-auditor` agent again with an incremented round number.
+  3. **Keep looping until the auditor issues PASS.** Code review cannot start until this gate passes.
+
+**Safety valve**: If you reach round 4 of this gate without passing, pause and ask the user how to proceed.
+
+## Phase 4: Code Quality Review Loop
+
+This loop repeats until BOTH code reviewers issue an APPROVE verdict **in the same round**.
+
+**Each round (N = 1, 2, 3, ...):**
+
+**IMPORTANT: Code reviewers MUST run SEQUENTIALLY, NOT in parallel.** Reviewer 2 reads reviewer 1's output.
+
+**Step 1:** Launch `code-quality-reviewer` agent. **WAIT for it to complete before Step 2.**
+- Prompt: "You are the code-quality-reviewer agent. This is code review round [N]. Review the code changes for the plan at [plan-path]. The verification auditor has already confirmed the code exists (see [verification-audit-path]). Run git diff to see changes. Write your review to [plan-path-without-ext]-code-review-1-r[N].md. If round 2+, read your previous reviews. Follow your instructions in .claude/agents/code-quality-reviewer.md."
+
+**Step 2 (ONLY after Step 1 is complete):** Launch `code-quality-reviewer-2` agent:
+- Prompt: "You are the code-quality-reviewer-2 agent. This is code review round [N]. Review the code AND reviewer 1's feedback at [code-review-1-rN-path]. Also read the verification auditor's report at [verification-audit-path]. Write your review to [plan-path-without-ext]-code-review-2-r[N].md. If round 2+, read your previous reviews. Follow your instructions in .claude/agents/code-quality-reviewer-2.md."
+
+**Step 3:** Extract verdicts. Show a brief status update and **immediately proceed to Step 4**. Do NOT ask for permission.
+
+**Step 4: LOOP DECISION — this is critical, do not skip this logic:**
+- If BOTH APPROVE → **immediately proceed to Phase 5**. Do NOT ask for permission.
+- If EITHER says NEEDS CHANGES → you MUST:
+  1. Launch `plan-coder` agent to fix the issues (NEVER fix the code yourself).
+  2. **GO BACK TO STEP 1 with N incremented.** Run BOTH reviewers again, even if one approved last round.
+
+**YOU MUST KEEP LOOPING until both code reviewers APPROVE in the same round.** Do not stop at round 1.
+
+**Safety valve**: Pause at round 6.
+
+## Phase 5: Test Coverage Review Loop
+
+**SEQUENTIAL — reviewer 1 first, WAIT, then reviewer 2. Never run them in parallel.**
+
+This loop repeats until BOTH test reviewers issue an APPROVE verdict **in the same round**.
+
+**Each round (N = 1, 2, 3, ...):**
+
+**Step 1:** Launch `test-reviewer` agent. **WAIT for completion.**
+- Prompt: "You are the test-reviewer agent. This is test review round [N]. Review the tests for the plan at [plan-path]. Run the tests. Write your review to [plan-path-without-ext]-test-review-1-r[N].md. If round 2+, read your previous reviews. Follow your instructions in .claude/agents/test-reviewer.md."
+
+**Step 2 (ONLY after Step 1 complete):** Launch `test-reviewer-2` agent.
+- Prompt: "You are the test-reviewer-2 agent. This is test review round [N]. Review the tests AND reviewer 1's feedback at [test-review-1-rN-path]. Write your review to [plan-path-without-ext]-test-review-2-r[N].md. If round 2+, read your previous reviews. Follow your instructions in .claude/agents/test-reviewer-2.md."
+
+**Step 3:** Extract verdicts. Show a brief status update and **immediately proceed to Step 4**. Do NOT ask for permission.
+
+**Step 4: LOOP DECISION — this is critical, do not skip this logic:**
+- If BOTH APPROVE → **immediately proceed to Phase 5.5 (Final Audit)**. Do NOT ask for permission.
+- If EITHER says NEEDS CHANGES → you MUST:
+  1. Launch `plan-coder` agent to fix the test issues (NEVER fix the code yourself).
+  2. **GO BACK TO STEP 1 with N incremented.** Run BOTH reviewers again, even if one approved last round.
+
+**YOU MUST KEEP LOOPING until both test reviewers APPROVE in the same round.** Do not stop at round 1.
+
+**Safety valve**: Pause at round 6.
+
+## Phase 5.5: Final Verification Audit
+
+**THIS IS THE FINAL GATE. Nothing is "done" until this passes. This is where we catch every agent that lied.**
+
+Launch the `verification-auditor` agent using the Agent tool:
+- Prompt: "You are the verification-auditor agent running in Mode 2 (Final Audit). This is the final verification before the pipeline completes. Your job is to verify that EVERY agent actually did what it claimed. Read the plan at [plan-path], ALL code review files, ALL test review files, and the post-implementation audit at [verification-audit-path].
+
+You MUST run the full Agent-by-Agent Accountability Check from your instructions. Specifically:
+
+1. PLAN-CREATOR: Did they verify files exist before listing them? Check the Target section.
+2. PLAN REVIEWERS: Did they give specific file:line references or generic rubber-stamps? Spot-check their claims.
+3. PLAN-CODER: Did they paste grep evidence for every VERIFIED item? Re-run every grep yourself.
+4. CODE REVIEWERS: Did they include Repo & Branch Verification? Did they actually do Plan-to-Code Verification? Spot-check their VERIFIED claims.
+5. TEST REVIEWER 1: Did they paste RAW TERMINAL OUTPUT from running tests — not a summary, the actual output? Did they verify test files exist with ls? Did they paste actual assertion code when claiming coverage? RUN THE TESTS YOURSELF and compare your output to what they claimed.
+6. TEST REVIEWER 2: Did they paste raw test output? Did they compare their output to reviewer 1's? Did they audit whether reviewer 1 pasted raw output? RUN THE TESTS YOURSELF and compare to both reviewers.
+
+For EVERY agent, issue an HONEST or DISHONEST verdict with specific evidence.
+
+Write your audit to [plan-path-without-ext]-final-audit.md. Follow your instructions in .claude/agents/verification-auditor.md."
+
+**Read the audit file and extract the verdict (PASS or FAIL) AND the per-agent HONEST/DISHONEST verdicts.**
+
+**Show the user:**
+- Overall verdict
+- Per-agent accountability: which agents were HONEST, which were DISHONEST, and what they lied about
+
+**GATE DECISION:**
+- If **PASS** → show a brief status update and **immediately proceed to Phase 6 (Done)**. Do NOT ask for permission.
+- If **FAIL** → you MUST:
+  1. Show the user which agent claims failed verification and what was found.
+  2. Launch the `plan-coder` agent to fix ALL failed items.
+  3. **Go back to Phase 4 (Code Quality Review Loop)** — because fixes may introduce new issues that need code and test review.
+  4. After code and test reviews pass again, run the final audit again.
+
+**Safety valve**: If the final audit fails 3 times, pause and ask the user how to proceed.
+
+## Phase 6: Done
+
+When all loops AND both verification gates have completed with full approval:
+
+1. Show a final summary:
+   - Total plan review rounds
+   - Post-implementation verification: rounds to pass
+   - Total code review rounds
+   - Total test review rounds
+   - Final audit: PASS (round it passed on)
+   - Key issues caught and fixed
+   - Any agent claims that were found to be false by the verification auditor
+2. List all files created in `docs/plans/`.
+3. Ask the user if they want to commit.
+
+## Important Rules
+
+- **USE THE AGENT TOOL FOR EVERY PHASE.** Never do the work yourself. Never fix the plan yourself. Never fix code yourself. ALWAYS delegate to the appropriate agent.
+- **ALL REVIEWER GROUPS MUST RUN SEQUENTIALLY.** Reviewer 1 first, wait for completion, THEN reviewer 2, wait, THEN reviewer 3 (for plan reviews). NEVER launch reviewers in parallel.
+- **ALL reviewers in a group must APPROVE in the SAME ROUND.** If one approved last round but the plan was revised, they must review again. No skipping reviewers because they approved a previous version.
+- NEVER skip a reviewer. All reviewers in each group must run every round.
+- **NEVER skip a verification gate.** Both gates (Phase 3.5 and Phase 5.5) are mandatory. Code review cannot start without passing Phase 3.5. The pipeline cannot complete without passing Phase 5.5.
+- The plan-creator revises the plan IN PLACE (same file, adds revision notes).
+- The plan-coder fixes code based on ALL reviewer feedback.
+- If any agent reports a discrepancy, STOP and tell the user.
+- All review files go in the same directory as the plan.
+- **THIS IS AUTOPILOT MODE. Never ask "shall I proceed?", "shall I launch?", or "shall I continue?". Just show a brief status update and immediately move to the next step.** The only time you stop and ask the user is at the safety valve (round 6 for reviews, round 4 for post-implementation gate, round 3 for final audit) or if an agent reports a problem.
