@@ -93,6 +93,38 @@ This loop repeats until ALL THREE reviewers issue an APPROVE verdict **in the sa
 
 **Safety valve**: If you reach round 6 without all three approving, pause and ask the user how to proceed.
 
+## Phase 2.5: Pre-Implementation Gate (MANDATORY — do NOT skip)
+
+**THIS GATE RUNS AFTER PLAN REVIEW PASSES AND BEFORE ANY CODE IS WRITTEN.**
+
+**Step 1: Prerequisite Check**
+Read the approved plan. Look for a `## Prerequisites`, `## Dependencies`, or `## Cross-Repo Dependencies` section (or any section that lists things that must be done/deployed before this plan).
+
+For EACH prerequisite listed:
+1. Determine what code or deployment it refers to.
+2. **Verify it's actually done** — grep for the code, check if the file exists, check git log for the commit. Don't just read the text — verify in the codebase.
+3. Classify each as:
+   - **DONE** — code exists and is verified
+   - **NOT DONE** — code doesn't exist or prerequisite hasn't been deployed
+   - **UNKNOWN** — can't determine from code alone (e.g., "must be deployed to staging")
+
+**If ANY prerequisite is NOT DONE:**
+- Show the user: "These prerequisites are not yet implemented: [list with details]"
+- Ask: "Do you want to (a) implement these first, (b) proceed without them, or (c) stop?"
+- Do NOT proceed to implementation until the user decides.
+
+**If prerequisites are DONE or user says proceed:** continue to Step 2.
+
+**Step 2: Branch Confirmation**
+Run `git branch --show-current` and show the user:
+- "Current branch: [branch-name]"
+- "Plan target branch (from ## Target section): [target-branch]"
+- If they match → proceed.
+- If they DON'T match → ask the user: "You're on [current] but the plan targets [target]. Which branch should I implement on?"
+- Do NOT start coding until the branch is confirmed.
+
+After both steps pass, **immediately proceed to Phase 3**.
+
 ## Phase 3: Implementation
 
 Launch the `plan-coder` agent using the Agent tool:
@@ -229,6 +261,7 @@ When all loops AND both verification gates have completed with full approval:
 - **ALL reviewers in a group must APPROVE in the SAME ROUND.** If one approved last round but the plan was revised, they must review again. No skipping reviewers because they approved a previous version.
 - NEVER skip a reviewer. All reviewers in each group must run every round.
 - **NEVER skip a verification gate.** Both gates (Phase 3.5 and Phase 5.5) are mandatory. Code review cannot start without passing Phase 3.5. The pipeline cannot complete without passing Phase 5.5.
+- **NEVER skip the pre-implementation gate (Phase 2.5).** Prerequisites must be verified and branch must be confirmed before any code is written.
 - The plan-creator revises the plan IN PLACE (same file, adds revision notes).
 - The plan-coder fixes code based on ALL reviewer feedback.
 - If any agent reports a discrepancy, STOP and tell the user.

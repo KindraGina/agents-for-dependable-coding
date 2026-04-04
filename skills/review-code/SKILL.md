@@ -18,10 +18,11 @@ Run the code quality and test review agents iteratively until all approve, with 
 ## MANDATORY PHASE SEQUENCE — YOU MUST FOLLOW THIS EXACT ORDER
 
 ```
-Phase 1: Post-Implementation Verification Gate  ← START HERE. Do NOT skip.
+Phase 0: Pre-Review Checks (branch + prerequisites) ← START HERE. Do NOT skip.
+Phase 1: Post-Implementation Verification Gate
 Phase 2: Code Quality Review Loop
 Phase 3: Test Coverage Review Loop
-Phase 4: Final Verification Audit               ← Do NOT skip. Do NOT end before this.
+Phase 4: Final Verification Audit                   ← Do NOT skip. Do NOT end before this.
 Phase 5: Done
 ```
 
@@ -55,6 +56,24 @@ If you skip Phase 1 or Phase 4, the entire review is invalid. The user has been 
 | `test-reviewer` | First test reviewer — coverage, quality, correctness |
 | `test-reviewer-2` | Second test reviewer — audits tests AND first reviewer's findings |
 | `plan-coder` | Fixes code based on reviewer feedback |
+
+## Phase 0: Pre-Review Checks (MANDATORY — do NOT skip)
+
+**Step 1: Branch Confirmation**
+Run `git branch --show-current` and read the plan's `## Target` section.
+- If they match → proceed.
+- If they DON'T match → show the user: "You're on [current] but the plan targets [target]. Which branch has the code to review?"
+- Do NOT start review until confirmed.
+
+**Step 2: Prerequisite Check**
+Read the plan. Look for a `## Prerequisites`, `## Dependencies`, or `## Cross-Repo Dependencies` section.
+
+For EACH prerequisite listed:
+1. **Verify it's actually done** — grep for the code, check if the file exists.
+2. If any prerequisite is **NOT DONE**, warn the user: "These prerequisites are not yet implemented: [list]. The code being reviewed may depend on them. Proceed with review anyway?"
+3. This is a WARNING, not a hard gate — the user may want to review code even if prerequisites are pending. But they need to know.
+
+After checks pass, **immediately proceed to Phase 1**.
 
 ## Phase 1: Post-Implementation Verification Gate
 
