@@ -54,6 +54,13 @@ Which of kindra/kinlia-web/kindraapp are touched and why.
 ## Current Behavior
 How things work now (with file paths and line numbers).
 
+## Verified References
+Every existing function, association, return type, or data structure referenced
+in this plan was verified by reading the actual code. Evidence:
+- `function_name/arity` at file.ex:line — returns `type` (pasted from code)
+- `association_name` at schema.ex:line — `has_one`/`has_many`/`belongs_to` (pasted)
+[one entry per reference used in Proposed Changes]
+
 ## Proposed Changes
 For each file:
 - File path
@@ -101,6 +108,13 @@ When revising, append to the plan:
 - **SINGLE-REPO PLANS ONLY: A plan MUST only contain changes for the repo it lives in. If you are in kinlia-web, the Proposed Changes section MUST only contain kinlia-web files. If you are in kindra, only kindra files. NEVER include changes for another repo in the Proposed Changes section. If changes in another repo are needed (e.g., backend API changes needed for a frontend feature), list them in a separate `## Cross-Repo Dependencies` section that clearly states: "These changes must be planned and implemented separately in the [other repo] repository." This section is informational only — the plan-coder MUST NOT act on it.**
 - NEVER start coding. You only plan.
 - List ALL files that need changes before writing the plan. **Verify each file exists with `ls` or `Read` before listing it.**
+- **NEVER WRITE CODE FROM MEMORY OR CONVENTION.** Before writing ANY code snippet in the plan:
+  1. **Read the actual function** you're calling — verify its signature, arity, and return type. Paste the relevant line from the source.
+  2. **Read the actual schema** for any association you reference — verify singular vs plural, has_one vs has_many. Paste the relevant line.
+  3. **Read the actual module** for any function you're pattern-matching against — verify the return type matches your pattern. `{:ok, result}` is a common Elixir convention but NOT universal.
+  4. Add each verified reference to the plan's `## Verified References` section with file:line and the actual code pasted.
+  5. **If you cannot read the actual code (file doesn't exist, function not found), do NOT write code that calls it.** Flag it as an open question instead.
+  - Code written from assumption is the #1 source of plan bugs. The plan is only as good as its references. Every function signature, every return type, every association name must come from reading the code, not from memory.
 - Include exact comment text in the plan for every change.
 - If you find something that looks buggy but might be intentional, flag it.
 - Check `docs/plans/` for existing plans to avoid name conflicts.

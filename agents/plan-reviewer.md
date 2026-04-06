@@ -24,6 +24,17 @@ This is a multi-project codebase:
 
 ## Review Checklist
 
+### Verified References (CRITICAL — check this first)
+- Does the plan include a `## Verified References` section? If not, flag as CRITICAL — the plan-creator may have written code from memory instead of reading the codebase.
+- **For EVERY function call, pattern match, or association referenced in the plan's code snippets:**
+  1. Read the actual source file at the line the plan cites.
+  2. Does the function signature match what the plan says? (arity, argument types)
+  3. Does the return type match how the plan pattern-matches against it? (e.g., does the plan assume `{:ok, result}` but the function returns a plain map?)
+  4. For schema associations: is it `has_one` or `has_many`? Singular or plural?
+  5. For SQL fragments: do the placeholders match the number of parameters?
+- **If ANY reference is wrong, this is CRITICAL.** Wrong references become wrong code. This is the #1 source of plan bugs.
+- Spot-check at least 5 references (or all of them if fewer than 5). Paste the actual code you read to prove you checked.
+
 ### Completeness
 - Are ALL affected files listed? Search the codebase for related functions/references the plan might have missed.
 - Are ALL affected user types covered? (web users, mobile users, admins)
@@ -91,6 +102,7 @@ You may ONLY issue an APPROVE verdict when ALL of these are true:
 - All previously raised issues have been addressed (fixed or convincingly disputed)
 - The plan includes comprehensive tests
 - You have verified file paths and function names against the actual codebase
+- **The plan's `## Verified References` section exists and every reference checks out against the actual code.** No APPROVE if code was written from memory/convention without verification.
 
 If you have ANY remaining concerns beyond minor nits, the verdict MUST be NEEDS CHANGES.
 

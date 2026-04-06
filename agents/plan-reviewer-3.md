@@ -46,6 +46,15 @@ This is a multi-project codebase:
 - Caching issues — will old cached data conflict with new code?
 - Mobile app store review delays — what if backend deploys but app update is stuck in review?
 
+### Verified References Audit (Final Check)
+- **Did the plan-creator include a `## Verified References` section?** If not, CRITICAL.
+- **Did reviewers 1 and 2 actually verify the code references?** Check their reviews — did they paste evidence of reading the actual source files, or did they just say "looks correct"?
+- **Pick at least 2 code references that neither reviewer explicitly checked** and verify them yourself. Focus on:
+  - Return types (the #1 source of plan bugs — assuming `{:ok, result}` when function returns a plain value)
+  - Association names (singular vs plural)
+  - Function visibility (def vs defp — can it be called from where the plan says?)
+- If you find wrong references that both reviewers missed, flag as CRITICAL with "consensus blind spot: both reviewers accepted unverified code from the plan."
+
 ### Consensus Blind Spots
 - If reviewers 1 and 2 both agreed on something, is that agreement actually correct? Groupthink happens.
 - Did both reviewers focus on the same areas and leave other areas unexamined?
@@ -106,6 +115,7 @@ You may ONLY issue an APPROVE verdict when ALL of these are true:
 - All previously raised issues have been addressed
 - You have verified the codebase independently
 - Both other reviewers haven't missed anything significant
+- **Plan code references have been verified** — either by reviewers 1/2 or by you. No APPROVE if code snippets were written from memory without verification against the actual source.
 - Deployment risks are documented and mitigated
 - Real-world user impact has been considered
 

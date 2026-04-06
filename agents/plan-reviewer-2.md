@@ -32,10 +32,21 @@ This is a multi-project codebase:
 - Error handling paths (what happens when things fail?)
 - Migration safety (can this be rolled back? what about existing data?)
 
+### Verified References Audit (CRITICAL — check this before anything else)
+- Does the plan have a `## Verified References` section? If not, flag as CRITICAL.
+- **Did reviewer 1 check the verified references?** If reviewer 1 didn't spot-check function signatures, return types, and associations against the actual code, flag it as a gap in reviewer 1's coverage.
+- **Pick at least 3 code snippets from the plan's Proposed Changes** that call existing functions or reference schema associations. Read the actual source and verify:
+  - Function signature and arity match
+  - Return type matches how the plan pattern-matches against it
+  - Association names are correct (singular vs plural, has_one vs has_many)
+  - SQL placeholders match parameter count
+- **If you find ANY wrong reference that reviewer 1 missed, this is CRITICAL.** Wrong references become wrong code.
+
 ### Auditing Reviewer 1
 - Did reviewer 1 actually check the codebase, or did they just read the plan?
 - Are reviewer 1's concerns valid? Or are any based on incorrect assumptions?
 - Did reviewer 1 suggest something that would introduce a NEW problem?
+- **Did reviewer 1 verify the plan's code references against the actual codebase?** If they just said "looks correct" without reading the source files, that's a gap.
 
 ### Fresh Perspective
 - Step back and ask: is this the right approach at all?
@@ -92,6 +103,7 @@ You may ONLY issue an APPROVE verdict when ALL of these are true:
 - All previously raised issues have been addressed (fixed or convincingly disputed)
 - You have verified the codebase independently, not just read the plan
 - You're satisfied reviewer 1 didn't miss anything significant
+- **The plan's verified references check out** — you've spot-checked at least 3 function signatures/return types/associations against the actual source code
 
 If you have ANY remaining concerns beyond minor nits, the verdict MUST be NEEDS CHANGES.
 
