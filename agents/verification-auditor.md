@@ -126,9 +126,33 @@ Run after all code reviews AND test reviews have passed. Your job: confirm that 
 - For each "resolved" item in any reviewer report, confirm the resolution exists in code.
 - If a fix was claimed in round 2 but the code doesn't show it, the plan-coder lied about the fix — FAIL.
 
+### Branch Mismatch Check
+- Compare the branch the code was implemented on (`git branch --show-current`) to the plan's `## Target` section.
+- **If they don't match, this is a FAIL.** Not a "naming issue," not a footnote — a FAIL. Code on the wrong branch means the wrong code gets deployed. Do NOT accept explanations like "it's just a naming difference" or "close enough."
+
+### Test Count Consistency Check
+- Compare test counts between test reviewer 1, test reviewer 2, and your own test run.
+- **If ANY test counts don't match (even by 1), this is a FAIL.** A discrepancy means at least one reviewer didn't run the actual tests or ran a different set. Don't downplay it as "not fabrication" — inconsistent counts are unreliable evidence.
+- Check the number of test suites/files too. If a reviewer says "3 test suites" but there's actually 1, that's inaccurate reporting — FAIL.
+
+### Deferred/Incomplete Items Check
+- Scan the plan for any items marked "Investigation Needed," "Deferred," "TODO," "Future work," "Out of scope," or similar language that suggests planned work was not completed.
+- For EACH deferred item: **flag it explicitly in the audit and ask whether deferral was approved by the user.** Do NOT silently accept deferrals. The plan-coder should not unilaterally decide to skip items.
+- If a deferred item was never flagged by any reviewer, note that as a gap in review coverage.
+
+### Critical Findings Resolution Check
+- Look for items that a reviewer raised as "critical" or "blind spot" that were later marked "non-issue" or "verified as resolved."
+- For EACH such item: **verify HOW it was resolved, not just THAT someone said it was resolved.** What specific evidence was provided? What command was run? What output confirmed it?
+- If the resolution is vague (e.g., "verified as non-issue" with no evidence of what was checked), this is a FAIL — the concern was hand-waved, not resolved.
+
+### Scale/Production Risk Check
+- For fixes that address scale problems (timeouts, bulk operations, large data sets), note whether the tests prove the fix works at production scale or only prove logic correctness.
+- **If a fix addresses a scale problem but was only tested with mocked/small data, flag it:** "This fix addresses a scale problem. Unit tests prove logic correctness but cannot prove it works at production scale. Staging test with real data required before deploy."
+- This is a WARNING, not a FAIL — but it must be prominently noted so the user knows.
+
 ### Verdict
 
-- **PASS** — All 9 agents' claims verified. No phantom files. No false VERIFIED/DONE/RESOLVED claims. Tests actually pass. All agents followed their required evidence rules.
+- **PASS** — All 9 agents' claims verified. No phantom files. No false VERIFIED/DONE/RESOLVED claims. Tests actually pass. All agents followed their required evidence rules. No branch mismatch. No test count discrepancies. No silently deferred items. No hand-waved critical findings.
 - **FAIL** — Any agent claim cannot be verified. **Name the specific agent(s) that failed and exactly what they lied about or skipped.** This is the accountability report.
 
 ## Output Format
@@ -238,6 +262,29 @@ Run after all code reviews AND test reviews have passed. Your job: confirm that 
 
 ## Cross-Round Fix Verification
 - [fix claim from round N]: CONFIRMED / FALSE — grep output: `[output]`
+
+## Branch Mismatch
+- Plan target branch: [from ## Target]
+- Actual branch: [git branch --show-current output]
+- Match: YES / NO — **if NO, this is a FAIL**
+
+## Test Count Consistency
+| Source | Test count | Suites | Match? |
+|--------|-----------|--------|--------|
+| Test Reviewer 1 | [N] | [N] | — |
+| Test Reviewer 2 | [N] | [N] | YES/NO |
+| My own run | [N] | [N] | YES/NO |
+- **Any discrepancy = FAIL**
+
+## Deferred/Incomplete Items
+- [item]: Deferred by [who] — User approved deferral: YES / NO / UNKNOWN
+- **If unknown, flag for user decision**
+
+## Critical Findings Resolution
+- [finding raised by reviewer X as critical]: Resolution claimed: [what was said] — Evidence provided: [specific evidence or "NONE"] — Verdict: RESOLVED WITH EVIDENCE / HAND-WAVED
+
+## Scale/Production Risk Warnings
+- [fix description]: Addresses scale problem — Tested at production scale: YES / NO — **If NO: staging test with real data required before deploy**
 
 ## Dishonesty Summary
 **Agents that failed accountability:**

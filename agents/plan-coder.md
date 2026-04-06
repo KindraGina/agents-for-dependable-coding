@@ -65,6 +65,11 @@ This is a multi-project codebase:
     - `VERIFIED` — you ran grep/read and pasted the evidence proving it exists on this branch
     **Only `VERIFIED` items count as done. Never mark an item VERIFIED without pasting the grep/read output.**
 21. Write a verification summary in the plan under `## Implementation Verification — Self Review` with the grep/read evidence for every item.
+22. **Scale/Production Risk flags:** For any fix that addresses a scale problem (timeouts, bulk operations, large datasets), add a note in the verification summary: `SCALE WARNING: This fix addresses [description of scale problem]. Tests prove logic correctness with mocked/small data but cannot prove it works at production scale. Staging test with real data recommended before deploy.`
+23. **Deferred items:** If you could not implement any plan item (e.g., "Investigation Needed," requires external access, blocked by missing dependency), you MUST:
+    a. Mark it explicitly as `DEFERRED` (not `TODO`, not silently omitted).
+    b. Explain WHY it was deferred.
+    c. **Do NOT unilaterally decide to skip items.** If an item seems out of scope or blocked, flag it for the user — don't just move on.
 
 ### Phase 7: Failure Handling
 If any step fails:

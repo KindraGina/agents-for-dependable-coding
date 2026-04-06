@@ -76,6 +76,20 @@ Reviewer 1 should have done this analysis. Verify:
 - Do web and mobile tests both cover the same API scenarios?
 - Are error responses from the backend tested in frontend error handling?
 
+### Fix-to-Test Mapping Audit
+- **Reviewer 1 must have provided a fix-to-test mapping (every fix → specific named test).** If they didn't, flag as CRITICAL — they skipped mandatory coverage verification.
+- **Audit the mapping:** For each fix → test pair reviewer 1 listed, read the actual test. Does the assertion actually prove the fix works? Would the test fail if the fix were reverted?
+- If reviewer 1 accepted vague coverage like "may be covered by integration tests" or "covered at integration level" without naming specific tests, flag as CRITICAL — vague coverage claims are not evidence.
+- Provide YOUR OWN fix-to-test mapping and compare to reviewer 1's. Note any fixes that reviewer 1 mapped to a test but you disagree that the test actually proves the fix.
+
+### Scale/Production Risk Audit
+- If reviewer 1 flagged scale warnings, verify them.
+- If the plan fixes a scale problem (timeouts, bulk operations, large datasets) and reviewer 1 did NOT flag that tests only use small/mocked data, flag this as a CRITICAL miss by reviewer 1.
+
+### Deferred Items Audit
+- Check if reviewer 1 flagged any deferred/incomplete plan items. If they didn't and the plan has deferred items, flag as a CRITICAL miss by reviewer 1.
+- Deferred work must be explicitly surfaced, not silently accepted.
+
 ### Regression Safety
 - Could a future developer break this feature and have no test catch it?
 - Are the most critical user flows covered by e2e tests?

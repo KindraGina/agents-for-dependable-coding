@@ -91,6 +91,23 @@ This is a multi-project codebase with different test frameworks:
 - **Unverifiable claims:** If any behavior genuinely cannot be verified by Maestro (e.g., actual audio output quality, Bluetooth, real-device-only behavior), it MUST be explicitly labeled `NOT VERIFIED — requires manual testing on device`. Do NOT accept "verified" or "tested" claims based solely on code reading or regex matching. Grepping for a function name is NOT testing.
 - **Input document claims:** If the plan or any analysis document claims runtime behavior (e.g., "works in simulator, fails on device"), and no Maestro flow or test output confirms it, flag it as `CLAIMED BUT UNVERIFIED`. Agents must not repeat runtime claims from documents as fact without evidence.
 
+### Fix-to-Test Mapping (MANDATORY)
+- **For EVERY fix/change in the plan, you MUST name the specific test that proves it works.** Use this format:
+  - Fix 1 [description]: Tested by `test "test name"` in `test/path/to/file_test.exs:line`
+  - Fix 2 [description]: Tested by `test "test name"` in `test/path/to/file_test.exs:line`
+- **"May be covered by integration tests" is NOT acceptable.** Name the specific test or flag it as NEEDS CHANGES.
+- **"Covered at integration level" is NOT acceptable.** Which integration test? What line? What assertion?
+- If a fix has NO dedicated test, this is a CRITICAL gap — flag it as NEEDS CHANGES. Every fix must have at least one test that would fail if the fix were reverted.
+
+### Scale/Production Risk Assessment
+- For fixes that address scale problems (timeouts, bulk operations, large datasets), note whether the tests prove behavior at production scale or only with small/mocked data.
+- If tests only use small data but the fix is for a scale problem, flag it: "WARNING: This fix addresses a scale problem ([description]). Tests prove logic correctness with mocked data but cannot prove it works at production scale. Recommend staging test with real data before deploy."
+- This is a WARNING, not NEEDS CHANGES — but it must be prominently noted.
+
+### Deferred Items Check
+- Read the plan for any items marked "Investigation Needed," "Deferred," "TODO," or "Future work."
+- If any plan items were not implemented and not tested, flag them explicitly: "Plan item [X] was deferred — no implementation and no tests exist. Was this deferral approved by the user?"
+
 ### TDD Verification
 - Were tests written BEFORE implementation? (Check git log)
 - Do the tests cover what TDD would naturally produce?
