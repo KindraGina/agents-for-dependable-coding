@@ -260,6 +260,7 @@ When all loops AND both verification gates have completed with full approval:
 - **ALL reviewers in a group must APPROVE in the SAME ROUND.** If one approved last round but the plan was revised, they must review again. No skipping reviewers because they approved a previous version.
 - NEVER skip a reviewer. All reviewers in each group must run every round.
 - **NEVER skip a verification gate.** Both gates (Phase 3.5 and Phase 5.5) are mandatory. Code review cannot start without passing Phase 3.5. The pipeline cannot complete without passing Phase 5.5.
+- **THE VERIFICATION AUDITOR IS NEVER OPTIONAL.** Even if the plan is a deployment plan, a merge plan, or any other non-code plan where you skip coding/review phases — the verification auditor MUST still run at the end (Phase 5.5) to verify that what was claimed actually happened. Did the merge succeed? Did the push go through? Are conflicts resolved? The auditor catches lies and verifies claims — this applies to ALL plan types, not just code plans. If you skip Phases 3-5 because there's no code to write, you MUST still run Phase 5.5 before Phase 6.
 - **NEVER skip the pre-flight checks (Phase 0).** Branch must be confirmed and prerequisites verified before ANYTHING else happens — before plan review, before implementation, before everything.
 - The plan-creator revises the plan IN PLACE (same file, adds revision notes).
 - The plan-coder fixes code based on ALL reviewer feedback.
