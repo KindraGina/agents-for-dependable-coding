@@ -12,9 +12,27 @@ Run the full iterative agent pipeline for a feature, bug fix, or refactor.
 /pipeline [path to existing plan OR description of what to build/fix]
 ```
 
-- If a file path is provided (e.g., `docs/plans/2026-03-12-feature.md`), skip plan creation and go straight to **Phase 0 (Pre-Flight Checks)**, then Phase 2 (Plan Review Loop).
-- If a description is provided, start at Phase 1 (Plan Creation), then Phase 0, then Phase 2.
+- If a file path is provided (e.g., `docs/plans/2026-03-12-feature.md`), start at **Phase 0 (Pre-Flight Checks)**, then Phase 2 (Plan Review Loop). Skip Phase 1 only.
+- If a description is provided, start at Phase 0, then Phase 1 (Plan Creation), then Phase 2.
 - If nothing is provided, ask the user what they want to build or which plan to review.
+
+## MANDATORY PHASE SEQUENCE — YOU MUST FOLLOW THIS EXACT ORDER
+
+```
+Phase 0: Pre-Flight Checks (branch + prerequisites) ← ALWAYS START HERE. NEVER SKIP.
+Phase 1: Plan Creation (skip only if plan file provided)
+Phase 2: Plan Review Loop
+Phase 3: Implementation
+Phase 3.5: Post-Implementation Verification Gate
+Phase 4: Code Quality Review Loop
+Phase 5: Test Coverage Review Loop
+Phase 5.5: Final Verification Audit                 ← NEVER SKIP, even for non-code plans.
+Phase 6: Done
+```
+
+**PHASE 0 IS THE VERY FIRST THING YOU DO. NOT Phase 1. NOT Phase 2. PHASE 0.**
+If you skip Phase 0, the user will not know if you're on the wrong branch until it's too late.
+This has happened multiple times before. Do not let it happen again.
 
 ## CRITICAL RULES — READ BEFORE DOING ANYTHING
 
@@ -24,6 +42,8 @@ Run the full iterative agent pipeline for a feature, bug fix, or refactor.
 - Suggest implementation steps yourself
 - Answer questions about the plan yourself
 - Skip the review agents
+- Skip Phase 0 (Pre-Flight Checks)
+- Show "Phase 2" or "Plan Review" before completing Phase 0
 - **Fix the plan or code yourself — ALWAYS launch the plan-creator or plan-coder agent to make changes. Even if the fix seems trivial, delegate it.**
 
 **EVERY phase MUST use the Agent tool.** If you catch yourself doing the work instead of launching an agent, STOP and launch the agent instead.
