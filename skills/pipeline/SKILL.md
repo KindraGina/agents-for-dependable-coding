@@ -6,33 +6,35 @@ description: Run the full plan → review → code → verify → review → ver
 
 Run the full iterative agent pipeline for a feature, bug fix, or refactor.
 
+## YOUR FIRST ACTION — DO THIS NOW, BEFORE ANYTHING ELSE
+
+**Run these two commands immediately. Do not read the plan first. Do not launch any agents first. Do this RIGHT NOW:**
+
+```bash
+pwd
+git branch --show-current
+```
+
+**Show the user:**
+- "Working directory: [pwd output]"
+- "Current branch: [branch-name]"
+
+**Then read the plan file** (if a path was provided). Look at the `## Target` section.
+- If the branch matches → say "Branch confirmed: [branch]" and proceed.
+- If they DON'T match → ask the user which branch to use. **STOP until they answer.**
+- If the plan has a `## Prerequisites` or `## Dependencies` section, verify each one is done (grep/ls). If any are NOT DONE, tell the user and ask how to proceed.
+
+**Only after branch is confirmed may you proceed to plan review or plan creation.**
+
 ## Usage
 
 ```
 /pipeline [path to existing plan OR description of what to build/fix]
 ```
 
-- If a file path is provided (e.g., `docs/plans/2026-03-12-feature.md`), start at **Phase 0 (Pre-Flight Checks)**, then Phase 2 (Plan Review Loop). Skip Phase 1 only.
-- If a description is provided, start at Phase 0, then Phase 1 (Plan Creation), then Phase 2.
+- If a file path is provided, confirm the branch (above), then go to Phase 2 (Plan Review Loop).
+- If a description is provided, confirm the branch (above), then go to Phase 1 (Plan Creation).
 - If nothing is provided, ask the user what they want to build or which plan to review.
-
-## MANDATORY PHASE SEQUENCE — YOU MUST FOLLOW THIS EXACT ORDER
-
-```
-Phase 0: Pre-Flight Checks (branch + prerequisites) ← ALWAYS START HERE. NEVER SKIP.
-Phase 1: Plan Creation (skip only if plan file provided)
-Phase 2: Plan Review Loop
-Phase 3: Implementation
-Phase 3.5: Post-Implementation Verification Gate
-Phase 4: Code Quality Review Loop
-Phase 5: Test Coverage Review Loop
-Phase 5.5: Final Verification Audit                 ← NEVER SKIP, even for non-code plans.
-Phase 6: Done
-```
-
-**PHASE 0 IS THE VERY FIRST THING YOU DO. NOT Phase 1. NOT Phase 2. PHASE 0.**
-If you skip Phase 0, the user will not know if you're on the wrong branch until it's too late.
-This has happened multiple times before. Do not let it happen again.
 
 ## CRITICAL RULES — READ BEFORE DOING ANYTHING
 
@@ -42,8 +44,6 @@ This has happened multiple times before. Do not let it happen again.
 - Suggest implementation steps yourself
 - Answer questions about the plan yourself
 - Skip the review agents
-- Skip Phase 0 (Pre-Flight Checks)
-- Show "Phase 2" or "Plan Review" before completing Phase 0
 - **Fix the plan or code yourself — ALWAYS launch the plan-creator or plan-coder agent to make changes. Even if the fix seems trivial, delegate it.**
 
 **EVERY phase MUST use the Agent tool.** If you catch yourself doing the work instead of launching an agent, STOP and launch the agent instead.
@@ -70,37 +70,6 @@ Agent tool call:
 | `code-quality-reviewer-2` | Second code reviewer — audits code AND first reviewer's findings |
 | `test-reviewer` | First test reviewer — coverage, quality, correctness |
 | `test-reviewer-2` | Second test reviewer — audits tests AND first reviewer's findings |
-
-## Phase 0: Pre-Flight Checks (MANDATORY — ALWAYS runs first, NEVER skip)
-
-**THIS IS THE VERY FIRST THING YOU DO. Before plan creation, before plan review, before anything.**
-
-**Step 1: Branch Confirmation**
-Run `git branch --show-current` and `pwd`. Show the user:
-- "Working directory: [pwd output]"
-- "Current branch: [branch-name]"
-- If a plan file was provided, read its `## Target` section and compare: "Plan target branch: [target-branch]"
-- If they match → proceed.
-- If they DON'T match → ask the user: "You're on [current] but the plan targets [target]. Which branch should I work on?"
-- **Do NOT proceed until the branch is confirmed.**
-
-**Step 2: Prerequisite Check** (only if a plan file was provided)
-Read the plan. Look for a `## Prerequisites`, `## Dependencies`, or `## Cross-Repo Dependencies` section (or any section that lists things that must be done/deployed before this plan).
-
-For EACH prerequisite listed:
-1. Determine what code or deployment it refers to.
-2. **Verify it's actually done** — grep for the code, check if the file exists, check git log for the commit. Don't just read the text — verify in the codebase.
-3. Classify each as:
-   - **DONE** — code exists and is verified
-   - **NOT DONE** — code doesn't exist or prerequisite hasn't been deployed
-   - **UNKNOWN** — can't determine from code alone (e.g., "must be deployed to staging")
-
-**If ANY prerequisite is NOT DONE:**
-- Show the user: "These prerequisites are not yet implemented: [list with details]"
-- Ask: "Do you want to (a) implement these first, (b) proceed without them, or (c) stop?"
-- Do NOT proceed until the user decides.
-
-**If no prerequisites section exists or all are DONE:** proceed to Phase 1 or Phase 2.
 
 ## Phase 1: Plan Creation (skip if user provided a plan path)
 
