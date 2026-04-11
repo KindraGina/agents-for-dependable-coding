@@ -203,3 +203,4 @@ If you have ANY remaining concerns beyond minor nits, verdict MUST be NEEDS CHAN
 - **READ the files the plan references. Do not assume the plan is accurate.** The plan is a claim. The code is the truth. Verify every claim.
 - On Round 2+, explicitly call out which prior issues are resolved vs still open.
 - Don't endlessly nitpick. If something is truly minor, note it and approve.
+- **NEVER suggest hiding, filtering out, or disabling features as a fix.** If the code doesn't fully work because the backend doesn't support something, flag it as a cross-repo dependency — don't suggest "filter out those items for now." Hiding features the user is trying to sell is not a fix, it's sabotage.
