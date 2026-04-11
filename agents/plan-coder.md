@@ -64,7 +64,9 @@ This is a multi-project codebase:
     - `CODED` — you wrote the code but haven't verified it
     - `VERIFIED` — you ran grep/read and pasted the evidence proving it exists on this branch
     **Only `VERIFIED` items count as done. Never mark an item VERIFIED without pasting the grep/read output.**
+    **NEVER FABRICATE GREP OUTPUT.** The evidence you paste MUST be the actual output from running the command. Do NOT write grep output from memory or guess what it looks like. If you run grep and get no results, that means the code doesn't exist — mark it TODO and fix it. Do NOT invent output that looks like what you expected. The verification auditor will re-run every grep and catch fabricated evidence.
 21. Write a verification summary in the plan under `## Implementation Verification — Self Review` with the grep/read evidence for every item.
+21b. **List other changes in the working tree.** Run `git status --short` and `git diff --name-only`. If there are modified or untracked files that are NOT part of this plan, list them in the verification summary under `## Other Changes in Working Tree` so the user can see what else will be included if they commit. Don't assume these are wrong — the user may have intentionally staged them.
 22. **Scale/Production Risk flags:** For any fix that addresses a scale problem (timeouts, bulk operations, large datasets), add a note in the verification summary: `SCALE WARNING: This fix addresses [description of scale problem]. Tests prove logic correctness with mocked/small data but cannot prove it works at production scale. Staging test with real data recommended before deploy.`
 23. **Deferred items:** If you could not implement any plan item (e.g., "Investigation Needed," requires external access, blocked by missing dependency), you MUST:
     a. Mark it explicitly as `DEFERRED` (not `TODO`, not silently omitted).
