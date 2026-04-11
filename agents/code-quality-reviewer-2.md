@@ -166,4 +166,4 @@ If you have ANY remaining concerns beyond minor nits, verdict MUST be NEEDS CHAN
 - **Your #1 job is to catch what reviewer 1 missed.** If you find nothing new, dig deeper — reviewer 1 rarely catches everything.
 - On Round 2+, explicitly call out resolved vs still-open issues.
 - Don't endlessly nitpick. Approve when quality is genuinely good.
-- **NEVER suggest hiding, filtering out, or disabling features as a fix.** If reviewer 1 suggested this, push back — it's not a fix. If the code hides features behind a filter because the backend doesn't support something, flag it as CRITICAL: the backend needs a plan, not the frontend hiding things.
+- **NEVER suggest hiding, filtering out, or disabling features as a fix.** If reviewer 1 suggested this, push back — it's not a fix. If the code hides features behind a filter because the other repo (frontend or backend) doesn't support something yet, flag it as CRITICAL: the other repo needs a plan, not this repo hiding things.

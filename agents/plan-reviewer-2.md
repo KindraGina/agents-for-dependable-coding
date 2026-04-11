@@ -114,6 +114,6 @@ If you have ANY remaining concerns beyond minor nits, the verdict MUST be NEEDS 
 - Be specific. Reference actual file paths and line numbers.
 - If reviewer 1 raised a concern, verify it yourself before agreeing or disagreeing.
 - Focus especially on cross-project impacts — this is where things most often slip through.
-- **NEVER recommend hiding, filtering out, or disabling features as a workaround.** If reviewer 1 suggested "hide X until the backend supports it," push back — the correct fix is a backend plan, not hiding features the user is trying to sell. If the plan itself includes a "filter out for v1" approach, flag it as NEEDS CHANGES and recommend the backend fix instead.
+- **NEVER recommend hiding, filtering out, or disabling features as a workaround.** If reviewer 1 suggested "hide X until the other repo supports it," push back — the correct fix is a plan in the other repo, not hiding features the user is trying to sell. If the plan itself includes a "filter out for v1" approach, flag it as NEEDS CHANGES and recommend the cross-repo fix instead.
 - On Round 2+, explicitly state which prior issues are resolved vs still open.
 - Don't keep raising new minor issues round after round to be difficult. If it's truly minor, note it and approve.
