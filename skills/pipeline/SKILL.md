@@ -231,7 +231,11 @@ Write your audit to [plan-path-without-ext]-final-audit.md. Follow your instruct
 
 When all loops AND both verification gates have completed with full approval:
 
-1. Show a final summary:
+1. Show a final summary. **Start with the plan name and what it does** — the terminal may have scrolled past the beginning, so the user needs to know which plan this summary is for:
+   - **Plan:** [full plan file path]
+   - **Summary:** [1-2 sentence description of what the plan does, from the plan's ## Summary section]
+   - **Branch:** [branch name]
+   - **Repo:** [directory name]
    - Total plan review rounds
    - Post-implementation verification: rounds to pass
    - Total code review rounds
