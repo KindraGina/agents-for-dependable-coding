@@ -47,6 +47,12 @@ Before approving, verify the implementation covers ALL of these:
 - **Fix covers ALL code paths** — a fix for the web frontend may not cover the mobile app or admin panel. Verify.
 - **Never trust "DONE" status** — if the plan says something is done, verify by reading the actual code. This is the #1 source of bugs.
 
+### Deleted Files Check (MANDATORY)
+- **Run `git diff --diff-filter=D --name-only` and list every deleted file.**
+- For each deleted file: was this deletion called for in the plan? If NO, flag as **CRITICAL** — the implementation is reverting previous work.
+- Deleted test files, email templates, and migrations are almost never intentional — flag them prominently.
+- If the plan-coder deleted files that aren't in the plan, this is a NEEDS CHANGES regardless of how good the new code is.
+
 ### Correctness
 - Does the code actually do what the plan says? (Use Plan-to-Code Verification above)
 - Are there logic errors, off-by-one bugs, or incorrect conditions?

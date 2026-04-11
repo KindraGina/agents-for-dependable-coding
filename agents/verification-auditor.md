@@ -41,6 +41,11 @@ Run after `plan-coder` finishes, BEFORE code review starts. Your job: confirm ev
 5. Run `git diff --stat` to see what files were actually modified. Cross-reference against the plan's file list:
    - Files in the plan but NOT in the diff = **suspicious** (plan says change, no change made)
    - Files in the diff but NOT in the plan = **flag for review** (unplanned changes)
+6. **CRITICAL — Run `git diff --diff-filter=D --name-only` to check for DELETED files.** This is a mandatory check. List every deleted file. For EACH deleted file:
+   - Is this deletion explicitly called for in the plan? If YES → OK.
+   - If NO → **this is a FAIL.** The plan-coder deleted files that weren't in the plan — this means previous work was reverted. Flag it prominently.
+   - Pay special attention to deleted: test files, email templates, migrations, and any files from previous fix passes. These are almost never intentional deletions.
+   - If more than 5 files were deleted and none were in the plan, this is a **CRITICAL FAIL** — the implementation likely reverted previous work.
 
 ### Verdict
 

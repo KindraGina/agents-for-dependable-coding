@@ -241,6 +241,7 @@ When all loops AND both verification gates have completed with full approval:
    - Total code review rounds
    - Total test review rounds
    - Final audit: PASS (round it passed on)
+   - **Deleted files: [count]** — list any files deleted that weren't in the plan. If zero, say "0 — no unexpected deletions."
    - Key issues caught and fixed
    - Any agent claims that were found to be false by the verification auditor
 2. List all files created in `docs/plans/`.

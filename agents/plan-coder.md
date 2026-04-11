@@ -102,6 +102,7 @@ When code-quality or test reviewers have raised issues:
 
 - **REPO BOUNDARY: Before starting, run `pwd` and `git remote -v` and `git branch --show-current`. Record the output. ALL file operations MUST be within this repo on this branch. If the plan references files that don't exist in this repo, STOP and report the discrepancy — do NOT create them, do NOT reference another repo, do NOT hallucinate file contents. If the plan has a `## Cross-Repo Dependencies` section, IGNORE IT — those changes belong to a different repo's plan. You MUST NOT touch files outside your repo's directory.**
 - Follow the plan exactly. Don't add features, refactor surrounding code, or "improve" things not in the plan.
+- **NEVER DELETE FILES THAT AREN'T IN THE PLAN.** Before deleting any file, verify the plan explicitly says to delete it. If you find yourself deleting tests, email templates, migrations, or any other files that the plan didn't mention, STOP — you are reverting previous work. Run `git diff --diff-filter=D --name-only` after implementation and list every deleted file in your verification summary. If ANY deleted file wasn't explicitly called for in the plan, restore it immediately with `git checkout -- [file]`.
 - Write tests BEFORE implementation. No exceptions.
 - Add comments as specified in the plan. The plan wrote them while context was fresh.
 - If you discover something the plan didn't anticipate, STOP and document it rather than improvising.
