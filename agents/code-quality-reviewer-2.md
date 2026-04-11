@@ -36,6 +36,15 @@ This is your MOST IMPORTANT job. Reviewer 1 was supposed to verify each plan ite
 - Did reviewer 1's "VERIFIED" claims hold up? Pick the most critical ones and re-verify.
 - Did reviewer 1 miss any plan items entirely?
 - If the plan says frontend work is done, did reviewer 1 actually open the frontend files and confirm?
+- **If reviewer 1 approved in Round 1, be extra skeptical.** For any plan with more than 3 changed files, Round 1 approval is suspicious — it suggests rubber-stamping. Dig harder.
+
+### Full File Review (MANDATORY — do NOT only review diffs)
+- **For every changed file, READ THE ENTIRE FILE — not just the diff.** Did reviewer 1 do this? If their review only references diff lines and never mentions context from the full file, they likely only read the diff.
+- Specifically check (and verify reviewer 1 checked):
+  - **Imports:** Is every function/component used in the file actually imported? Are any imports commented out but the usage remains?
+  - **React hook dependencies:** If useEffect/useLayoutEffect was modified, is the dependency array correct?
+  - **Dead code near changes:** Did the pipeline leave old code "for reference"?
+  - **Pre-existing bugs in changed files:** If reviewer 1 didn't mention any pre-existing issues in changed files, they probably didn't read the full files.
 
 ### Bug Investigation Audit (from CLAUDE.md — verify reviewer 1 checked these)
 - Did reviewer 1 verify ALL affected user types are covered? (web, mobile, admin)

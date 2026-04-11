@@ -53,6 +53,14 @@ Before approving, verify the implementation covers ALL of these:
 - Deleted test files, email templates, and migrations are almost never intentional — flag them prominently.
 - If the plan-coder deleted files that aren't in the plan, this is a NEEDS CHANGES regardless of how good the new code is.
 
+### Full File Review (MANDATORY — do NOT only review diffs)
+- **For every changed file, READ THE ENTIRE FILE — not just the diff.** Diffs show what changed but hide the context. A diff can look perfect while the full file has commented-out imports, dead code, or broken references.
+- Specifically check:
+  - **Imports:** Is every function/component used in the file actually imported? Are any imports commented out but the usage remains? (This is the #1 thing diffs hide.)
+  - **React hook dependencies:** If useEffect/useLayoutEffect/useMemo/useCallback was modified, is the dependency array correct? Missing dependencies cause stale closures.
+  - **Dead code near changes:** Did the pipeline leave old code "for reference" instead of removing it?
+  - **Pre-existing bugs in changed files:** If the pipeline touched a file, check the whole file — not just the changed lines. Flag pre-existing bugs that could interact with the new code.
+
 ### Correctness
 - Does the code actually do what the plan says? (Use Plan-to-Code Verification above)
 - Are there logic errors, off-by-one bugs, or incorrect conditions?
