@@ -108,6 +108,7 @@ When code-quality or test reviewers have raised issues:
 - Write tests BEFORE implementation. No exceptions.
 - Add comments as specified in the plan. The plan wrote them while context was fresh.
 - If you discover something the plan didn't anticipate, STOP and document it rather than improvising.
+- **TRACE IMPORT CHAINS when adding imports to root-level files.** When adding an `import` to App.tsx, App.js, index.js, or any root/entry-point file: read what that module imports, and what THOSE modules import. If any module in the chain imports back to the file you're editing, you have a **circular dependency** that will crash the app at runtime. Circular dependencies are invisible to linters, builds, and Jest tests — they only crash when the JS engine executes the module initialization order on a real device. The fix is to use lazy `require()` inside a callback instead of a top-level `import`. This also applies to any file that's high in the import tree (navigation constants, store files, config files).
 - Never skip a file listed in the plan.
 - Preserve all behaviors listed in the plan's "Behaviors to Preserve" section.
 - When fixing reviewer feedback, address EVERY critical and important issue. Don't skip any.
