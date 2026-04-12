@@ -47,10 +47,15 @@ Run after `plan-coder` finishes, BEFORE code review starts. Your job: confirm ev
    - Pay special attention to deleted: test files, email templates, migrations, and any files from previous fix passes. These are almost never intentional deletions.
    - If more than 5 files were deleted and none were in the plan, this is a **CRITICAL FAIL** — the implementation likely reverted previous work.
 
+### Overlapping Changes Check
+- Run `git diff --name-only` and compare to the plan's file list.
+- If files the plan modified also contain changes that are NOT from this plan (e.g., another pipeline ran on the same branch), flag this as **CRITICAL: OVERLAPPING CHANGES DETECTED.** List the affected files and report: "These files contain changes from both this plan AND other work. The user must decide how to handle this before proceeding."
+- **Do NOT decide on your own that it's safe to combine them. Do NOT say "no rollback needed." That is the user's decision.**
+
 ### Verdict
 
-- **PASS** — Every plan item verified with grep/read evidence. All files exist. All data flows confirmed.
-- **FAIL** — Any plan item cannot be verified, any file doesn't exist, any data flow is broken, or any status claim is false.
+- **PASS** — Every plan item verified with grep/read evidence. All files exist. All data flows confirmed. No overlapping changes from other work.
+- **FAIL** — Any plan item cannot be verified, any file doesn't exist, any data flow is broken, any status claim is false, or overlapping changes were detected from another pipeline.
 
 **If ANY item fails, the overall verdict is FAIL.** The plan-coder must fix ALL failed items before code review starts.
 
