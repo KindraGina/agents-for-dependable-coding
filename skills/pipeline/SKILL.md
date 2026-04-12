@@ -229,23 +229,40 @@ Write your audit to [plan-path-without-ext]-final-audit.md. Follow your instruct
 
 ## Phase 6: Done
 
-When all loops AND both verification gates have completed with full approval:
+When all loops AND both verification gates have completed with full approval, output the summary using **EXACTLY** this format. Copy this template and fill in the values. Do NOT rearrange, skip fields, or use a different format:
 
-1. Show a final summary. **Start with the plan name and what it does** — the terminal may have scrolled past the beginning, so the user needs to know which plan this summary is for:
-   - **Plan:** [full plan file path]
-   - **Summary:** [1-2 sentence description of what the plan does, from the plan's ## Summary section]
-   - **Branch:** [branch name]
-   - **Repo:** [directory name]
-   - Total plan review rounds
-   - Post-implementation verification: rounds to pass
-   - Total code review rounds
-   - Total test review rounds
-   - Final audit: PASS (round it passed on)
-   - **Deleted files: [count]** — list any files deleted that weren't in the plan. If zero, say "0 — no unexpected deletions."
-   - Key issues caught and fixed
-   - Any agent claims that were found to be false by the verification auditor
-2. List all files created in `docs/plans/`.
-3. Ask the user if they want to commit.
+```
+## Pipeline Complete
+
+**Plan:** [full plan file path]
+**What it does:** [read the plan's ## Summary section and paste 1-2 sentences here]
+**Branch:** [run git branch --show-current and paste the result]
+**Repo:** [run basename $(pwd) and paste the result]
+
+| Phase | Rounds | Result |
+|-------|--------|--------|
+| Plan Review | [N] rounds | [result] |
+| Implementation | [N] round(s) | [result] |
+| Post-Impl Verification | [N] round(s) | [PASS/FAIL] |
+| Code Quality Review | [N] rounds | [result] |
+| Test Coverage Review | [N] rounds | [result] |
+| Final Audit | [N] round | [PASS/FAIL] |
+
+**Deleted files:** [count] — [list if any, or "no unexpected deletions"]
+
+**Key issues caught and fixed:**
+- [issue 1]
+- [issue 2]
+...
+
+**Agent accountability:** [all HONEST or list dishonest agents]
+
+**Files in docs/plans/:** [count] review/audit files
+
+Would you like to commit these changes?
+```
+
+The **Plan** and **What it does** fields are MANDATORY. The user runs multiple pipelines in parallel and needs to know which plan just finished. If you skip these fields, the summary is useless.
 
 ## Important Rules
 
