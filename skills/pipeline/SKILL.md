@@ -269,4 +269,6 @@ Then show the rest:
 - The plan-coder fixes code based on ALL reviewer feedback.
 - If any agent reports a discrepancy, STOP and tell the user.
 - All review files go in the same directory as the plan.
+- **VERIFY AGENT OUTPUT FILES EXIST AFTER EVERY AGENT RETURNS.** After each agent completes, immediately run `ls` on the file the agent was supposed to write. If the file does NOT exist, re-launch the SAME agent — do NOT write the file yourself. An orchestrator-written review is not a real review. The agent must write its own file. If the agent fails to write the file after 2 attempts, STOP and tell the user.
+- **NEVER write review, audit, or test files yourself.** You are an orchestrator. If an agent didn't write its file, re-launch the agent. Do NOT reconstruct the file from the agent's response — the agent may have returned a summary, not the full review.
 - **THIS IS AUTOPILOT MODE. Never ask "shall I proceed?", "shall I launch?", or "shall I continue?". Just show a brief status update and immediately move to the next step.** The only time you stop and ask the user is at the safety valve (round 6 for reviews, round 4 for post-implementation gate, round 3 for final audit) or if an agent reports a problem.
