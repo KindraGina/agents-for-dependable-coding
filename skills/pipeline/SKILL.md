@@ -229,40 +229,32 @@ Write your audit to [plan-path-without-ext]-final-audit.md. Follow your instruct
 
 ## Phase 6: Done
 
-When all loops AND both verification gates have completed with full approval, output the summary using **EXACTLY** this format. Copy this template and fill in the values. Do NOT rearrange, skip fields, or use a different format:
+**Step 1: Read the plan file.** Run `Read` on the plan file to get its name and `## Summary` section. You need this for the output below.
 
-```
-## Pipeline Complete
+**Step 2: Update the plan file.** Use the Edit tool to add a `## Pipeline Results` section at the bottom of the plan file with:
+- Date pipeline completed
+- Total rounds per phase
+- Key issues caught and fixed (with brief descriptions)
+- Final test count and pass status
+- Final audit verdict
+- List of all review/audit files created
 
-**Plan:** [full plan file path]
-**What it does:** [read the plan's ## Summary section and paste 1-2 sentences here]
-**Branch:** [run git branch --show-current and paste the result]
-**Repo:** [run basename $(pwd) and paste the result]
+This makes the plan the permanent source of truth for what happened during the pipeline.
 
-| Phase | Rounds | Result |
-|-------|--------|--------|
-| Plan Review | [N] rounds | [result] |
-| Implementation | [N] round(s) | [result] |
-| Post-Impl Verification | [N] round(s) | [PASS/FAIL] |
-| Code Quality Review | [N] rounds | [result] |
-| Test Coverage Review | [N] rounds | [result] |
-| Final Audit | [N] round | [PASS/FAIL] |
+**Step 3: Show the summary.** Your FIRST line of output MUST be:
 
-**Deleted files:** [count] — [list if any, or "no unexpected deletions"]
+**Pipeline Complete: [plan file name] — [1-2 sentence summary from the plan's ## Summary section]**
 
-**Key issues caught and fixed:**
-- [issue 1]
-- [issue 2]
-...
+This is NOT optional. The user runs multiple pipelines in parallel and needs to know which plan just finished. If your first line does not contain the plan name and what it does, the summary is useless.
 
-**Agent accountability:** [all HONEST or list dishonest agents]
-
-**Files in docs/plans/:** [count] review/audit files
-
-Would you like to commit these changes?
-```
-
-The **Plan** and **What it does** fields are MANDATORY. The user runs multiple pipelines in parallel and needs to know which plan just finished. If you skip these fields, the summary is useless.
+Then show the rest:
+- Branch and repo
+- Phase table (rounds and results)
+- Deleted files count
+- Key issues caught and fixed
+- Agent accountability
+- Files in docs/plans/
+- "Would you like to commit these changes?"
 
 ## Important Rules
 
