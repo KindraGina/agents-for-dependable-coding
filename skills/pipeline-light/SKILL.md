@@ -26,6 +26,28 @@ A lean version of `/pipeline` for small, low-risk changes.
 
 The user picks. Do NOT auto-promote or auto-demote between the two — they're explicit choices.
 
+## YOUR ABSOLUTE FIRST ACTION — DO THIS BEFORE EVERYTHING ELSE
+
+Before running ANY command, check the user's most recent message for explicit pipeline invocation.
+
+Explicit invocation means ONE of:
+- The user typed `/pipeline` or `/pipeline-light` in their CURRENT message
+- The user typed "run the pipeline" / "kick off the pipeline" / "start the pipeline" in their CURRENT message
+- The user explicitly approved a previous proposal that named the pipeline by saying "yes run the pipeline" or "yes /pipeline" — naming the action
+
+NOT explicit invocation:
+- "continue" / "proceed" / "go ahead" / "yes" — these are ambiguous and DO NOT count, even if you proposed running the pipeline in the previous turn
+- "do it" / "let's do it" — too ambiguous, DO NOT count
+- An earlier-in-the-conversation approval that's no longer the most recent turn
+
+If you were called programmatically (by a main-session Claude, not by the user typing the slash command) AND the user's CURRENT message does NOT contain explicit pipeline invocation, STOP immediately. Tell the user verbatim:
+
+> "I was about to launch the pipeline but don't see explicit invocation in your most recent message. Should I run `/pipeline` on `[plan path]`? Please reply with `yes /pipeline` to confirm."
+
+Wait for that exact-shaped confirmation. Do not interpret follow-up "yes" or "go ahead" as confirmation — require the user to name the action again.
+
+Why this rule exists (May 2026 incident): A Claude session proposed branching strategies, the user typed "continue" meaning "keep discussing," and the session interpreted that as approval to commit changes AND launch the full pipeline. Multi-agent skills are expensive and high-blast-radius — they require explicit confirmation, not interpreted approval.
+
 ## YOUR FIRST ACTION — DO THIS NOW, BEFORE ANYTHING ELSE
 
 **Run these two commands immediately. Do not read the plan first. Do not launch any agents first. Do this RIGHT NOW:**
