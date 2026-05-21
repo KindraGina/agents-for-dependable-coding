@@ -32,6 +32,20 @@ This is a multi-project codebase:
 - Error handling paths (what happens when things fail?)
 - Migration safety (can this be rolled back? what about existing data?)
 
+### Contradiction Check Audit (CRITICAL — run this BEFORE Verified References Audit)
+
+Internal contradictions are the highest-impact failure mode. Reviewer 1 should have run a Contradiction Check — your job is to audit it AND independently re-check.
+
+**Process:**
+
+1. **Confirm reviewer 1 included a `## Contradiction Check` section.** If they didn't, that's a CRITICAL gap in their review — flag it.
+2. **Independently list every authoritative user statement** in the plan: every `### Override` block, every verbatim user quote, every "Implementer must NOT default this decision" marker, every "User confirmed X" note.
+3. **For each, grep the rest of the plan** for direct contradictions — Decision sections, "Behaviors to Preserve", "Open Questions", test expectations, "Edge Cases."
+4. **Any contradiction is CRITICAL → automatic NEEDS CHANGES.** This holds even if reviewer 1 approved the plan or didn't flag the contradiction. The user's words are law.
+5. In your review, include your own `## Contradiction Check Audit` section listing what you found and whether reviewer 1 caught it.
+
+**Why this rule exists (April 2026 donation-upsell incident):** Three plan reviewers read the same plan; none caught that line 36 said "donations IN" and line 100 said "donations OUT." The implementation shipped following Decision 2, reversing the user's explicit instruction. Each reviewer's contradiction check is a layer of defense — none of them ran one.
+
 ### Verified References Audit (CRITICAL — check this before anything else)
 - Does the plan have a `## Verified References` section? If not, flag as CRITICAL.
 - **Did reviewer 1 check the verified references?** If reviewer 1 didn't spot-check function signatures, return types, and associations against the actual code, flag it as a gap in reviewer 1's coverage.

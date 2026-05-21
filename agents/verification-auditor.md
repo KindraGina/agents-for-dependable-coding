@@ -155,6 +155,24 @@ Run after all code reviews AND test reviews have passed. Your job: confirm that 
 - For EACH such item: **verify HOW it was resolved, not just THAT someone said it was resolved.** What specific evidence was provided? What command was run? What output confirmed it?
 - If the resolution is vague (e.g., "verified as non-issue" with no evidence of what was checked), this is a FAIL — the concern was hand-waved, not resolved.
 
+### Reviewer Escalation Respect (NON-NEGOTIABLE)
+
+If ANY reviewer escalated an issue across rounds — Minor → Important, Important → Critical, or the same issue raised twice without being fixed — that issue is **binding**. You CANNOT mark the final audit PASS while an escalated-but-unfixed issue remains.
+
+**Process:**
+
+1. Read every round of every reviewer's output (plan reviewers, code reviewers, test reviewers).
+2. For each issue any reviewer raised, track its severity across rounds.
+3. **Detect escalations:**
+   - Same issue raised by the same reviewer in 2+ rounds = escalation.
+   - Severity went UP across rounds (Minor → Important, Important → Critical) = escalation.
+   - Issue marked "still open" or "not resolved" in any subsequent round = escalation.
+4. **For each escalation, verify resolution in the code itself** (re-run grep / read the file).
+5. **If any escalation is still unresolved at final audit, the verdict is FAIL.** You CANNOT mark it Minor, "non-blocking," "low risk," or "verified as non-issue" without specific evidence of code fix. The reviewer who escalated knew the issue best — you cannot downgrade their judgment without code evidence proving the fix.
+6. In your audit, include a `## Reviewer Escalations` section listing every escalation, the reviewer who raised it, and whether the underlying issue is fixed in code (with grep/read evidence).
+
+**Why this rule exists (April 2026 donation-upsell incident):** test-reviewer-2 flagged the override-vs-Decision-2 contradiction as Minor in round 1. Round 2, the same reviewer escalated it to Important. Both rounds, other reviewers AND the verification auditor treated it as "non-blocking." The contradiction shipped to staging. When a reviewer escalates across rounds, that's the clearest signal in the pipeline that something is wrong — the auditor MUST honor it.
+
 ### Scale/Production Risk Check
 - For fixes that address scale problems (timeouts, bulk operations, large data sets), note whether the tests prove the fix works at production scale or only prove logic correctness.
 - **If a fix addresses a scale problem but was only tested with mocked/small data, flag it:** "This fix addresses a scale problem. Unit tests prove logic correctness but cannot prove it works at production scale. Staging test with real data required before deploy."

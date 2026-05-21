@@ -39,6 +39,16 @@ git branch --show-current
 - "Working directory: [pwd output]"
 - "Current branch: [branch-name]"
 
+**PROTECTED BRANCH REFUSAL — this is a HARD STOP:**
+
+If the current branch is one of `main`, `master`, `staging`, `testflight`, `production`, `prod`, or `release`, you MUST refuse to run. Tell the user verbatim:
+
+> "You're on the protected branch `[branch]`. The pipeline cannot run here directly — changes must be made on a feature branch and merged back. Please create a feature branch (e.g. `git checkout -b feature/[short-description]`) and re-run the pipeline. STOPPING."
+
+Do NOT proceed. Do NOT offer to create the branch yourself. Do NOT ask "should I proceed anyway?" — the user creates the branch themselves and re-runs the pipeline.
+
+**Why this rule exists (April 2026 donation-upsell incident):** A pipeline ran on `staging` directly with no feature branch. 11 files were modified on the protected branch with no PR boundary, no clean rollback path, and contaminated the staging deploy line.
+
 **Then read the plan file** (if a path was provided). Look at the `## Target` section.
 - If the branch matches → say "Branch confirmed: [branch]" and proceed.
 - If they DON'T match → ask the user which branch to use. **STOP until they answer.**

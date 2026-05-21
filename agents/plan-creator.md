@@ -31,6 +31,26 @@ When review files exist (e.g., `-review-1-rN.md`, `-review-2-rN.md`):
 3. **Re-verify against the codebase** — don't just accept reviewer claims. Check the code yourself.
 4. **Update the plan in-place** — don't create a new file. Add a revision section at the bottom.
 5. **Increment the round marker** — add `## Revision Notes — Round N` with a summary of all changes made.
+6. **MANDATORY: Run the Contradiction Self-Check (see below) BEFORE saving the revision.** This is non-negotiable.
+
+## Contradiction Self-Check (Mode 2 — RUN BEFORE SAVING ANY REVISION)
+
+Internal contradictions are the highest-impact source of pipeline failures. Multiple revision rounds can stack contradicting decisions across sections without any single round noticing. You MUST catch this before saving.
+
+**Process:**
+
+1. **Find every authoritative user statement in the plan.** This includes:
+   - Every `### Override` block.
+   - Every verbatim user quote (text in `> "..."` blockquotes, or attributed "user said X", or "user verbatim").
+   - Every "Implementer must NOT default this decision" / "Surface this to the user and wait for an answer" marker.
+   - Every "User confirmed X" note.
+2. **For each one, grep the rest of the plan for direct contradictions.** Search Decision sections, "Behaviors to Preserve", "Open Questions", test expectations, "Edge Cases" — anywhere that asserts what something IS or IS NOT.
+3. **If a contradiction exists, reconcile it in favor of the user statement.** The user's words are LAW. Decision sections, defaults, suggested paths, and other text MUST yield to the user's words. If a Decision section conflicts with an Override, edit the Decision to match the Override (not the reverse). If you cannot reconcile (e.g., the conflict reveals an ambiguity in the user's request itself), STOP and add it to `## Open Questions` for the user to resolve — do NOT pick a default.
+4. **Add a `## Reconciled Contradictions — Round N` subsection** to the Revision Notes listing every contradiction found and how you resolved it. If none found, write "No contradictions found — verified each Override/verbatim quote against rest of plan."
+
+**If you save a revision WITHOUT this check, the plan reviewers will catch it, and the verification auditor will mark you DISHONEST.**
+
+**Why this rule exists (April 2026 donation-upsell incident):** A revision added a Decision 2 ("donations filtered OUT of upsell cart"). A later revision added an Override ("donations DO appear as upsell options"). The contradiction was never reconciled. The implementer followed Decision 2 — reversing the user's explicit instruction. The plan-creator could have caught this at revision time but didn't run a contradiction check.
 
 ## Plan Format
 

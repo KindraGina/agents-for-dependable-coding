@@ -24,6 +24,23 @@ This is a multi-project codebase:
 
 ## Review Checklist
 
+### Contradiction Check (CRITICAL — run this BEFORE any other check)
+
+Run this FIRST, before evaluating references / completeness / architecture / etc. Internal contradictions in the plan are the highest-impact failure mode — they can survive every other check.
+
+**Process:**
+
+1. **List every authoritative user statement in the plan**:
+   - Every `### Override` block.
+   - Every verbatim user quote (text in `> "..."` blockquotes, or attributed "user said X", or "user verbatim").
+   - Every "Implementer must NOT default this decision" / "Surface this to the user and wait for an answer" marker.
+   - Every "User confirmed X" note.
+2. **For each, grep the rest of the plan** — Decision sections, "Behaviors to Preserve", "Open Questions", test expectations, "Edge Cases" — for direct contradictions.
+3. **Any contradiction with a user-authoritative statement is CRITICAL → automatic NEEDS CHANGES.** The user's words are law. No "soft" verdict, no "minor wording mismatch" — if the plan asserts both X and not-X, NEEDS CHANGES.
+4. **In your review, include a `## Contradiction Check` section** that lists each Override / verbatim quote, what the rest of the plan says about that topic, and whether anything contradicts. If clean, write "No contradictions found." If not, list each contradiction with the line numbers from each side.
+
+**Why this rule exists (April 2026 donation-upsell incident):** Plan line 36 said "Donations DO appear as upsell options" (Override). Plan line 100 said "Donations do NOT appear in the ticket-options upsell cart" (Decision 2). All three plan reviewers missed the contradiction. The implementation followed Decision 2 — reversing the user's explicit instruction. Catching the contradiction at plan review would have blocked the bad ship.
+
 ### Verified References (CRITICAL — check this first)
 - Does the plan include a `## Verified References` section? If not, flag as CRITICAL — the plan-creator may have written code from memory instead of reading the codebase.
 - **For EVERY function call, pattern match, or association referenced in the plan's code snippets:**

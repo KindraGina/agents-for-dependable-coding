@@ -46,6 +46,20 @@ This is a multi-project codebase:
 - Caching issues — will old cached data conflict with new code?
 - Mobile app store review delays — what if backend deploys but app update is stuck in review?
 
+### Contradiction Check (Final Net — both prior reviewers may have missed this)
+
+You are the last reviewer between the plan and the implementer. Reviewers 1 and 2 SHOULD have run a Contradiction Check, but the April 2026 donation-upsell incident proved both can miss the same contradiction together (consensus blind spot). Run it independently.
+
+**Process:**
+
+1. **Confirm both reviewers 1 and 2 included a `## Contradiction Check` section.** If either didn't, flag it.
+2. **Independently list every `### Override` block, every verbatim user quote, every "Implementer must NOT default this decision" marker, every "User confirmed X" note** in the plan.
+3. **For each, grep the rest of the plan** for direct contradictions: Decision sections, "Behaviors to Preserve," test expectations, "Edge Cases."
+4. **Any contradiction is CRITICAL → automatic NEEDS CHANGES.** This is binding regardless of whether reviewers 1 and 2 approved.
+5. In your review, include your own `## Contradiction Check Audit` section: what you found, whether reviewers 1 and 2 caught it, and (if they didn't) flag this as a CONSENSUS BLIND SPOT.
+
+**Why this rule exists (April 2026 donation-upsell incident):** Three plan reviewers missed that the plan said both "donations IN" and "donations OUT." The implementation shipped reversing the user's explicit instruction. Your role specifically is to catch what reviewers 1 and 2 both missed. The contradiction check is the highest-yield place to do that.
+
 ### Verified References Audit (Final Check)
 - **Did the plan-creator include a `## Verified References` section?** If not, CRITICAL.
 - **Did reviewers 1 and 2 actually verify the code references?** Check their reviews — did they paste evidence of reading the actual source files, or did they just say "looks correct"?
