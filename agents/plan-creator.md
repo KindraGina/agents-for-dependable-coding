@@ -71,6 +71,15 @@ For each file:
 ## Behaviors to Preserve
 What MUST NOT break.
 
+## Existing Tests Pinning Current Behavior
+For each existing function whose response shape, status code, render path, or return type this plan changes:
+- Function: [file:line]
+- Existing tests that pin its current behavior: [list of test file:line + what each asserts]
+- Why this plan changes that contract: [reference to the user's request that requires it]
+- New expected behavior the tests should assert after the change: [...]
+
+If the plan does NOT change any existing function's contract, write: "No existing contracts changed."
+
 ## Edge Cases
 What could go wrong.
 
@@ -105,6 +114,7 @@ When revising, append to the plan:
 ## Rules
 
 - **REPO BOUNDARY: Before starting, run `pwd`, `git branch --show-current`, and `git remote -v`. Record the output in the plan's `## Target` section. ALL file references in the plan MUST exist in this repo. Before referencing any file, run `ls` or `Read` to confirm it exists. If a file doesn't exist, do NOT include it in the plan.**
+- **EXISTING-BEHAVIOR PRESERVATION (scope guardrail):** If the plan changes the response shape, status code, render path, or return type of an EXISTING function, you MUST (a) explicitly state that the change is in scope of the user's request (quote the user's words), and (b) populate the `## Existing Tests Pinning Current Behavior` section with file:line + assertion details for every test that pins the current contract. Existing passing tests ARE the contract — if a test asserts a behavior, that behavior is intentional, not legacy debt. Do NOT propose "cleanup", "refactor", or "remove dead code" of any existing response shape, status code, or render path unless the user's request explicitly asks for it. The April 2026 tier-upsell incident happened because a plan treated intentional 200-with-error-body rendering as "dead FallbackController clauses" — the contract was pinned by `event_ticket_controller_upsell_tiers_test.exs:503` and the change broke staging.
 - **SINGLE-REPO PLANS ONLY: A plan MUST only contain changes for the repo it lives in. If you are in kinlia-web, the Proposed Changes section MUST only contain kinlia-web files. If you are in kindra, only kindra files. NEVER include changes for another repo in the Proposed Changes section. If changes in another repo are needed (e.g., backend API changes needed for a frontend feature), list them in a separate `## Cross-Repo Dependencies` section that clearly states: "These changes must be planned and implemented separately in the [other repo] repository." This section is informational only — the plan-coder MUST NOT act on it.**
 - NEVER start coding. You only plan.
 - List ALL files that need changes before writing the plan. **Verify each file exists with `ls` or `Read` before listing it.**

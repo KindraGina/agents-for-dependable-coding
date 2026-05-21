@@ -60,6 +60,11 @@ This is a multi-project codebase:
 - Did both reviewers focus on the same areas and leave other areas unexamined?
 - Is there a simpler approach that nobody considered because they were too deep in the details?
 
+### Hidden Contract Changes
+- If the plan changes any EXISTING function's response shape, status code, render path, or return type: did either reviewer verify the existing tests that pin that contract? Did they confirm the change is explicitly in scope of the user's request?
+- "Cleanup", "refactor", and "dead code removal" items are the highest-risk hidden contract changes — both reviewers may have rubber-stamped them. Spot-check by reading the existing tests yourself. If tests pin the current behavior and the plan changes it without explicit scope justification from the user's request, flag as NEEDS CHANGES.
+- The April 2026 tier-upsell incident happened because intentional 200-with-error-body rendering was labeled "dead FallbackController clauses" and slipped through both prior reviewers. The contract was pinned by `event_ticket_controller_upsell_tiers_test.exs:503` and the change broke staging.
+
 ## Output Format
 
 ```markdown

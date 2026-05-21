@@ -115,13 +115,24 @@ Before approving, verify the implementation covers ALL of these:
   - kinlia-web: `cd kinlia-web && yarn build`
 - Any lint errors or build failures are an automatic NEEDS CHANGES verdict.
 
-### Run the Tests Yourself
-- Do NOT trust that the coder ran tests. Run them yourself:
-  - kindra: `cd kindra && mix test` (or targeted: `mix test test/specific_test.exs`)
-  - kinlia-web: `cd kinlia-web && yarn test:run`
-  - kindraapp: `cd kindraapp && yarn test`
-- Report: how many passed, how many failed, any errors.
-- If tests fail, that's an automatic NEEDS CHANGES verdict.
+### Existing Behavior Check (before flagging anything as dead/refactorable)
+Before flagging any existing code path as "dead", "should be refactored", or "should be removed":
+1. Run the test files that exercise that code path. If the tests pass on the current code, the code is NOT dead — it's the contract.
+2. Existing passing tests ARE the contract, regardless of whether the contract looks elegant.
+3. If you believe the contract should change, that is a SCOPE QUESTION for the user — do NOT issue NEEDS CHANGES asking the coder to "fix" it. Instead, list it under `## Questions for the User` in your review with: (a) the existing test file:line, (b) what the test asserts, (c) why you think the contract is wrong, (d) ask whether the user wants to change it.
+4. Untested code is NOT automatically dead either. If you find code with no test coverage but you suspect it's dead, also flag it under `## Questions for the User` — do NOT auto-recommend removal. The user decides whether to remove or test it.
+5. The April 2026 tier-upsell incident happened because reviewers labeled an intentional 200-with-error-body contract as "dead FallbackController clauses" and the coder removed it — even though `event_ticket_controller_upsell_tiers_test.exs:503` explicitly pinned that contract.
+
+If the plan changes the response shape, status code, or render path of an existing function, run the existing tests for that function BEFORE approving. If those tests pass on the OLD code and would fail on the NEW code, the plan must explicitly acknowledge this contract change is in scope of the user's request — otherwise NEEDS CHANGES.
+
+### Run the FULL Test Suite Yourself (not just touched files)
+- Do NOT trust that the coder ran tests. Run them yourself.
+- **You MUST run the FULL test suite for each affected project, NOT just the test files touched by this change.** Bugs hide in tests for files this change didn't directly modify but indirectly broke. The April 2026 tier-upsell incident shipped to staging because the pipeline ran 126 tests instead of the project's full 2,175 — CI caught the regression after deploy, not the pipeline.
+  - kindra: `cd kindra && mix test` (the whole suite — do NOT pass a file path)
+  - kinlia-web: `cd kinlia-web && yarn test:run` (the whole suite)
+  - kindraapp: `cd kindraapp && yarn test` (the whole suite)
+- Report: **the project's total test count**, how many passed, how many failed, any errors. If your count is far below the project's known total (e.g., 126 when the project has 2,175), you ran a subset — re-run the full suite before approving.
+- If ANY test fails — including a test outside the files this change touched — that's an automatic NEEDS CHANGES verdict.
 
 ### Pre-Flight Merge Readiness
 - Run `git fetch origin` and check if the target branch has modified any of our changed files
@@ -191,6 +202,14 @@ For each plan item:
 - Related file changes on target: NONE / [list files]
 - Deployment order: [backend first? frontend first? simultaneous?]
 
+## Existing-Behavior Check
+- Code I considered flagging as dead/refactor: [file:line, or NONE]
+- Tests covering that code: [file:line of test + what it asserts, or NONE FOUND]
+- Verdict: Code is intentional (test pins contract) / Untested — flagged as user question / Legitimately dead (no tests, no callers, plan explicitly removes)
+
+## Questions for the User
+- [scope/contract questions that should NOT be auto-fixed by the coder. For each: file:line + what the test asserts (or "no test exists") + why you think this is a question + what choices the user has]
+
 ## What Looks Good
 - [acknowledge well-implemented parts]
 ```
@@ -203,6 +222,7 @@ You may ONLY issue APPROVE when ALL of these are true:
 - All previously raised issues resolved
 - No security vulnerabilities
 - **Every plan item verified against actual code** (Plan-to-Code Verification complete with all items checked)
+- **Full test suite was run (not a subset of files), and every test passed** — including tests in files this change did not directly touch
 - No ignored error return values
 - Constants/limits consistent across all files
 - Code matches the plan

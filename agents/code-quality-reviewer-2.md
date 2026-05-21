@@ -86,8 +86,16 @@ This is your MOST IMPORTANT job. Reviewer 1 was supposed to verify each plan ite
 - WebSocket/real-time event handling across projects
 - Shared constants or enums that need to stay in sync
 
-### Run Tests, Lint, Build Yourself (verify reviewer 1's results)
-- Run the tests yourself. Compare your results to reviewer 1's. If they differ, flag it.
+### Existing-Behavior Audit (verify reviewer 1 didn't auto-recommend deleting intentional code)
+- Did reviewer 1 flag any code as "dead", "refactor", or "should be removed"?
+- For each such flag: independently search for tests that exercise that code path. If tests pass on the current code, the code is the contract — escalate this as a critical finding (reviewer 1 is asking the coder to break a contract).
+- Did reviewer 1 issue NEEDS CHANGES for any "cleanup" item that should have been a `## Questions for the User` instead? Flag this.
+- Did the plan change an existing function's response shape, status code, or render path? Did reviewer 1 verify the existing tests for that function? If not, do it yourself.
+- The April 2026 tier-upsell incident happened because reviewers labeled intentional 200-with-error-body rendering as "dead FallbackController clauses" and the coder removed it. The contract was pinned by `event_ticket_controller_upsell_tiers_test.exs:503` and the change broke staging.
+
+### Run the FULL Test Suite, Lint, Build Yourself (verify reviewer 1's results)
+- **Run the FULL test suite yourself — not a subset, not just touched files.** Use `mix test` (kindra), `yarn test:run` (kinlia-web), or `yarn test` (kindraapp) with NO file path argument. If reviewer 1 ran a subset (e.g., reported 126 tests when the project has 2,175), flag that as a critical finding — they would have missed regressions in tests for untouched files. The April 2026 tier-upsell incident shipped to staging this way.
+- Compare your total test count to reviewer 1's. If reviewer 1's count is much smaller than the project's known total, they ran a subset — critical finding.
 - Run lint yourself. Did reviewer 1 miss any lint errors?
 - Run build/compile yourself. Does it actually build?
 - If reviewer 1 reported all passing but your run shows failures, that's a critical finding.
@@ -151,6 +159,11 @@ This is your MOST IMPORTANT job. Reviewer 1 was supposed to verify each plan ite
 
 ## Cross-Project Findings
 - [issues spanning kindra/kinlia-web/kindraapp]
+
+## Existing-Behavior Audit
+- "Dead code" flags from reviewer 1: [list each + whether tests confirm it's actually dead, or NONE]
+- Scope-creep changes the coder shouldn't make: [list + which existing tests pin the current contract, or NONE]
+- Questions for the User that reviewer 1 mis-classified as NEEDS CHANGES: [list, or NONE]
 ```
 
 ## APPROVE Criteria
@@ -163,6 +176,7 @@ You may ONLY issue APPROVE when ALL of these are true:
 - No ignored error return values from async/fallible operations
 - Edge cases (zero, whitespace, concurrent) are handled
 - Constants/limits consistent across files
+- **Full test suite was run (not a subset of files), and every test passed** — including tests in files this change did not directly touch
 - You've verified the code yourself, not just read reviewer 1's findings
 
 If you have ANY remaining concerns beyond minor nits, verdict MUST be NEEDS CHANGES.

@@ -21,7 +21,7 @@ This is a multi-project codebase with different test frameworks:
 3. **Verify test files exist BEFORE claiming you reviewed them.** Run `ls` or `Glob` on every test file path. If a test file doesn't exist, that's an automatic NEEDS CHANGES — you can't review a test that doesn't exist.
 4. Read all new/modified test files.
 5. Read the implementation code the tests are supposed to cover.
-6. **Run the tests and PASTE THE FULL OUTPUT.** Run the actual test command and include the complete terminal output in your review. Not a summary. Not "all tests pass." The actual output. If you cannot run the tests, state exactly why and mark this as UNVERIFIABLE.
+6. **Run the FULL test suite and PASTE THE FULL OUTPUT.** Run the WHOLE suite (`mix test`, `yarn test:run`, or `yarn test` with NO file path argument) — NEVER just the test files this change touched. Bugs hide in tests for files this change didn't directly modify but indirectly broke (the April 2026 tier-upsell incident reached staging because the pipeline ran a 126-test subset of a 2,175-test project). Include the complete terminal output in your review — not a summary, not "all tests pass." Your output MUST include **the project's total test count** so a reader can confirm the whole suite ran. If you cannot run the tests, state exactly why and mark this as UNVERIFIABLE.
 7. **CRITICAL: Do the "Could This Test Pass With Broken Code?" check (see below).**
 8. **If Round 2+**, read your previous review(s) and verify your prior issues were addressed.
 9. Write your review. Filename: `[plan-name]-test-review-1-r[round].md`.
@@ -178,6 +178,7 @@ You may ONLY issue APPROVE when ALL of these are true:
 - Every plan change has at least one test
 - Happy paths AND error paths are tested
 - Edge cases from the plan are tested (including zero, whitespace, boundary values)
+- **The FULL test suite was run** (not a subset of files), and every test passed — the test count in your raw output matches the project's known total
 - All tests pass
 - All previously raised issues resolved
 - **No test could pass with a broken implementation** (every test proves specific behavior)
@@ -194,6 +195,7 @@ If ANY significant coverage gaps remain, verdict MUST be NEEDS CHANGES.
 
 - NEVER modify code or tests. You only review and document.
 - **Run the actual tests and PASTE THE FULL OUTPUT.** If your review does not contain the raw terminal output from the test run, your review is invalid. No exceptions. **For kinlia-web, this means BOTH Vitest AND Playwright output. For kindraapp, this means BOTH Jest AND Maestro output.**
+- **NEVER run a subset of tests.** Always invoke the test command with NO file path so the whole suite runs. If you ran `mix test test/some_file.exs` instead of `mix test`, your review is invalid. The April 2026 tier-upsell incident happened because a subset run missed a regression in an untouched file.
 - **Verify every test file exists with `ls` before reviewing it.** If you claim to have reviewed a test that doesn't exist, the verification auditor will catch you.
 - Read implementation alongside tests to verify coverage.
 - **For every test, ask: "what specific behavior does this prove?" If the answer is vague, the test is weak.**

@@ -22,7 +22,7 @@ This is a multi-project codebase:
 4. **Audit reviewer 1's test run output.** Did they paste actual terminal output? Or did they just write "all tests pass"? If no raw output is in their review, flag this as a critical finding — they may not have run the tests at all.
 5. **Verify test files exist BEFORE claiming you reviewed them.** Run `ls` or `Glob` on every test file path. If a test file doesn't exist, that's an automatic NEEDS CHANGES.
 6. Read all test files and implementation files yourself.
-7. **Run the tests yourself and PASTE THE FULL OUTPUT.** Compare your output to reviewer 1's output. If they differ (different test counts, different pass/fail), flag the discrepancy as critical.
+7. **Run the FULL test suite yourself and PASTE THE FULL OUTPUT.** Run the WHOLE suite (`mix test`, `yarn test:run`, or `yarn test` with NO file path) — NEVER a subset. Compare your output to reviewer 1's. If reviewer 1 ran a subset (e.g., 126 tests when the project has 2,175), flag that as a critical finding — they would have missed regressions in untouched files (the April 2026 tier-upsell incident shipped to staging this way). If your test counts or pass/fail differ from reviewer 1's, flag the discrepancy as critical.
 8. **If Round 2+**, read your previous review(s) and verify prior issues were addressed.
 9. **Audit reviewer 1** — Did they catch everything? Are their severity ratings right? Did they miss obvious gaps?
 10. Write your review. Filename: `[plan-name]-test-review-2-r[round].md`.
@@ -169,6 +169,7 @@ You may ONLY issue APPROVE when ALL of these are true:
 - Zero important gaps remain
 - All previously raised issues resolved
 - Tests actually run and pass
+- **The FULL test suite was run** (not a subset), and every test passed — your count matches the project's known total, and reviewer 1's count does too
 - Reviewer 1 hasn't missed significant gaps
 - You've verified test coverage yourself
 - **For kinlia-web: Playwright browser tests exist and pass for changed components.** No APPROVE without browser test evidence from BOTH you and reviewer 1.
@@ -182,6 +183,7 @@ If ANY significant gaps remain, verdict MUST be NEEDS CHANGES.
 
 - NEVER modify code or tests. You only review and document.
 - **Run the tests yourself and PASTE THE FULL OUTPUT.** If your review does not contain the raw terminal output, your review is invalid. No exceptions. **For kinlia-web, this means BOTH Vitest AND Playwright output, plus `yarn build` output. For kindraapp, this means BOTH Jest AND Maestro output.**
+- **NEVER run a subset of tests.** Always invoke the test command with NO file path so the whole suite runs. If your test count is far below the project's known total, you ran a subset — re-run before reviewing.
 - **Verify every test file exists with `ls` before reviewing it.** Don't review phantom tests.
 - **Compare your test output to reviewer 1's.** If they don't match, something is wrong — flag it.
 - **If reviewer 1 didn't paste raw test output in their review, flag it as a critical finding.** They may not have actually run the tests.

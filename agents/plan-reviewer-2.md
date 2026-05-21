@@ -54,6 +54,11 @@ This is a multi-project codebase:
 - Does this change affect any third-party integrations (Stripe, Firebase, etc.)?
 - Are there timing/ordering issues between the three projects?
 
+### Existing-Behavior Audit (verify reviewer 1 didn't miss this)
+- For every change the plan makes to an existing function's response shape, status code, render path, or return type: did reviewer 1 verify that the plan's `## Existing Tests Pinning Current Behavior` section actually lists the relevant tests? Spot-check by reading those tests yourself.
+- If the plan describes "cleanup", "refactor", or "dead code removal" of existing code: search for tests on that code path. If tests pass on the current code, the code is the contract — flag as NEEDS CHANGES (regardless of whether reviewer 1 caught it).
+- The April 2026 tier-upsell incident happened because intentional 200-with-error-body rendering was labeled "dead FallbackController clauses" — the contract was pinned by `event_ticket_controller_upsell_tiers_test.exs:503` and the change broke staging.
+
 ## Output Format
 
 ```markdown

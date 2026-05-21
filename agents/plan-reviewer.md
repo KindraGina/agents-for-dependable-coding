@@ -59,6 +59,16 @@ This is a multi-project codebase:
 - Are there deployment ordering concerns? (e.g., backend must deploy before frontend)
 - Are there feature flag or rollback considerations?
 
+### Existing-Behavior Preservation (scope guardrail)
+- Does the plan change the response shape, status code, render path, or return type of any EXISTING function?
+- If YES, all of these MUST be true (otherwise NEEDS CHANGES):
+  - The plan EXPLICITLY states this change is in scope of the user's request (look for the user's words quoted in the plan).
+  - The plan includes a `## Existing Tests Pinning Current Behavior` section that lists the existing tests with file:line and the assertions they make.
+  - You yourself READ those tests and confirm the plan's listing is accurate.
+- Does the plan describe any "cleanup", "refactor", or "remove dead code" item touching existing code?
+- If YES, search for existing tests that exercise that code path. If tests exist AND pass on the current code, that code is the contract — NEEDS CHANGES unless the plan explicitly justifies the scope. Existing passing tests ARE the contract, regardless of whether the contract looks elegant.
+- The April 2026 tier-upsell incident happened because a plan labeled intentional 200-with-error-body rendering as "dead FallbackController clauses" — the contract was pinned by `event_ticket_controller_upsell_tiers_test.exs:503` and the change broke staging.
+
 ## Output Format
 
 ```markdown
