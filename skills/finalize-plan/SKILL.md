@@ -62,6 +62,10 @@ The plan structure MUST be:
 
 > "Check 1 (STRUCTURAL FAILURE): `## Verified References` must appear before `## Proposed Changes` in the plan. It is currently [missing / at the bottom / elsewhere]. Move it to the position above, repopulate it with pasted code from actual reads, and re-run `/finalize-plan`. No further checks were performed — fix this first."
 
+**Special case — wrong-tool detection:** If the plan has `M_n` mutating commands (M1, M2, etc.) and no `## Proposed Changes` code-change section, this is an ops runbook (AWS CLI sequence / deploy procedure / manual migration), not a code-change plan. STOP with verdict NEEDS WORK and only this entry:
+
+> "Check 1 (WRONG TOOL): This appears to be an ops runbook (has M_n mutating commands, no `## Proposed Changes` code section). `/finalize-plan` is for code-change plans that go through `/pipeline`. Use `/finalize-runbook [path]` instead — that skill is tuned for ops runbook structure (Live Verified State, host labels, recovery flag completeness, etc.)."
+
 This check is terminating because every other check assumes the plan was written code-first. If `## Verified References` is at the bottom, the body was written from memory and the rest of the audit cannot trust anything in it. Re-running other checks on a memory-written plan produces false confidence.
 
 ---
