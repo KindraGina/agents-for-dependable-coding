@@ -48,9 +48,9 @@ Run them in order. ANY single failure = NEEDS WORK verdict for the whole plan.
 
 ---
 
-**Check 1 — Verified References section appears FIRST in the plan body.**
+**Check 1 — Verified References section appears FIRST in the plan body. THIS CHECK IS TERMINATING.**
 
-The plan structure should be:
+The plan structure MUST be:
 1. Title
 2. `## Target` (pwd / branch / remote)
 3. `## Summary`
@@ -58,7 +58,11 @@ The plan structure should be:
 5. `## Proposed Changes`
 6. ... rest
 
-If `## Verified References` is at the bottom of the plan, REJECT. Reason: when the section is at the bottom, the body gets written first (from memory), and only the parts the author happens to think about get "verified." When the section is first, the author MUST read code before writing anything else.
+**If `## Verified References` is NOT before `## Proposed Changes`, STOP. Do NOT run Checks 2–11. Write the audit file with verdict NEEDS WORK and only the following Failed Checks entry:**
+
+> "Check 1 (STRUCTURAL FAILURE): `## Verified References` must appear before `## Proposed Changes` in the plan. It is currently [missing / at the bottom / elsewhere]. Move it to the position above, repopulate it with pasted code from actual reads, and re-run `/finalize-plan`. No further checks were performed — fix this first."
+
+This check is terminating because every other check assumes the plan was written code-first. If `## Verified References` is at the bottom, the body was written from memory and the rest of the audit cannot trust anything in it. Re-running other checks on a memory-written plan produces false confidence.
 
 ---
 

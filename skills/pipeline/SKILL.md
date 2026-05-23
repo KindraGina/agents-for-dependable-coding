@@ -56,17 +56,40 @@ Do NOT proceed. Do NOT offer to create the branch yourself. Do NOT ask "should I
 - If they DON'T match → ask the user which branch to use. **STOP until they answer.**
 - If the plan has a `## Prerequisites` or `## Dependencies` section, verify each one is done (grep/ls). If any are NOT DONE, tell the user and ask how to proceed.
 
-**Only after branch is confirmed may you proceed to plan review or plan creation.**
+**Only after branch is confirmed may you proceed to the finalize-audit gate below.**
+
+## FINALIZE-PLAN AUDIT GATE — MANDATORY, NO EXCEPTIONS
+
+The pipeline ONLY runs on plans that have passed `/finalize-plan`. This is a structural firewall against memory-written plans reaching the pipeline.
+
+**Step A — A plan FILE PATH is required.** If the user invoked `/pipeline` with only a description and no `docs/plans/...md` path, REFUSE verbatim:
+
+> "The pipeline requires a plan file PATH, not a description. Draft your plan first (e.g. with a separate planning agent or `/plan`), run `/finalize-plan [plan-path]` until it passes, then re-run `/pipeline [plan-path]`. STOPPING."
+
+**Step B — Look for the finalize-plan audit.** Compute the expected audit path: take the plan path, strip `.md`, append `-finalize-audit.md`. Run `ls` on it.
+
+**Step C — If the audit file does NOT exist, REFUSE verbatim:**
+
+> "No `/finalize-plan` audit found for `[plan-path]`. Expected file: `[expected-audit-path]`. Please run `/finalize-plan [plan-path]` first and ensure the verdict is READY before invoking `/pipeline`. STOPPING."
+
+**Step D — If the audit file exists, read it.** Extract the `## Verdict:` line.
+- If verdict is **READY** → proceed to Phase 2 (Plan Review Loop).
+- If verdict is **NEEDS WORK** → REFUSE verbatim:
+
+> "The `/finalize-plan` audit at `[audit-path]` has verdict NEEDS WORK. Fix the failed checks listed in that file, re-run `/finalize-plan` until the verdict is READY, then re-invoke `/pipeline`. STOPPING."
+
+**Phase 1 (Plan Creation) is no longer reachable from `/pipeline`.** Plans must be drafted outside the pipeline and finalized before invocation. The plan-creator agent is still used in Phase 2 for REVISIONS during the review loop — that's its only remaining role.
+
+**Why this gate exists:** Plans written from memory contain wrong function names, wrong return types, wrong schema fields, wrong table names — bugs that the pipeline reviewers were never designed to catch (they assume the plan is grounded). The `/finalize-plan` audit catches memory-writing by verifying every code reference has pasted source. Without this gate, memory-written plans burn pipeline cycles and ship bugs.
 
 ## Usage
 
 ```
-/pipeline [path to existing plan OR description of what to build/fix]
+/pipeline [path to existing plan]
 ```
 
-- If a file path is provided, confirm the branch (above), then go to Phase 2 (Plan Review Loop).
-- If a description is provided, confirm the branch (above), then go to Phase 1 (Plan Creation).
-- If nothing is provided, ask the user what they want to build or which plan to review.
+- The plan path is REQUIRED. The pipeline refuses to run without one.
+- The plan at that path must have a passing `/finalize-plan` audit alongside it (see gate above).
 
 ## CRITICAL RULES — READ BEFORE DOING ANYTHING
 

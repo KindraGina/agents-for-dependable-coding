@@ -76,17 +76,38 @@ Do NOT proceed. Do NOT offer to create the branch yourself. Do NOT ask "should I
 - If they DON'T match → ask the user which branch to use. **STOP until they answer.**
 - If the plan has a `## Prerequisites` or `## Dependencies` section, verify each one is done (grep/ls). If any are NOT DONE, tell the user and ask how to proceed.
 
-**Only after branch is confirmed may you proceed to plan review or plan creation.**
+**Only after branch is confirmed may you proceed to the finalize-audit gate below.**
+
+## FINALIZE-PLAN AUDIT GATE — MANDATORY, NO EXCEPTIONS
+
+Pipeline-light ONLY runs on plans that have passed `/finalize-plan`. This is a structural firewall against memory-written plans reaching the pipeline.
+
+**Step A — A plan FILE PATH is required.** If the user invoked `/pipeline-light` with only a description and no `docs/plans/...md` path, REFUSE verbatim:
+
+> "Pipeline-light requires a plan file PATH, not a description. Draft your plan first, run `/finalize-plan [plan-path]` until it passes, then re-run `/pipeline-light [plan-path]`. STOPPING."
+
+**Step B — Look for the finalize-plan audit.** Compute the expected audit path: take the plan path, strip `.md`, append `-finalize-audit.md`. Run `ls` on it.
+
+**Step C — If the audit file does NOT exist, REFUSE verbatim:**
+
+> "No `/finalize-plan` audit found for `[plan-path]`. Expected file: `[expected-audit-path]`. Please run `/finalize-plan [plan-path]` first and ensure the verdict is READY before invoking `/pipeline-light`. STOPPING."
+
+**Step D — If the audit file exists, read it.** Extract the `## Verdict:` line.
+- If verdict is **READY** → proceed to Phase 2 (Plan Review Loop).
+- If verdict is **NEEDS WORK** → REFUSE verbatim:
+
+> "The `/finalize-plan` audit at `[audit-path]` has verdict NEEDS WORK. Fix the failed checks listed in that file, re-run `/finalize-plan` until READY, then re-invoke `/pipeline-light`. STOPPING."
+
+**Phase 1 (Plan Creation) is no longer reachable from `/pipeline-light`.** Plans must be drafted outside the pipeline and finalized before invocation.
 
 ## Usage
 
 ```
-/pipeline-light [path to existing plan OR description of what to build/fix]
+/pipeline-light [path to existing plan]
 ```
 
-- If a file path is provided, confirm the branch (above), then go to Phase 2 (Plan Review Loop).
-- If a description is provided, confirm the branch (above), then go to Phase 1 (Plan Creation).
-- If nothing is provided, ask the user what they want to fix or which plan to review.
+- The plan path is REQUIRED. Pipeline-light refuses to run without one.
+- The plan at that path must have a passing `/finalize-plan` audit alongside it (see gate above).
 
 ## CRITICAL RULES — READ BEFORE DOING ANYTHING
 
