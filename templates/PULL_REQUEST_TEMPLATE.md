@@ -106,8 +106,7 @@ as the source of truth and re-copy when the template changes.
 - [ ] **PR is from a feature branch** — NOT from `main` / `master` / `staging` / `testflight` / `production`.
 - [ ] **No secrets in the diff** — no API keys, passwords, `.env` contents, or tokens. New env vars are documented in `.env.example` (without real values).
 - [ ] **No debug noise** — removed `console.log`, `debugger`, half-finished comments, commented-out code blocks, and `TODO` notes without a ticket.
-- [ ] **Mobile-app / other-client impact considered** — if the change touches an API, response format, or DB schema, I've flagged it in the Breaking changes section above (old mobile-app versions may still be in use).
-- [ ] **Breaking changes flagged loudly** — both in the Breaking changes section above AND with a `BREAKING:` commit message prefix (skip if not a breaking change).
+- [ ] **Breaking changes flagged loudly** — if the change is incompatible with old code, old back-ends, or old mobile-app versions (mobile users may still be running an old version): (a) prefix at least one commit message with `BREAKING:`, AND (b) describe what breaks and how to migrate in the "Breaking changes" section above. Skip this box if it's not a breaking change.
 - [ ] **Documentation updated** — README, setup instructions, or env-var docs updated if the change requires it (skip if not applicable).
 - [ ] **PR under ~500 lines** — if larger, I've explained below why it can't be split.
 
