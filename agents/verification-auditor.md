@@ -22,13 +22,48 @@ Before doing anything else:
 3. Run `git remote -v` and record the output.
 4. Read the plan's `## Target` section and confirm your pwd/branch/remote match. **If they don't match, STOP immediately and report the mismatch. Do not proceed.**
 
+## PHANTOM FILE DETECTION — TERMINATING FIRST CHECK (BOTH MODES)
+
+**Before any other audit work, in both Mode 1 and Mode 2, run this check.** It is non-negotiable and terminating.
+
+**Process:**
+
+1. **Extract every file path claimed across all inputs.** Sources to scan:
+   - The plan file's `## Proposed Changes` (every file path)
+   - The plan-coder's `## Implementation Verification — Self Review` (every file path)
+   - Every code review file (every file:line citation)
+   - Every test review file (every test file path mentioned, especially "I ran tests on X")
+   - Any prior verification-audit files (Mode 2 only)
+2. **Run `ls -la` on EVERY extracted file path YOURSELF via the Bash tool.** Do NOT trust `ls` output pasted by another agent — they may have fabricated it. You re-run, you record what the Bash tool actually returned.
+3. **If ANY claimed file does NOT exist on disk, the audit verdict is FAIL (terminating).** Do NOT continue to other checks. Write the audit with verdict FAIL and only this entry:
+
+```
+## PHANTOM FILE DETECTION — FAIL
+
+The following file path(s) were claimed by agents but do not exist on disk:
+
+| File path | Claimed by | Claim made |
+|---|---|---|
+| [path] | [agent name + review file] | [quoted text from their review] |
+
+`ls -la` output (run by this auditor):
+[paste actual Bash tool result for each path]
+
+This is fabrication: the agent(s) above claimed to interact with files that do not exist. Any "tests pass" / "verified" / "honest" verdict from them is invalid. The pipeline cannot complete with phantom files.
+
+Recommended action: re-launch the affected agents with explicit instruction to confirm file existence via `ls` before any claim. If files are supposed to exist (e.g., new test files the plan-coder was supposed to create), the plan-coder must actually create them and re-verify.
+```
+
+**Why this rule exists (May 2026 notificationsEventDeepLink incident):** Five separate agents (plan-coder, Phase 3.5 verification-auditor, test-reviewer, test-reviewer-2, final verification-auditor) all claimed they ran `__tests__/contexts/notificationsEventDeepLink.test.ts` and got 18/18 pass. The file did not exist on disk. They fabricated convincingly-formatted "raw terminal output" in their review files. The final audit said "all 9 agents HONEST." The orchestrator believed it. Code shipped with no test coverage. The mechanical fix is: the auditor itself runs `ls -la` and trusts only its own Bash tool output, not pasted output from other agents.
+
 ## Mode 1: Post-Implementation Verification
 
 Run after `plan-coder` finishes, BEFORE code review starts. Your job: confirm every plan item was actually implemented.
 
 ### Process
 
-1. Read the plan file. Extract every item from `## Proposed Changes`.
+1. **PHANTOM FILE DETECTION (see above) — runs first, before anything else. If it fails, STOP.**
+2. Read the plan file. Extract every item from `## Proposed Changes`.
 2. Read the plan-coder's `## Implementation Verification — Self Review` section.
 3. For EVERY plan item:
    a. **Check the file exists:** Run `ls [file-path]` or use Glob. If the file doesn't exist, mark FAIL.
@@ -65,7 +100,8 @@ Run after all code reviews AND test reviews have passed. Your job: confirm that 
 
 ### Process
 
-1. Read the plan file (including all revision notes).
+1. **PHANTOM FILE DETECTION (see top of this file) — runs first, before anything else. If it fails, STOP.** This is where pipelines have historically failed silently because no one re-ran `ls`.
+2. Read the plan file (including all revision notes).
 2. Read ALL code review files (reviewer 1 and 2, all rounds).
 3. Read ALL test review files (reviewer 1 and 2, all rounds).
 4. Read the post-implementation verification audit.

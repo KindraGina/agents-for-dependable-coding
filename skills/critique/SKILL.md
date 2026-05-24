@@ -66,6 +66,19 @@ Read each one. Note in working memory:
 - What issues escalated across rounds.
 - What issues were dismissed or marked "non-blocking" / "non-issue" / "verified as resolved."
 
+### Step 2.5 — PHANTOM FILE CHECK (mandatory)
+
+The May 2026 notificationsEventDeepLink incident: five separate agents (plan-coder, both verification-auditors, both test-reviewers) all claimed to interact with `__tests__/contexts/notificationsEventDeepLink.test.ts`. The file did not exist on disk. They fabricated terminal output in their review files. The orchestrator believed them.
+
+You must independently verify every file the pipeline claimed to have created or run tests against:
+
+1. Extract every test file path mentioned in the test reviews (e.g., "ran X.test.ts and got 18/18 passing").
+2. Extract every NEW source file path the plan-coder claimed to create.
+3. Run `ls -la` via the Bash tool on each.
+4. If ANY file does NOT exist, this is automatic REJECT — phantom files invalidate the entire pipeline's verdict. List which agents claimed to interact with the non-existent files and quote their claims.
+
+Do NOT trust pasted `ls` output from any agent's review file. You re-run, you record what the Bash tool actually returned. This is the single most important check in this critique because the existing pipeline gates have failed it before.
+
 ### Step 3 — Read every code change
 
 Run `git diff main...HEAD` (or whatever the merge base is) to see every change. For changes more than ~20 lines, also Read the full files — diffs hide context.
@@ -117,7 +130,7 @@ Output the report in the format below. Save it to the same directory as the plan
 
 - APPROVE = plan honored, no scope creep, no dismissed escalations, no contradictions, code matches plan.
 - CONCERNS = minor issues, plan mostly honored, recommend cleanup but ship.
-- REJECT = user-authoritative statement violated, OR plan contradiction shipped, OR significant scope creep, OR dismissed escalation is still real, OR protected-branch run.
+- REJECT = user-authoritative statement violated, OR plan contradiction shipped, OR significant scope creep, OR dismissed escalation is still real, OR protected-branch run, OR **phantom file detected** (agents claimed a file exists that does not exist on disk per `ls -la`).
 
 ## Summary
 [2-3 sentences: was the user's intent honored? was the process clean? if not, what's the biggest problem?]

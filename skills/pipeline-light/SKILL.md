@@ -180,9 +180,12 @@ Launch the `verification-auditor` agent:
 
 **Read the audit file and extract the verdict (PASS or FAIL).**
 
-**GATE DECISION:**
-- If **PASS** → immediately proceed to Phase 4.
-- If **FAIL** → launch the `plan-coder` to fix ALL failed items, then re-launch the auditor with incremented round number. **Keep looping until PASS.** Code review cannot start until this gate passes.
+**ORCHESTRATOR PHANTOM-FILE CROSS-CHECK (mandatory — even on PASS):**
+Read the audit, extract every file path mentioned. Run `ls -la` via Bash on each. If ANY file does NOT exist, OVERRIDE the auditor's PASS and treat as FAIL — phantom files invalidate the verdict. The May 2026 notificationsEventDeepLink incident is the why.
+
+**GATE DECISION (only after orchestrator cross-check passes):**
+- If **PASS** (auditor + cross-check) → immediately proceed to Phase 4.
+- If **FAIL** (auditor OR cross-check) → launch the `plan-coder` to fix ALL failed items, then re-launch the auditor with incremented round number. **Keep looping until PASS AND cross-check pass.** Code review cannot start until both pass.
 
 **Safety valve**: If you reach round 4 of this gate without passing, pause and ask the user how to proceed.
 
@@ -229,15 +232,23 @@ Launch the `verification-auditor` agent:
 
 **Read the audit file and extract the verdict (PASS or FAIL) AND the per-agent HONEST/DISHONEST verdicts.**
 
+**ORCHESTRATOR PHANTOM-FILE CROSS-CHECK (mandatory — even on PASS / all HONEST):**
+The May 2026 notificationsEventDeepLink incident: final audit said PASS with all 9 agents HONEST. The test file claimed to exist did not. Five agents fabricated terminal output. Don't trust the audit alone.
+
+1. Read the final audit. Extract every file path mentioned (especially test files).
+2. Run `ls -la` via Bash on each.
+3. If ANY file does NOT exist, OVERRIDE the PASS and treat as FAIL. Tell the user the orchestrator caught phantom files the auditor missed.
+
 **Show the user:**
-- Overall verdict
-- Per-agent accountability: which agents were HONEST, which were DISHONEST, and what they lied about
+- Overall verdict (after cross-check)
+- Per-agent accountability
+- Cross-check result (files verified, any phantoms)
 
-**GATE DECISION:**
-- If **PASS** → immediately proceed to Phase 6.
-- If **FAIL** → launch `plan-coder` to fix, then **go back to Phase 4 (Code Quality Review)** — because fixes may introduce new issues. After code and test reviews pass again, run the final audit again.
+**GATE DECISION (only after orchestrator cross-check passes):**
+- If **PASS** (auditor + cross-check) → immediately proceed to Phase 6.
+- If **FAIL** (auditor OR cross-check) → launch `plan-coder` to fix, then **go back to Phase 4 (Code Quality Review)** — because fixes may introduce new issues. After code and test reviews pass again, run the final audit again — and re-run the orchestrator cross-check.
 
-**Safety valve**: If the final audit fails 3 times, pause and ask the user how to proceed.
+**Safety valve**: If the final audit (or orchestrator cross-check) fails 3 times, pause and ask the user how to proceed.
 
 ## Phase 6: Done
 

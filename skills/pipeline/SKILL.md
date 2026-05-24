@@ -184,13 +184,25 @@ Launch the `verification-auditor` agent using the Agent tool:
 
 **Read the audit file and extract the verdict (PASS or FAIL).**
 
-**GATE DECISION:**
-- If **PASS** → show a brief status update and **immediately proceed to Phase 4**. Do NOT ask for permission.
-- If **FAIL** → you MUST:
+**ORCHESTRATOR PHANTOM-FILE CROSS-CHECK (mandatory — even if the auditor said PASS):**
+
+Before accepting the auditor's PASS verdict, you (the orchestrator) MUST independently verify that every file the audit references actually exists on disk. The auditor is supposed to do this (Phantom File Detection is its first check), but the May 2026 notificationsEventDeepLink incident proved that even the auditor can fail this check. You add a second layer.
+
+1. Read the audit file. Extract every file path mentioned (test files, source files, migrations, anything claimed to exist).
+2. Run `ls -la` via the Bash tool on each path.
+3. If ANY file does NOT exist, OVERRIDE the auditor's PASS verdict and treat the audit as FAIL. Tell the user verbatim:
+
+> "Orchestrator override: the verification auditor reported PASS, but my cross-check found phantom files: `[list]`. The auditor's PASS verdict is invalid. Treating as FAIL. Re-launching plan-coder to actually create the missing files. (This is the failure mode from the May 2026 notificationsEventDeepLink incident — fabricated test files claimed to exist but did not. The orchestrator is the trust anchor outside the subagent chain.)"
+
+Then loop as if the auditor returned FAIL.
+
+**GATE DECISION (only after the orchestrator cross-check passes):**
+- If **PASS** (and cross-check confirms) → show a brief status update and **immediately proceed to Phase 4**. Do NOT ask for permission.
+- If **FAIL** (auditor OR orchestrator cross-check) → you MUST:
   1. Launch the `plan-coder` agent to fix ALL failed items (NEVER fix them yourself):
-     - Prompt: "You are the plan-coder agent in fix mode. The verification auditor found items that were NOT actually implemented. Read the audit at [verification-audit-path]. Fix ALL failed items. For each fix, run grep/read to verify your fix exists before marking it done. Follow your instructions in .claude/agents/plan-coder.md."
+     - Prompt: "You are the plan-coder agent in fix mode. The verification auditor found items that were NOT actually implemented. Read the audit at [verification-audit-path]. Fix ALL failed items. For each fix, run grep/read AND `ls -la` to verify your fix exists before marking it done. Follow your instructions in .claude/agents/plan-coder.md."
   2. Launch the `verification-auditor` agent again with an incremented round number.
-  3. **Keep looping until the auditor issues PASS.** Code review cannot start until this gate passes.
+  3. **Keep looping until the auditor issues PASS AND the orchestrator cross-check passes.** Code review cannot start until both pass.
 
 **Safety valve**: If you reach round 4 of this gate without passing, pause and ask the user how to proceed.
 
@@ -268,19 +280,33 @@ Write your audit to [plan-path-without-ext]-final-audit.md. Follow your instruct
 
 **Read the audit file and extract the verdict (PASS or FAIL) AND the per-agent HONEST/DISHONEST verdicts.**
 
-**Show the user:**
-- Overall verdict
-- Per-agent accountability: which agents were HONEST, which were DISHONEST, and what they lied about
+**ORCHESTRATOR PHANTOM-FILE CROSS-CHECK (mandatory — even if the auditor said PASS and all agents HONEST):**
 
-**GATE DECISION:**
-- If **PASS** → show a brief status update and **immediately proceed to Phase 6 (Done)**. Do NOT ask for permission.
-- If **FAIL** → you MUST:
-  1. Show the user which agent claims failed verification and what was found.
+The May 2026 notificationsEventDeepLink incident: final audit said PASS, all 9 agents HONEST. The orchestrator believed it. The test file the audit said was passing did not exist on disk. Five separate agents fabricated terminal output.
+
+Before accepting the final PASS:
+1. Read the final audit file. Extract every file path mentioned across the audit (especially every test file).
+2. Run `ls -la` via the Bash tool on each path.
+3. If ANY file does NOT exist, OVERRIDE the final PASS and treat as FAIL. Tell the user verbatim:
+
+> "Orchestrator override: the final verification auditor reported PASS with all agents HONEST, but my cross-check found phantom files: `[list]`. The audit's PASS verdict is invalid — the test files supposedly executed do not exist on disk. This is the failure mode from the May 2026 notificationsEventDeepLink incident. Re-launching the plan-coder to actually create the missing files, then re-running Phase 4 and Phase 5."
+
+Then loop as if the final audit returned FAIL.
+
+**Show the user:**
+- Overall verdict (after cross-check)
+- Per-agent accountability: which agents were HONEST, which were DISHONEST, and what they lied about
+- Cross-check result: how many files the orchestrator verified, any phantoms found
+
+**GATE DECISION (only after the orchestrator cross-check passes):**
+- If **PASS** (and cross-check confirms) → show a brief status update and **immediately proceed to Phase 6 (Done)**. Do NOT ask for permission.
+- If **FAIL** (auditor OR orchestrator cross-check) → you MUST:
+  1. Show the user which agent claims failed verification (or which phantom files were found) and what was caught.
   2. Launch the `plan-coder` agent to fix ALL failed items.
   3. **Go back to Phase 4 (Code Quality Review Loop)** — because fixes may introduce new issues that need code and test review.
-  4. After code and test reviews pass again, run the final audit again.
+  4. After code and test reviews pass again, run the final audit again — and re-run the orchestrator cross-check.
 
-**Safety valve**: If the final audit fails 3 times, pause and ask the user how to proceed.
+**Safety valve**: If the final audit (or orchestrator cross-check) fails 3 times, pause and ask the user how to proceed.
 
 ## Phase 6: Done
 
