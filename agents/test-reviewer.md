@@ -78,6 +78,7 @@ This is a multi-project codebase with different test frameworks:
 - **End-to-end data flow tests** (data enters from frontend → API → backend logic → database → query → response — verify the full chain)
 - Async operation failure tests (what happens when Task.Supervisor fails?)
 - Concurrent operation tests (two users do the same thing at once)
+- **Mixed-source integration tests** — when a function merges data from multiple sources (e.g. two database tables, legacy + marketplace, two APIs), at least one test MUST create records from **every source simultaneously** and verify the merged result. Single-source tests only prove each source works in isolation — they don't exercise the merge, sort, or dedup logic. (May 2026 incident: all 6 donation tests created data from one source only; the sort comparator had a type bug that only crashes with 2+ records, so every test passed but staging crashed.)
 
 ### Browser Tests (MANDATORY for kinlia-web)
 - **For ANY kinlia-web changes, Playwright browser tests MUST exist and pass.** Vitest runs in jsdom (not a real browser) and does NOT catch all runtime errors — wrong imports, rendering crashes, and runtime failures can pass Vitest but crash in a real browser.

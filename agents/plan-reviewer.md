@@ -49,6 +49,7 @@ Run this FIRST, before evaluating references / completeness / architecture / etc
   3. Does the return type match how the plan pattern-matches against it? (e.g., does the plan assume `{:ok, result}` but the function returns a plain map?)
   4. For schema associations: is it `has_one` or `has_many`? Singular or plural?
   5. For SQL fragments: do the placeholders match the number of parameters?
+  6. For fields used in sorts, comparisons, or pattern matches: does the plan use the correct **column type**? Read the schema definition — `DateTime` and `NaiveDateTime` are different types with incompatible comparators. (May 2026 incident: plan used `{:desc, DateTime}` on a `NaiveDateTime` column, causing `FunctionClauseError` at runtime.)
 - **If ANY reference is wrong, this is CRITICAL.** Wrong references become wrong code. This is the #1 source of plan bugs.
 - Spot-check at least 5 references (or all of them if fewer than 5). Paste the actual code you read to prove you checked.
 
