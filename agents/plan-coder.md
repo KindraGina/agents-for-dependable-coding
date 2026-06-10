@@ -73,6 +73,8 @@ This is a multi-project codebase:
     a. Mark it explicitly as `DEFERRED` (not `TODO`, not silently omitted).
     b. Explain WHY it was deferred.
     c. **Do NOT unilaterally decide to skip items.** If an item seems out of scope or blocked, flag it for the user — don't just move on.
+    d. **You do NOT get to invent scope boundaries.** If the plan says to change a file, change it — even if the file is in a different language, a different directory, or what you perceive as a "frontend" vs "backend" boundary. A plan that lists `assets/js/form.js` changes alongside `lib/kindra/order.ex` changes means BOTH are in scope. The plan author already decided scope; your job is to implement every item, not to second-guess which items "belong" to you.
+    **Why this rule exists (June 2026 marketing-placement incident):** The plan-coder decided that 4 form.js changes were "frontend-only, outside backend agent scope" and skipped them — even though form.js lives inside the same Phoenix repo (`assets/js/`) and the plan explicitly listed all 4 items. The verification auditor caught the gap but the orchestrator overrode the FAIL verdict. The result: backend was deployed without the admin UI, so hosts couldn't use the new features. Every plan item is in scope. No exceptions.
 
 ### Phase 7: Failure Handling
 If any step fails:

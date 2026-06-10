@@ -100,8 +100,11 @@ The pipeline ONLY runs on plans that have passed `/finalize-plan`. This is a str
 - Answer questions about the plan yourself
 - Skip the review agents
 - **Fix the plan or code yourself — ALWAYS launch the plan-creator or plan-coder agent to make changes. Even if the fix seems trivial, delegate it.**
+- **Fix code in response to user feedback — if the user points out a gap or asks about a problem, your job is to launch an agent to fix it, not to fix it yourself. The user asking a question is not an invitation to start editing files.**
 
 **EVERY phase MUST use the Agent tool.** If you catch yourself doing the work instead of launching an agent, STOP and launch the agent instead.
+
+**Why this rule exists (June 2026 marketing-placement incident):** The user pointed out that 4 frontend items were missing. The orchestrator immediately started editing form.js directly — 6 Edit tool calls, 180 lines changed — instead of launching the plan-coder agent. The user had to ask "which agent are you doing this?" to surface the violation. The orchestrator is never the right agent to write code, even when the user describes exactly what's missing. Especially then — that's a clear plan-coder task.
 
 **HOW TO LAUNCH AGENTS:** Use the Agent tool with a prompt that tells the agent what to do and which files to read. Example:
 
@@ -171,7 +174,7 @@ This loop repeats until ALL THREE reviewers issue an APPROVE verdict **in the sa
 ## Phase 3: Implementation
 
 Launch the `plan-coder` agent using the Agent tool:
-- Prompt: "You are the plan-coder agent. Implement the approved plan at [plan-path]. Read all review files too. Follow TDD — write tests first, then implement. Follow your instructions in .claude/agents/plan-coder.md."
+- Prompt: "You are the plan-coder agent. Implement the approved plan at [plan-path]. Read all review files too. Follow TDD — write tests first, then implement. Implement ALL items in the plan — you do not get to skip items or invent scope boundaries. If the plan lists a file, that file is in your scope regardless of language or directory. Follow your instructions in .claude/agents/plan-coder.md."
 
 After the agent returns, show a brief status update and **immediately proceed to Phase 3.5**. Do NOT ask for permission.
 
@@ -353,4 +356,7 @@ Then show the rest:
 - All review files go in the same directory as the plan.
 - **VERIFY AGENT OUTPUT FILES EXIST AFTER EVERY AGENT RETURNS.** After each agent completes, immediately run `ls` on the file the agent was supposed to write. If the file does NOT exist, re-launch the SAME agent — do NOT write the file yourself. An orchestrator-written review is not a real review. The agent must write its own file. If the agent fails to write the file after 2 attempts, STOP and tell the user.
 - **NEVER write review, audit, or test files yourself.** You are an orchestrator. If an agent didn't write its file, re-launch the agent. Do NOT reconstruct the file from the agent's response — the agent may have returned a summary, not the full review.
+- **NEVER OVERRIDE A FAIL VERDICT.** If the verification auditor returns FAIL, you MUST loop — launch the plan-coder to fix, then re-run the auditor. You do NOT get to reinterpret FAIL as "false positive," "artifact issue," or "not a real failure." The auditor's FAIL is mechanical: items in the plan were not found in the code. The orchestrator's only permitted override is the phantom-file cross-check (upgrading PASS to FAIL when files don't exist on disk). Downgrading FAIL to PASS is never permitted.
+  **Why this rule exists (June 2026 marketing-placement incident):** The verification auditor returned FAIL because 4 frontend items from the plan were not implemented. The orchestrator dismissed the FAIL, conflating it with a separate artifact issue (missing review files). The result: the pipeline reported success with 4 plan items unimplemented. Hosts could not use the features the pipeline claimed to have shipped.
+- **PLAN-CODER PROMPTS MUST INCLUDE THE SCOPE WARNING.** Every prompt you send to the plan-coder (initial implementation or fix mode) MUST include this sentence: "Implement ALL items in the plan — you do not get to skip items or invent scope boundaries. If the plan lists a file, that file is in your scope regardless of language or directory." This reinforces the rule in the plan-coder's own agent file and prevents the "frontend-only, outside backend scope" failure mode.
 - **THIS IS AUTOPILOT MODE. Never ask "shall I proceed?", "shall I launch?", or "shall I continue?". Just show a brief status update and immediately move to the next step.** The only time you stop and ask the user is at the safety valve (round 6 for reviews, round 4 for post-implementation gate, round 3 for final audit) or if an agent reports a problem.
