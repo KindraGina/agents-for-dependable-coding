@@ -81,11 +81,17 @@ If a state claim is bare prose ("Production runs PG13.20") without pasted comman
 
 ---
 
-**Check 3 — Spot-check 3 state claims live.**
+**Check 3 — Re-run ALL Live Verified State commands and diff.**
 
-Pick 3 entries from Live Verified State at random. Re-run the cited command (or equivalent). Compare output to what's documented.
+Re-run EVERY command cited in the Live Verified State section (not a sample — all of them). For each:
+1. Run the exact command the runbook cites (or the closest read-only equivalent).
+2. Compare the output to what the runbook documents.
+3. If the output matches → PASS that entry.
+4. If the output differs (state drift, different resource ID, wrong username, wrong DB name, etc.) → record the discrepancy with both the runbook's claimed value and the actual live value.
 
-If ANY mismatch (state drift, different resource ID, etc.), REJECT with the discrepancy. State changes between when the runbook was written and now mean the runbook is operating on stale facts.
+If ANY entry has a mismatch, REJECT with every discrepancy listed. State changes between when the runbook was written and now mean the runbook is operating on stale facts — and fabricated state claims (written from memory, never actually verified) will fail here too.
+
+**Why exhaustive, not sampled:** A 3-item spot-check lets memory-written claims slip through if they aren't in the random sample. The Postgres upgrade runbook had wrong `MasterUsername` and wrong DB name — both would have been caught by exhaustive re-run but survived spot-checking because they weren't selected. The extra ~30 seconds of command re-runs is worth it for any runbook that touches production infrastructure.
 
 ---
 
@@ -183,7 +189,7 @@ Save to `[runbook-path-without-ext]-finalize-audit.md`.
 
 ## What I read/ran this session (memory-compliance evidence)
 - Runbook file: [path] — read in full: YES
-- Live commands re-run for spot-check (Check 3): [list each + result]
+- Live commands re-run for exhaustive Check 3: [list every command + result]
 - AWS CLI help commands run (for Check 7): [list]
 - Files ls-checked (for Check 12): [list]
 
@@ -199,7 +205,7 @@ Save to `[runbook-path-without-ext]-finalize-audit.md`.
 |---|---|---|---|
 | 1 | Live Verified State appears first | PASS / FAIL (TERMINATING) | [details] |
 | 2 | Every state claim has pasted output | PASS / FAIL | [missing claims] |
-| 3 | Random 3 state claims match live | PASS / FAIL | [drift details] |
+| 3 | ALL state claims match live (exhaustive) | PASS / FAIL | [drift details — list every mismatch] |
 | 4 | Every M-command has host label | PASS / FAIL | [unlabeled commands] |
 | 5 | No bundled commands (or with justification callout) | PASS / FAIL | [bundled M-steps + whether justified] |
 | 6 | Per-command approval discipline | PASS / FAIL | [missing approval text] |
@@ -228,7 +234,7 @@ If NEEDS WORK:
 ## Rules
 
 - **NEVER use memory.** Every claim in the audit comes from a file/command read this session. Paste evidence inline.
-- **Spot-check is not skip-check.** For Checks 2, 4, 5, 6, 7, 8, 9, 10, 11, 12 you check ALL relevant items. For Check 3 you spot-check 3.
+- **Check 3 is exhaustive.** Re-run ALL Live Verified State commands, not a sample. For Checks 2, 4, 5, 6, 7, 8, 9, 10, 11, 12 you also check ALL relevant items.
 - **Be specific in failures.** "Recovery lever missing flags" is not enough. "Recovery `restore-db-instance-from-db-snapshot` at line N missing `--db-subnet-group-name` and `--vpc-security-group-ids` — required per `aws rds restore-db-instance-from-db-snapshot help` output (pasted in §3 of this audit)." That's specific.
 - **READY / NEEDS WORK — no soft verdicts.** No "looks mostly good" / "minor issues but ship it." Any FAIL → NEEDS WORK.
 - **Confirm memory compliance explicitly at the top of the audit.** The user must see the evidence trail.
