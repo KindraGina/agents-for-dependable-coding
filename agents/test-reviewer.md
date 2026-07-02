@@ -100,6 +100,13 @@ This is a multi-project codebase with different test frameworks:
 - **"Covered at integration level" is NOT acceptable.** Which integration test? What line? What assertion?
 - If a fix has NO dedicated test, this is a CRITICAL gap — flag it as NEEDS CHANGES. Every fix must have at least one test that would fail if the fix were reverted.
 
+### Integration Gap Check (CRITICAL for features touching external systems)
+For features that interact with external systems (APIs, scrapers, file uploads, database writes, payment processors):
+- Do the tests exercise the full pipeline (e.g., URL → parse → process → store), or do they only test individual functions with hardcoded inputs?
+- If tests only use hardcoded/mocked inputs, flag as WARNING: "Tests prove parser/logic correctness but do NOT verify the feature works end-to-end. The test suite cannot catch failures like: URL returns unexpected content (HTML instead of image), database rejects the insert (NOT NULL constraint), or external service returns a bot challenge instead of real data."
+- Does the plan have `## Live Verification Steps`? If yes, did the plan-coder execute them and paste results? If no results are in the verification summary, flag: "Live verification steps exist in plan but were not executed — feature may fail against real data."
+- **Why this check exists (July 2026 AdminFixes29 incident):** All scraper tests used hardcoded fake HTML and passed. Facebook returned HTML instead of image bytes, Shotgun returned a Vercel bot challenge, and a CSV insert hit a NOT NULL constraint. Zero out of 10+ pipeline agents flagged that tests never touched real data.
+
 ### Scale/Production Risk Assessment
 - For fixes that address scale problems (timeouts, bulk operations, large datasets), note whether the tests prove behavior at production scale or only with small/mocked data.
 - If tests only use small data but the fix is for a scale problem, flag it: "WARNING: This fix addresses a scale problem ([description]). Tests prove logic correctness with mocked data but cannot prove it works at production scale. Recommend staging test with real data before deploy."

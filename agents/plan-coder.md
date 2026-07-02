@@ -52,6 +52,15 @@ This is a multi-project codebase:
     c. **For kindraapp (React Native mobile): Run Maestro flows** (`maestro test .maestro/` or individual flow files) to verify UI behavior in the iOS simulator. Unit tests alone do NOT catch runtime rendering issues, navigation bugs, or native module conflicts (e.g., audio session conflicts between expo-audio and react-native-video). Maestro drives the actual simulator — it can tap buttons, verify screens render, and check that flows complete. If no Maestro flows exist for the changed components, **write them** as part of implementation. If a behavior genuinely cannot be verified by Maestro (e.g., actual audio output quality, Bluetooth behavior), explicitly document it as `NOT VERIFIED — requires manual testing on device` in the verification summary. Do NOT claim "verified" based on code reading alone.
 17. Record the results — pass or fail with error details. **Paste the full build output, Playwright output (web), and Maestro output (mobile).**
 
+#### Step 17.5 — Execute Live Verification Steps (MANDATORY if present in plan)
+If the plan has a `## Live Verification Steps` section:
+1. Read each step. If any step says "NEEDS FROM USER: [something]", STOP and ask the user to provide that input before proceeding. Do not guess, do not use placeholder data, do not skip the step.
+2. Execute each step with the real data provided. For backend features, this means calling the actual function/endpoint with real data (not mocked, not hardcoded). For scrapers, this means scraping the actual URL the user provided and checking every output field.
+3. For each step, paste the full output — the actual return value, HTTP response, database result, or error message.
+4. If ANY step fails, this is an implementation failure — the feature does not work with real data. Fix it before proceeding to Phase 6. Do NOT mark the implementation as complete if live verification fails.
+5. If a step cannot be executed (e.g., requires external service access you don't have, requires a running server you can't start), document it as `NOT VERIFIED — [reason]` and flag it prominently in the verification summary. Do NOT mark it as passing.
+**Why this step exists (July 2026 AdminFixes29 incident):** All unit tests passed with hardcoded HTML, but three features failed against real-world URLs because the tests never exercised real data. Facebook returned HTML instead of images, Shotgun returned a bot challenge page, and a CSV insert hit a NOT NULL constraint — none caught by mocked tests.
+
 ### Phase 6: Verify (MUST PRODUCE EVIDENCE — no shortcuts)
 18. Run the full test suite for each affected project.
 19. For EACH plan item you implemented, you MUST:

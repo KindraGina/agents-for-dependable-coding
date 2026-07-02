@@ -72,6 +72,11 @@ Reviewer 1 should have done this analysis. Verify:
 - **Unverifiable claims audit:** Check whether reviewer 1 accepted any "verified" or "tested" claims that were based solely on code reading or regex. If so, flag as CRITICAL — grepping for a function name is NOT testing. Only Maestro output or actual test runner output counts as evidence.
 - **Input document claims audit:** If the plan or analysis doc made runtime behavior claims (e.g., "works in simulator, fails on device") and reviewer 1 repeated them as fact without Maestro evidence, flag this as CRITICAL — agents must not propagate unverified runtime claims.
 
+### Integration Gap Audit
+- Did reviewer 1 flag an integration gap (tests only use hardcoded/mocked inputs for features touching external systems)? If they didn't and the feature interacts with external systems (scrapers, APIs, file uploads, database writes), flag this as a gap in reviewer 1's coverage.
+- Does the plan have `## Live Verification Steps`? If yes, were they executed by the plan-coder? Check the verification summary for pasted output from each step. Missing output = feature was never tested against real data.
+- Are ALL tests using hardcoded inputs, or is there at least one test that exercises the full pipeline (input → parse → process → store)? If all tests mock everything, flag: "Entire test suite uses mocked data — cannot detect failures against real-world inputs."
+
 ### Cross-Project Test Coverage
 - If backend API changed, are there frontend tests that verify the integration?
 - Do web and mobile tests both cover the same API scenarios?

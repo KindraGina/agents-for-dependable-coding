@@ -96,6 +96,7 @@ Report a summary to the user:
 - **Finalize:** READY (round [N])
 - **Pipeline:** [/pipeline or /pipeline-light] — completed
 - **Critique:** [APPROVE / CONCERNS / REJECT]
+- **Live Verification:** [PASSED — all steps verified with real data / NOT TESTED — no live verification steps in plan / PARTIALLY TESTED — N of M steps verified, K could not be executed]
 
 [If APPROVE]: All stages passed. Code is ready for your review before merge.
 [If CONCERNS]: Pipeline passed but critique found minor issues. See [critique file path].

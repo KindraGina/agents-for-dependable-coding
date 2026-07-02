@@ -79,6 +79,19 @@ You must independently verify every file the pipeline claimed to have created or
 
 Do NOT trust pasted `ls` output from any agent's review file. You re-run, you record what the Bash tool actually returned. This is the single most important check in this critique because the existing pipeline gates have failed it before.
 
+### Step 2.7 — Live Feature Verification (mandatory if plan has Live Verification Steps)
+
+If the plan has a `## Live Verification Steps` section:
+
+1. Read each step. If any step says "NEEDS FROM USER: [something]" and the input was never provided during planning or implementation, ASK THE USER for it now. Do not skip the step, do not guess.
+2. Execute each step yourself with the real data. For backend features, call the actual function or endpoint. For scrapers, scrape the actual URL. For file uploads, use a real file.
+3. Paste the full output for each step.
+4. If ANY step fails, this is automatic **REJECT**: "Feature does not work with real data. The pipeline passed all structural checks (code exists, tests pass, reviewers approved), but the feature fails when actually used against real-world input."
+5. If you cannot execute a step (e.g., requires a running server you can't access), document it as `COULD NOT VERIFY — [reason]` and flag it as a process concern.
+
+If the plan does NOT have a `## Live Verification Steps` section:
+- Flag this as a process concern in the critique: "No live verification steps in the plan — the pipeline verified code structure and test correctness but never tested whether the feature works with real data. This is the gap that caused the July 2026 AdminFixes29 failures."
+
 ### Step 3 — Read every code change
 
 Run `git diff main...HEAD` (or whatever the merge base is) to see every change. For changes more than ~20 lines, also Read the full files — diffs hide context.

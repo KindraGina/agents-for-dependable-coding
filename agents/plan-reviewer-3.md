@@ -26,6 +26,10 @@ This is a multi-project codebase:
 
 ## What You're Looking For (Things Reviewers 1 & 2 Both Tend to Miss)
 
+### Feature Completeness — Final Net
+- Does the plan scope the FULL feature or only reported symptoms? If neither reviewer 1 nor reviewer 2 flagged a missing `## Feature Completeness Check` or `## Live Verification Steps` section, flag it now — this is the last gate before implementation.
+- For "fix" plans: would a user testing this feature end-to-end hit something broken that's not in the plan? Think like the user, not the developer — they don't care which field was "reported," they care that the whole feature works.
+
 ### Real-World User Impact
 - What does the ACTUAL user experience look like during and after this change?
 - Are there users on old app versions who will break? (Mobile app updates are not instant)

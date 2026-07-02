@@ -53,6 +53,13 @@ Run this FIRST, before evaluating references / completeness / architecture / etc
 - **If ANY reference is wrong, this is CRITICAL.** Wrong references become wrong code. This is the #1 source of plan bugs.
 - Spot-check at least 5 references (or all of them if fewer than 5). Paste the actual code you read to prove you checked.
 
+### Feature Completeness (CRITICAL — check this for any "fix" or "improve" plan)
+- Does the plan include a `## Feature Completeness Check` section listing every output of the feature? If not, flag as NEEDS CHANGES: "Plan does not scope the full feature."
+- If the plan says "fix X" but only addresses specific symptoms without listing ALL outputs of X, flag as NEEDS CHANGES: "Plan scopes symptoms, not the full feature. All outputs of [feature] must be listed and verified." Example: "fix event scraping" must cover name, date, location, description, image, price, URL — not just the one field that was reported broken.
+- Does the plan include a `## Live Verification Steps` section with concrete steps to test against real data? If not, flag as NEEDS CHANGES: "No live verification steps. How will we know this works with real data, not just mocked tests?"
+- If any live verification step says "NEEDS FROM USER," has the user been asked? If not, flag it.
+- **Why this check exists (July 2026 AdminFixes29 incident):** A plan scoped "fix Facebook scraping" as three symptoms. Images were excluded. The pipeline passed. On staging, images were broken. Three of five cascade items failed against real-world data.
+
 ### Completeness
 - Are ALL affected files listed? Search the codebase for related functions/references the plan might have missed.
 - Are ALL affected user types covered? (web users, mobile users, admins)

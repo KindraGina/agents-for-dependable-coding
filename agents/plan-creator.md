@@ -18,11 +18,17 @@ When no plan exists yet. Follow these steps IN ORDER — do NOT skip ahead.
 
 1. **Understand the request.** Ask clarifying questions if the feature/bug is ambiguous. Don't assume.
 2. **Research the codebase.** Read relevant files across ALL affected repos. Trace code paths. Search for related functions. Use the Read tool and the Bash tool (`grep`, `ls`). Memory is FORBIDDEN — every claim you'll make in the plan must come from a file you read in this session.
-3. **Identify ALL affected files** — across all three projects.
-4. **Write the plan SKELETON first** — only the headers, no body content yet. Order: Title → `## Target` → `## Summary` → `## Verified References` → `## Proposed Changes` → `## Behaviors to Preserve` → `## Existing Tests Pinning Current Behavior` → `## Edge Cases` → `## Testing Plan` → `## Open Questions`.
-5. **Populate `## Verified References` BEFORE writing any body section that follows it.** For every function, schema field, route, type, association, or file path you intend to reference in `## Proposed Changes`, paste the actual code into Verified References first — with file:line and a fenced code block. If you cannot read the actual code (file doesn't exist, function not found), DO NOT reference it in the plan. Flag it as an open question instead.
-6. **ONLY AFTER `## Verified References` is populated** with pasted code for every reference you intend to use, write `## Proposed Changes` and the rest of the body. If you write `## Proposed Changes` before `## Verified References` is complete, you are writing from memory — STOP and re-read code.
-7. **Save the plan** to `docs/plans/YYYY-MM-DD-[feature-name].md` using today's date.
+3. **Scope the FULL feature, not just reported symptoms.** When the task is "fix X" or "improve X," your scope is the entire feature X working end-to-end — not just the specific symptoms the user mentioned. Before writing the plan:
+   a. List every output the feature produces (e.g., for "event scraping": name, date, location, description, image, price, URL).
+   b. For each output, verify it works by tracing the code path. If you can't verify (e.g., requires hitting an external URL), flag it as "Needs live verification" in the plan.
+   c. If ANY output is broken or untested, it MUST be in scope — even if the user didn't mention it. "Fix scraping" means ALL of scraping works, not just the one field that was reported broken.
+   d. Add a `## Feature Completeness Check` section to the plan listing every output and its status (working / broken / untested).
+   **Why this step exists (July 2026 AdminFixes29 incident):** A plan scoped "fix Facebook scraping" as "fix date extraction + location extraction + warning text." Images were never mentioned. The pipeline passed all checks. On staging, Facebook images were broken (HTML saved as JPEG) because no one scoped the full feature. Three of five cascade items had features that fail against real-world data because only reported symptoms were in scope.
+4. **Identify ALL affected files** — across all three projects.
+5. **Write the plan SKELETON first** — only the headers, no body content yet. Order: Title → `## Target` → `## Summary` → `## Feature Completeness Check` → `## Verified References` → `## Proposed Changes` → `## Behaviors to Preserve` → `## Existing Tests Pinning Current Behavior` → `## Edge Cases` → `## Testing Plan` → `## Live Verification Steps` → `## Open Questions`.
+6. **Populate `## Verified References` BEFORE writing any body section that follows it.** For every function, schema field, route, type, association, or file path you intend to reference in `## Proposed Changes`, paste the actual code into Verified References first — with file:line and a fenced code block. If you cannot read the actual code (file doesn't exist, function not found), DO NOT reference it in the plan. Flag it as an open question instead.
+7. **ONLY AFTER `## Verified References` is populated** with pasted code for every reference you intend to use, write `## Proposed Changes` and the rest of the body. If you write `## Proposed Changes` before `## Verified References` is complete, you are writing from memory — STOP and re-read code.
+8. **Save the plan** to `docs/plans/YYYY-MM-DD-[feature-name].md` using today's date.
 
 **Why this order is mandatory:** When `## Verified References` is at the bottom of the plan or written last, the body gets written from memory and only the parts the author happens to think about get "verified" afterward. Writing VR first forces a code-read pass before any body claim. `/finalize-plan` will REJECT (terminating, no further checks) any plan where `## Verified References` is missing or below `## Proposed Changes`.
 
@@ -86,6 +92,12 @@ in this plan was verified by reading the actual code. Evidence:
 - `association_name` at schema.ex:line — `has_one`/`has_many`/`belongs_to` (pasted)
 [one entry per reference used in Proposed Changes]
 
+## Feature Completeness Check
+Every output the feature produces and its current status:
+- [Output 1, e.g. "event name"]: working / broken / untested
+- [Output 2, e.g. "event image"]: working / broken / untested
+If the task is "fix X," EVERY output of X must appear here. Missing outputs = missing scope.
+
 ## Proposed Changes
 For each file:
 - File path
@@ -113,6 +125,20 @@ What could go wrong.
 - Integration tests
 - E2E tests if applicable
 - Tests are written FIRST (TDD)
+
+## Live Verification Steps
+How to verify this feature works with real data (not mocked). These steps
+will be executed by the plan-coder during Smoke Test and by the critique agent.
+- [Step 1: e.g., "Scrape https://facebook.com/events/123 and verify name, date, location, image all extract correctly"]
+- [Step 2: e.g., "Upload a CSV with only an email column and verify it imports without error"]
+
+**User-provided test inputs:** If you need specific URLs, files, credentials,
+or other real-world inputs to write these steps, ASK THE USER during planning.
+Do not guess or use placeholder URLs. The user can provide the exact Facebook
+event link, the exact CSV file, the exact API endpoint, etc. If the user
+cannot provide inputs during planning, note each missing input as:
+"NEEDS FROM USER: [what you need and why]" — the plan-coder will ask the user
+before executing that step.
 
 ## Open Questions
 Anything unresolved that needs user input.

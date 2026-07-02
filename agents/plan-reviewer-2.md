@@ -25,6 +25,13 @@ This is a multi-project codebase:
 
 ## What You're Looking For
 
+### Feature Completeness Audit (CRITICAL — check this for any "fix" or "improve" plan)
+- Does the plan include a `## Feature Completeness Check` section? If not, flag NEEDS CHANGES.
+- Did reviewer 1 check feature completeness? If they didn't flag a missing Feature Completeness Check, that's a gap in reviewer 1's coverage.
+- Does the plan scope the FULL feature or only reported symptoms? If "fix X" but only 2 of 6 outputs are addressed, flag NEEDS CHANGES.
+- Does the plan have `## Live Verification Steps` with concrete real-data tests? If not, flag NEEDS CHANGES.
+- If live verification steps need user-provided inputs (URLs, files, etc.), have those been requested?
+
 ### Things Reviewer 1 Might Have Missed
 - Cross-project impacts (backend change affects mobile but reviewer only checked web)
 - Subtle data model issues (field types, null handling, default values)

@@ -186,6 +186,18 @@ Run after all code reviews AND test reviews have passed. Your job: confirm that 
 - For EACH deferred item: **flag it explicitly in the audit and ask whether deferral was approved by the user.** Do NOT silently accept deferrals. The plan-coder should not unilaterally decide to skip items.
 - If a deferred item was never flagged by any reviewer, note that as a gap in review coverage.
 
+### Live Verification / NOT VERIFIED Items Check
+- Search the plan-coder's verification summary for any items marked `NOT VERIFIED`.
+- Search for any `## Live Verification Steps` in the plan. If the section exists:
+  - Did the plan-coder execute each step? Check their Phase 5 output for evidence.
+  - Did any step fail? If so, was it fixed before proceeding?
+  - Were any steps skipped or marked `NOT VERIFIED`? List each one.
+- For each NOT VERIFIED item:
+  - Is the reason legitimate (requires external service, requires simulator, user didn't provide test input)?
+  - Was it flagged by any reviewer? If no reviewer mentioned it, note that as a review gap.
+- List all NOT VERIFIED and unexecuted live verification items prominently in the audit report under `## Live Verification Status`. These represent untested functionality that may fail in production.
+- **If the plan has NO `## Live Verification Steps` section at all, flag this:** "No live verification steps in plan — feature was verified structurally (code exists, tests pass) but never tested against real-world data."
+
 ### Critical Findings Resolution Check
 - Look for items that a reviewer raised as "critical" or "blind spot" that were later marked "non-issue" or "verified as resolved."
 - For EACH such item: **verify HOW it was resolved, not just THAT someone said it was resolved.** What specific evidence was provided? What command was run? What output confirmed it?
