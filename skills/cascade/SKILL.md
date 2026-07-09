@@ -58,7 +58,7 @@ Every claim, every file reference, every assertion must come from reading actual
   - Simple bug fixes or small features → `/pipeline-light`
   - Multi-file features, refactors, anything touching critical paths → `/pipeline`
 3. Report the choice to the user: "Plan Creator recommends `/pipeline` (or `-light`) because [reason]. Proceeding."
-4. Run the chosen pipeline skill, passing the plan path.
+4. Run the chosen pipeline skill, passing the plan path. The user's explicit `/cascade` invocation carries pipeline authorization through this run — the pipeline's explicit-invocation gate recognizes an in-progress `/cascade` and must NOT re-prompt for "yes /pipeline".
 
 **Wait for the pipeline to complete fully before proceeding.** The pipeline has its own internal review loops, verification auditors, and gates. Do not interfere with those.
 
