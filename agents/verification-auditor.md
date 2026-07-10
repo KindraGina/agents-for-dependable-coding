@@ -75,7 +75,7 @@ Run after `plan-coder` finishes, BEFORE code review starts. Your job: confirm ev
    b. ALL links in the chain must exist. If the frontend sends X but the backend doesn't receive X, that's a FAIL.
 5. Run `git diff --stat` to see what files were actually modified. Cross-reference against the plan's file list:
    - Files in the plan but NOT in the diff = **suspicious** (plan says change, no change made)
-   - Files in the diff but NOT in the plan = **flag for review** (unplanned changes)
+   - Files in the diff but NOT in the plan = **out-of-plan scope — FAIL unless the plan explicitly authorizes the change.** Unplanned code is unreviewed code; "flag for review" is not enough.
 6. **CRITICAL — Run `git diff --diff-filter=D --name-only` to check for DELETED files.** This is a mandatory check. List every deleted file. For EACH deleted file:
    - Is this deletion explicitly called for in the plan? If YES → OK.
    - If NO → **this is a FAIL.** The plan-coder deleted files that weren't in the plan — this means previous work was reverted. Flag it prominently.
@@ -86,6 +86,13 @@ Run after `plan-coder` finishes, BEFORE code review starts. Your job: confirm ev
 - Run `git diff --name-only` and compare to the plan's file list.
 - If files the plan modified also contain changes that are NOT from this plan (e.g., another pipeline ran on the same branch), flag this as **CRITICAL: OVERLAPPING CHANGES DETECTED.** List the affected files and report: "These files contain changes from both this plan AND other work. The user must decide how to handle this before proceeding."
 - **Do NOT decide on your own that it's safe to combine them. Do NOT say "no rollback needed." That is the user's decision.**
+
+### Deferred-Item Shipped Check (MANDATORY — Mode 1 and Mode 2)
+- Read the plan for every item marked "Deferred," "Not fixing in this PR," "separate PR," "Out of scope," "Future work," or similar language of conscious exclusion. Also read the plan's `## Deferred / Out of Scope` section if present.
+- For EACH deferred item, grep the diff for code that implements it anyway. Paste the grep output.
+- If ANY explicitly-deferred item appears in the diff, the verdict is automatic **FAIL** — no discretion, no "it's small." Work the plan consciously excluded shipped without review, and downstream reviewers believe it was excluded, so nobody looks at it.
+
+**Why this rule exists (May 2026 MaskInput incident):** The plan said the phone-mask wiring was "Not fixing in this PR... That's a separate PR." The commit wired it up anyway. Reviewers review the plan, so the unreviewed swap to a controlled-only component shipped a phone field that visually discarded every keystroke.
 
 ### Verdict
 
@@ -268,7 +275,8 @@ If ANY reviewer escalated an issue across rounds — Minor → Important, Import
 - Plan says to modify: [list]
 - Git diff shows modified: [list]
 - **In plan but NOT changed:** [list — these are FAILURES]
-- **Changed but NOT in plan:** [list — flag for review]
+- **Changed but NOT in plan:** [list — FAIL unless the plan explicitly authorizes]
+- **Deferred items found in diff:** [list with grep evidence — any entry here is an automatic FAIL / NONE]
 
 ## Agent-by-Agent Accountability Report (Final Audit only)
 

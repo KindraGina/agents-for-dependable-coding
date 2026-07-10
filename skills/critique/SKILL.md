@@ -92,6 +92,14 @@ If the plan has a `## Live Verification Steps` section:
 If the plan does NOT have a `## Live Verification Steps` section:
 - Flag this as a process concern in the critique: "No live verification steps in the plan — the pipeline verified code structure and test correctness but never tested whether the feature works with real data. This is the gap that caused the July 2026 AdminFixes29 failures."
 
+### Step 2.75 — Interaction-Change Verification Gate (HARD CAP on the verdict)
+
+Determine whether the diff touches any user-facing interaction: form inputs, buttons, navigation, gestures — anything a user types into or taps. (Check the diff for input components, onChange/onPress handlers, form libraries.)
+
+If it does, AND no live verification of that interaction was actually executed (by the pipeline, by you in Step 2.7, or documented as run by the user), your verdict is CAPPED at CONCERNS. You may NOT output APPROVE, no matter how clean everything else looks. Include a `## Manual Verification Required` section listing the exact steps the user must run before merging: device/simulator, screen-by-screen navigation, what to type, what they should see.
+
+Why: agents cannot see the simulator, and static review is structurally weak against interaction bugs — the May 2026 MaskInput phone field looked idiomatic in code and was completely unusable when touched. The honest posture is to refuse to bless untested interactions and hand the user a concrete test script instead.
+
 ### Step 3 — Read every code change
 
 Run `git diff main...HEAD` (or whatever the merge base is) to see every change. For changes more than ~20 lines, also Read the full files — diffs hide context.
@@ -141,7 +149,7 @@ Output the report in the format below. Save it to the same directory as the plan
 
 ## Verdict: APPROVE / CONCERNS / REJECT
 
-- APPROVE = plan honored, no scope creep, no dismissed escalations, no contradictions, code matches plan.
+- APPROVE = plan honored, no scope creep, no dismissed escalations, no contradictions, code matches plan, AND no unverified interaction changes (Step 2.75).
 - CONCERNS = minor issues, plan mostly honored, recommend cleanup but ship.
 - REJECT = user-authoritative statement violated, OR plan contradiction shipped, OR significant scope creep, OR dismissed escalation is still real, OR protected-branch run, OR **phantom file detected** (agents claimed a file exists that does not exist on disk per `ls -la`).
 
@@ -192,6 +200,9 @@ If none: "No must-not-default markers in plan."
 Any "verified as non-issue" or "marked resolved" without specific evidence:
 - [issue] — [vague resolution text] — what should have been provided instead
 If none: "All resolutions backed by specific evidence."
+
+## Manual Verification Required
+[Only if Step 2.75 capped the verdict: the exact steps the user must run before merging — device/simulator, screen-by-screen navigation, what to type, what they should see. If not applicable: "All interaction changes were live-verified — none."]
 
 ## Branch Hygiene
 - Branch the pipeline ran on: [from `git branch --show-current` or the pipeline's logs]

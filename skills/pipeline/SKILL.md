@@ -79,6 +79,8 @@ The pipeline ONLY runs on plans that have passed `/finalize-plan`. This is a str
 
 > "The `/finalize-plan` audit at `[audit-path]` has verdict NEEDS WORK. Fix the failed checks listed in that file, re-run `/finalize-plan` until the verdict is READY, then re-invoke `/pipeline`. STOPPING."
 
+**Step E — Retroactive plans get the FULL path.** If the plan contains a `## Retroactive Plan` marker (it documents code that already exists), do NOT compress or skip any phase. Phase 3 becomes "plan-coder verifies the existing diff implements the plan and fixes gaps," and Phases 3.5–5.5 run in full against the actual diff. Documentation of existing work is never pre-approved work.
+
 **Phase 1 (Plan Creation) is no longer reachable from `/pipeline`.** Plans must be drafted outside the pipeline and finalized before invocation. The plan-creator agent is still used in Phase 2 for REVISIONS during the review loop — that's its only remaining role.
 
 **Why this gate exists:** Plans written from memory contain wrong function names, wrong return types, wrong schema fields, wrong table names — bugs that the pipeline reviewers were never designed to catch (they assume the plan is grounded). The `/finalize-plan` audit catches memory-writing by verifying every code reference has pasted source. Without this gate, memory-written plans burn pipeline cycles and ship bugs.

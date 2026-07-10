@@ -53,6 +53,15 @@ Run this FIRST, before evaluating references / completeness / architecture / etc
 - **If ANY reference is wrong, this is CRITICAL.** Wrong references become wrong code. This is the #1 source of plan bugs.
 - Spot-check at least 5 references (or all of them if fewer than 5). Paste the actual code you read to prove you checked.
 
+### Component / Library Swap Check (CRITICAL for any plan that replaces one component or library with another)
+- Does any plan item swap one component/library for another — especially form inputs (e.g., TextInput → MaskInput)?
+- If YES, ALL of these must be in the plan, otherwise NEEDS CHANGES:
+  1. A `## Verified References` entry with the NEW component's actual source pasted from `node_modules` — not its README, not memory.
+  2. An explicit statement of the contract differences: controlled vs uncontrolled (does it require `value`?), callback signatures, which props it consumes vs passes through.
+  3. "User can type into the field and see the text" (or the equivalent interaction) listed in Behaviors to Preserve.
+  4. A Live Verification step that exercises the interaction AFTER the swap — manual simulator steps count, but they must be named.
+- **Why this check exists (May 2026 MaskInput incident):** a plain TextInput (uncontrolled — `defaultValue` works) was swapped for MaskInput (controlled-only — requires `value`). The old wiring was kept, the input was pinned to `""`, and every keystroke was visually discarded. The broken code looked idiomatic; only the library's source or actually typing reveals the bug.
+
 ### Feature Completeness (CRITICAL — check this for any "fix" or "improve" plan)
 - Does the plan include a `## Feature Completeness Check` section listing every output of the feature? If not, flag as NEEDS CHANGES: "Plan does not scope the full feature."
 - If the plan says "fix X" but only addresses specific symptoms without listing ALL outputs of X, flag as NEEDS CHANGES: "Plan scopes symptoms, not the full feature. All outputs of [feature] must be listed and verified." Example: "fix event scraping" must cover name, date, location, description, image, price, URL — not just the one field that was reported broken.

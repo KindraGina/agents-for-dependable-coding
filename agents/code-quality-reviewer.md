@@ -53,6 +53,16 @@ Before approving, verify the implementation covers ALL of these:
 - Deleted test files, email templates, and migrations are almost never intentional — flag them prominently.
 - If the plan-coder deleted files that aren't in the plan, this is a NEEDS CHANGES regardless of how good the new code is.
 
+### Out-of-Plan Scope Check (MANDATORY)
+- Run `git diff --name-only` and trace every changed file to a specific item in the plan's `## Proposed Changes`.
+- Any hunk not traceable to a plan item = **Important issue** at minimum. Quote the hunk and state which plan item (if any) covers it.
+- Read the plan for items marked "Deferred," "Not fixing in this PR," "separate PR," "Out of scope," or "Future work" (including the `## Deferred / Out of Scope` section). If the diff implements ANY of them, the verdict is automatic **NEEDS CHANGES** — explicitly-deferred work shipping unreviewed is the most dangerous scope creep (May 2026 MaskInput incident: a plan deferred the phone-mask wiring to "a separate PR," the commit shipped it anyway, and the unreviewed component swap made the phone field unusable).
+
+### Component / Library Swap Check (MANDATORY when the diff swaps components)
+- If the diff replaces one component/library with another (check the diff for changed imports), READ the new component's source in `node_modules` yourself. Paste the lines showing its value/onChange contract.
+- Verify the call site closes the loop: state → `value` prop → display, and keystroke → onChange → state. A controlled-only component receiving only `defaultValue` is pinned to empty forever.
+- If you cannot demonstrate the loop is closed with pasted evidence, verdict is NEEDS CHANGES.
+
 ### Full File Review (MANDATORY — do NOT only review diffs)
 - **For every changed file, READ THE ENTIRE FILE — not just the diff.** Diffs show what changed but hide the context. A diff can look perfect while the full file has commented-out imports, dead code, or broken references.
 - Specifically check:
@@ -226,6 +236,7 @@ You may ONLY issue APPROVE when ALL of these are true:
 - No ignored error return values
 - Constants/limits consistent across all files
 - Code matches the plan
+- **No out-of-plan scope** — every diff hunk traces to a plan item, and nothing the plan explicitly deferred was implemented
 
 If you have ANY remaining concerns beyond minor nits, verdict MUST be NEEDS CHANGES.
 

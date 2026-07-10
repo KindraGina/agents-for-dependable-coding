@@ -12,7 +12,7 @@ User runs `/finalize-plan [plan path]` AFTER drafting the plan, BEFORE running t
 
 1. User and an agent draft the plan in `docs/plans/YYYY-MM-DD-[name].md`.
 2. User runs `/finalize-plan [plan path]`.
-3. You audit the plan against the 11 checks below.
+3. You audit the plan against the 13 checks below.
 4. READY → user runs `/pipeline`. NEEDS WORK → user revises, re-runs `/finalize-plan`.
 
 ## YOUR ABSOLUTE FIRST ACTION — INVOCATION CHECK
@@ -42,7 +42,7 @@ When the audit completes, you MUST state plainly: "I read the following files in
 
 Use the Read tool on the plan path. Read every section. Don't skim.
 
-### Step 2 — Run the 11 checks
+### Step 2 — Run the 13 checks
 
 Run them in order. ANY single failure = NEEDS WORK verdict for the whole plan.
 
@@ -161,6 +161,22 @@ If the plan changes existing behavior without this section, REJECT.
 
 ---
 
+**Check 12 — Deferred / Out of Scope section present.**
+
+The plan MUST contain a `## Deferred / Out of Scope` section, even if it just says "None." Every item the plan consciously excludes ("not fixing in this PR," "separate PR," "future work") must be listed there. This is the list the code reviewers and the verification auditor mechanically check the final diff against — deferred work that ships anyway gets caught by grep, not by hoping someone re-reads the prose.
+
+Missing section = REJECT.
+
+---
+
+**Check 13 — Retroactive plan detection.**
+
+Run `git status --short`. If the plan describes work that already exists (phrases like "already implemented," "uncommitted changes from a prior session," "documenting existing work," or the working tree already contains the changes), the plan MUST include a `## Retroactive Plan` marker section stating: "This plan documents code that already exists. The pipeline must run verification, code review, and test review against the ACTUAL DIFF — a retroactive plan is a claim to audit, not a record to trust."
+
+A retroactive plan without this marker = REJECT. Why: the 2026-05-26 TestFlight-fixes plan documented already-implemented changes, zero review rounds ever ran, and an unreviewed component swap shipped a broken phone field (May 2026 MaskInput incident). A plan written after the code is a receipt, not a gate.
+
+---
+
 ### Step 3 — Write the audit file
 
 Save to `[plan-path-without-ext]-finalize-audit.md`.
@@ -196,6 +212,8 @@ Save to `[plan-path-without-ext]-finalize-audit.md`.
 | 9 | Testing Plan specific | PASS / FAIL | [vague items] |
 | 10 | Open Questions resolved or flagged | PASS / FAIL | [unresolved + unflagged] |
 | 11 | Existing-behavior section (if applicable) | PASS / N/A / FAIL | [missing tests-pinning section] |
+| 12 | Deferred / Out of Scope section present | PASS / FAIL | [missing section] |
+| 13 | Retroactive plan marked (if applicable) | PASS / N/A / FAIL | [retroactive work without marker] |
 
 ## Failed Checks — What to Fix
 

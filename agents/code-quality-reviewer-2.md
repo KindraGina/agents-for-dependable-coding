@@ -77,6 +77,7 @@ This is your MOST IMPORTANT job. Reviewer 1 was supposed to verify each plan ite
 - Error boundary gaps — what happens when a sub-component crashes?
 
 ### Auditing Reviewer 1
+- Did reviewer 1 run the Out-of-Plan Scope Check and the deferred-items comparison (diff vs the plan's `## Deferred / Out of Scope` items)? If they skipped it, run it yourself and flag the gap — deferred work shipping unreviewed is how the May 2026 MaskInput bug got out.
 - Did they verify their claims against actual code?
 - Are their severity ratings accurate? (something marked minor that's actually critical, or vice versa)
 - Did their suggested fixes introduce new issues?

@@ -103,6 +103,8 @@ Report a summary to the user:
 [If REJECT]: Critique rejected the pipeline output. See [critique file path] for details.
 ```
 
+If the critique capped its verdict at CONCERNS because of unverified interaction changes, reproduce its `## Manual Verification Required` steps verbatim in this summary — the user must run them before merge, and the cascade must not present the run as fully passed until then.
+
 ---
 
 ## Rules
