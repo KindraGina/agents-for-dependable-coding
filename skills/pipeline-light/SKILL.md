@@ -62,6 +62,8 @@ git branch --show-current
 - "Working directory: [pwd output]"
 - "Current branch: [branch-name]"
 
+**The `pwd` output is this run's LAUNCH REPO.** Every branch, file edit, test run, and git command in this entire pipeline run — by you or any agent you launch — happens inside this repo and nowhere else. See the REPO BOUNDARY rule under Important Rules.
+
 **PROTECTED BRANCH REFUSAL — this is a HARD STOP:**
 
 If the current branch is one of `main`, `master`, `staging`, `testflight`, `production`, `prod`, or `release`, you MUST refuse to run. Tell the user verbatim:
@@ -164,6 +166,7 @@ This loop repeats until the reviewer issues an APPROVE verdict.
 - If APPROVE → **immediately proceed to Phase 3**. Do NOT ask for permission.
 - If NEEDS CHANGES → launch the `plan-creator` agent to revise (NEVER fix the plan yourself):
   - Prompt: "You are the plan-creator agent in revision mode. Read the review at [review-1-path]. Revise the plan at [plan-path] to address all critical and important issues. Add a 'Revision Notes — Round N' section. Follow your instructions in .claude/agents/plan-creator.md."
+  - **SINGLE-REPO RE-CHECK — mandatory after EVERY revision.** The finalize-plan single-repo gate ran BEFORE the pipeline; revisions can smuggle cross-repo work in after it. Grep the revised plan's `## Proposed Changes` and numbered steps for file paths outside the launch repo (absolute paths like `~/Sites/...`, or another repo's name when it is not the launch repo). Cross-repo work may ONLY appear in a `## Cross-Repo Dependencies` section (informational — never implemented by this run). If a mainline step targets another repo, re-launch the plan-creator to move it there and report the cross-repo need to the user — reviewers cannot authorize cross-repo scope; only the user can. (July 2026 tag-taxonomy incident: a mid-pipeline revision wrote a kinlia-web fix into a mainline step and the run edited files in kinlia-web, another session's active repo.)
   - **GO BACK TO STEP 1 with N incremented.**
 
 **Safety valve**: If you reach round 6 without APPROVE, pause and ask the user how to proceed.
@@ -171,7 +174,7 @@ This loop repeats until the reviewer issues an APPROVE verdict.
 ## Phase 3: Implementation
 
 Launch the `plan-coder` agent:
-- Prompt: "You are the plan-coder agent. Implement the approved plan at [plan-path]. Read the review file too. Follow TDD — write tests first, then implement. Implement ALL items in the plan — you do not get to skip items or invent scope boundaries. If the plan lists a file, that file is in your scope regardless of language or directory. Follow your instructions in .claude/agents/plan-coder.md."
+- Prompt: "You are the plan-coder agent. Implement the approved plan at [plan-path]. Read the review file too. Follow TDD — write tests first, then implement. Implement ALL items in the plan — you do not get to skip items or invent scope boundaries. If the plan lists a file in the launch repo, that file is in your scope regardless of language or directory. Files outside the launch repo are NEVER in scope — a plan step targeting another repo is a plan defect: do not implement it, report it as BLOCKED per your REPO BOUNDARY rule. Follow your instructions in .claude/agents/plan-coder.md."
 
 After the agent returns, show a brief status update and **immediately proceed to Phase 3.5**.
 
@@ -283,6 +286,8 @@ Then show:
 ## Important Rules
 
 - **USE THE AGENT TOOL FOR EVERY PHASE.** Never do the work yourself. ALWAYS delegate to the appropriate agent.
+- **REPO BOUNDARY — THE PIPELINE NEVER LEAVES ITS LAUNCH REPO.** The `pwd` recorded at startup is the launch repo for the entire run. Neither you nor ANY agent you launch may create branches, edit files, run tests, or run git commands in any other repository — no matter what the plan says, and no matter how emphatically a reviewer or plan revision insists the change "cannot be silently dropped" or "must ship together." If a plan step, reviewer finding, or agent report calls for changes in another repo: do NOT execute it; ensure it lives only in the plan's `## Cross-Repo Dependencies` section (informational); and surface it to the user as a separate decision — the other repo gets its own plan and its own pipeline run if the user wants one.
+  **Why this rule exists (July 2026 tag-taxonomy incident):** the backend tag-taxonomy plan passed finalize as single-repo; a mid-pipeline revision then wrote the exact kinlia-web fix into a mainline step ("specified here so it cannot be silently dropped"); nothing re-checked single-repo after the revision, and the run created a branch and edited files inside kinlia-web — a repo with its own active session — leaving unannounced uncommitted changes in that session's working tree.
 - **NEVER skip a verification gate.** Both gates (Phase 3.5 and Phase 5.5) are mandatory in light mode too. Skipping them would defeat the purpose of having light mode — the auditor is what makes "one reviewer per stage" safe.
 - **NEVER skip the pre-flight checks (Phase 0).** Branch must be confirmed before ANYTHING else happens.
 - **TEST RUNS MUST BE THE FULL SUITE.** Same rule as full /pipeline — the test-reviewer and verification-auditor must invoke `mix test` / `yarn test:run` / `yarn test` with NO file path argument. Subset runs are an invalid review even in light mode.
@@ -294,6 +299,6 @@ Then show:
 - **NEVER write review, audit, or test files yourself.** You are an orchestrator. If an agent didn't write its file, re-launch the agent.
 - **NEVER OVERRIDE A FAIL VERDICT.** If the verification auditor returns FAIL, you MUST loop — launch the plan-coder to fix, then re-run the auditor. You do NOT get to reinterpret FAIL as "false positive," "artifact issue," or "not a real failure." The auditor's FAIL is mechanical: items in the plan were not found in the code. The orchestrator's only permitted override is the phantom-file cross-check (upgrading PASS to FAIL when files don't exist on disk). Downgrading FAIL to PASS is never permitted.
   **Why this rule exists (June 2026 marketing-placement incident):** The verification auditor returned FAIL because 4 frontend items from the plan were not implemented. The orchestrator dismissed the FAIL, conflating it with a separate artifact issue (missing review files). The result: the pipeline reported success with 4 plan items unimplemented. Hosts could not use the features the pipeline claimed to have shipped.
-- **PLAN-CODER PROMPTS MUST INCLUDE THE SCOPE WARNING.** Every prompt you send to the plan-coder (initial implementation or fix mode) MUST include this sentence: "Implement ALL items in the plan — you do not get to skip items or invent scope boundaries. If the plan lists a file, that file is in your scope regardless of language or directory." This reinforces the rule in the plan-coder's own agent file and prevents the "frontend-only, outside backend scope" failure mode.
+- **PLAN-CODER PROMPTS MUST INCLUDE THE SCOPE WARNING.** Every prompt you send to the plan-coder (initial implementation or fix mode) MUST include this sentence: "Implement ALL items in the plan — you do not get to skip items or invent scope boundaries. If the plan lists a file in the launch repo, that file is in your scope regardless of language or directory. Files outside the launch repo are NEVER in scope — a plan step targeting another repo is a plan defect: do not implement it, report it as BLOCKED per your REPO BOUNDARY rule." This reinforces the rule in the plan-coder's own agent file and prevents the "frontend-only, outside backend scope" failure mode.
 - **THIS IS AUTOPILOT MODE. Never ask "shall I proceed?", "shall I launch?", or "shall I continue?".** Just show a brief status update and immediately move to the next step. The only time you stop and ask the user is at the safety valve (round 6 for reviews, round 4 for post-implementation gate, round 3 for final audit) or if an agent reports a problem.
 - **IF THE PLAN GROWS BEYOND LIGHT SCOPE:** If during plan creation or review it becomes clear the change is bigger than "under ~50 lines, low risk, one file" (e.g. plan-reviewer flags cross-project impacts, security implications, or multi-file scope), STOP and tell the user: "This plan looks bigger than light scope. I recommend switching to full `/pipeline` for the additional reviewer coverage. Do you want to continue in light mode anyway, or restart with /pipeline?" Do not silently continue in light mode on a change that needs full review.

@@ -62,6 +62,8 @@ Every claim, every file reference, every assertion must come from reading actual
 
 **Wait for the pipeline to complete fully before proceeding.** The pipeline has its own internal review loops, verification auditors, and gates. Do not interfere with those.
 
+**The pipeline is confined to the repo this cascade was launched in.** If the pipeline (or any reviewer inside it) reports that another repo must change, that is information for the user, not work for this cascade — no stage may create branches or edit files in any other repo (see Rule 9). Report the cross-repo need in your next status update and again in the Stage 4 summary.
+
 ---
 
 ## Stage 3 — Critique the Pipeline Output
@@ -124,3 +126,5 @@ If the critique capped its verdict at CONCERNS because of unverified interaction
 7. **Protected branch check.** Before starting, verify the current branch is NOT `main`, `master`, `staging`, `testflight`, `production`, `prod`, or `release`. If it is, STOP and tell the user to create a feature branch first.
 
 8. **No memory.** Every factual claim about the plan, the code, or the pipeline output must come from files read in this session.
+
+9. **Repo containment.** The cascade and everything it invokes run entirely inside the repo where `/cascade` was launched. No stage — finalize, pipeline, critique, or any agent they spawn — may create branches, edit files, or run git commands in another repository, no matter what the plan says or how emphatically a reviewer insists. A cross-repo need discovered mid-cascade goes into the plan's `## Cross-Repo Dependencies` section (informational only) and gets reported to the user; the other repo gets its own plan and its own cascade only if the user says so. **Why this rule exists (July 2026 tag-taxonomy incident):** a cascade launched in the backend repo created a branch and edited files in kinlia-web — another session's active repo — because a mid-pipeline plan revision wrote the kinlia-web fix into a mainline step and no gate re-checked single-repo scope after the revision. The user and the other session both lost time to forensics on the mystery branch and uncommitted files.
