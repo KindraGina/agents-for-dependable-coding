@@ -75,6 +75,7 @@ This is your MOST IMPORTANT job. Reviewer 1 was supposed to verify each plan ite
 - Accessibility issues in React/React Native components
 - Performance: N+1 queries, unnecessary re-renders, missing indexes
 - Error boundary gaps — what happens when a sub-component crashes?
+- Comparison operators (`>=`, `<`, etc.) or default sort ordering applied directly to `DateTime`/`Date`/`Time`/`NaiveDateTime` structs in Elixir — structural, not chronological, comparison that is wrong only on some calendar dates (July 2026 recent-event-names incident). Require the `*.compare/2` functions or module-as-sorter forms; flag as CRITICAL and verify reviewer 1 ran the DateTime / Struct Comparison Check.
 
 ### Auditing Reviewer 1
 - Did reviewer 1 run the Out-of-Plan Scope Check and the deferred-items comparison (diff vs the plan's `## Deferred / Out of Scope` items)? If they skipped it, run it yourself and flag the gap — deferred work shipping unreviewed is how the May 2026 MaskInput bug got out.

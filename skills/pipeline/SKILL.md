@@ -59,7 +59,15 @@ Do NOT proceed. Do NOT offer to create the branch yourself. Do NOT ask "should I
 - If they DON'T match → ask the user which branch to use. **STOP until they answer.**
 - If the plan has a `## Prerequisites` or `## Dependencies` section, verify each one is done (grep/ls). If any are NOT DONE, tell the user and ask how to proceed.
 
-**Only after branch is confirmed may you proceed to the finalize-audit gate below.**
+**WORKING-TREE ENTANGLEMENT CHECK — run `git status --short` and compare against the plan:**
+- If the working tree has uncommitted modifications to ANY file the plan's `## Proposed Changes` will touch, STOP and tell the user: "The working tree already has uncommitted changes to `[files]`, which this plan also edits. Running the pipeline here would entangle the plan's commit with that in-flight work (and break any cherry-pick step the plan depends on). How do you want the existing changes handled?" Do NOT stash, commit, or discard anything yourself — the user decides.
+- Uncommitted changes to files the plan does NOT touch: report them briefly ("N unrelated modified files present — leaving them alone") and proceed.
+
+**TARGET-CODE EXISTENCE CHECK — before any agent launches:**
+- Grep the current branch's checkout for the main function(s)/file(s) the plan edits (take them from the plan's `## Verified References`). If the code the plan modifies does not exist on THIS branch, the plan was verified against a DIFFERENT branch — STOP and tell the user which branch actually contains it. Line numbers and references do not cross branches.
+- **Why these checks exist (July 2026 recent-event-names near-miss):** a datetime fix was nearly run on a branch carrying a large pile of unrelated uncommitted edits to the exact file the plan targeted — which would have destroyed the clean cherry-pickable commit the plan's rollout step required — and was then nearly branched off `master`, where the buggy function didn't exist at all (the plan's references had been verified against `develop`).
+
+**Only after branch is confirmed and both checks pass may you proceed to the finalize-audit gate below.**
 
 ## FINALIZE-PLAN AUDIT GATE — MANDATORY, NO EXCEPTIONS
 

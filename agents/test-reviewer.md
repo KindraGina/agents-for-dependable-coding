@@ -44,6 +44,12 @@ This is a multi-project codebase with different test frameworks:
    - BAD: `assert status in [200, 422]` (this test can never fail — it accepts both success and failure)
    - GOOD: `assert status == 200` for the happy path, `assert status == 422` for the error path, as separate tests.
 
+5. **Time-dependent logic MUST be tested with pinned dates, not relative dates.**
+   - BAD: building test data with "now + 1 day" / "now − 10 days" for upcoming-vs-past, expiry, scheduling, or any date-boundary logic. Whether such a test catches a broken date comparison depends on what day of the month it runs — it can stay green for weeks and then fail at a month boundary.
+   - GOOD: pin an absolute "now" (injected into the code under test) and absolute dates that straddle a month/year boundary (e.g. now = 2026-12-31, events on 2027-01-01 and 2027-01-02), so the broken comparison fails on EVERY calendar day.
+   - Any boundary/ordering/expiry test built on relative dates is an automatic NEEDS CHANGES.
+   - **Why this check exists (July 2026 recent-event-names incident):** the pipeline's own test used "+1/+2 days" mid-month and went green over a structurally-wrong `>=` DateTime comparison; it only started failing at the next month boundary, read as "flaky CI," and blocked staging deploys. A relative-date test satisfies "fails without the fix" on the day it's written while proving nothing.
+
 ## What You Review
 
 ### Coverage

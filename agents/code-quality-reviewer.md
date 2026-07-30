@@ -77,6 +77,10 @@ Before approving, verify the implementation covers ALL of these:
 - Do error paths return the right status codes / error messages?
 - Are database queries correct? (joins, where clauses, ordering)
 
+### DateTime / Struct Comparison Check (MANDATORY for Elixir diffs)
+- Flag ANY use of `>`, `<`, `>=`, `<=`, `Enum.min/max`, or default `Enum.sort` ordering applied directly to `DateTime`, `Date`, `Time`, or `NaiveDateTime` structs as CRITICAL. Elixir compares structs by structural term order (for dates: day-of-month first), NOT chronologically — the code compiles with zero warnings, reads as obviously correct, and returns wrong answers only on some calendar dates. Require `DateTime.compare/2` / `Date.compare/2`, or `Enum.sort_by/min_by/max_by(..., DateTime)` with the module as sorter.
+- **Why this check exists (July 2026 recent-event-names incident):** `&(&1.start_time >= now)` passed 21 review rounds and its own test on July 14, then silently misfiled events whenever the comparison crossed a month boundary — surfacing weeks later as "flaky" CI that blocked staging deploys. The line looked plainly right; nothing mechanical was watching for it.
+
 ### Error Handling
 - Are return values from fallible operations checked? (Task.Supervisor.start_child, GenServer.call, HTTP requests, etc.)
 - Does the function report success even when an async operation could fail to start?

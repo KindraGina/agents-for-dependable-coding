@@ -125,6 +125,7 @@ What could go wrong.
 - Integration tests
 - E2E tests if applicable
 - Tests are written FIRST (TDD)
+- If the feature involves time-dependent logic (upcoming vs past, expiry, scheduling, any date/time comparison): specify PINNED absolute test dates with an injected "now", chosen to straddle a month/year boundary — never relative dates like "today + 1 day". (July 2026 recent-event-names incident: a relative-date test passed mid-month over a broken DateTime comparison and only failed at the next month boundary.)
 
 ## Live Verification Steps
 How to verify this feature works with real data (not mocked). These steps

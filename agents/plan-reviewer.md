@@ -87,6 +87,7 @@ Run this FIRST, before evaluating references / completeness / architecture / etc
 - Are edge cases covered by tests?
 - Are the right testing frameworks specified (Vitest/Playwright/Jest)?
 - Is there an integration test plan, not just unit tests?
+- If the plan touches time-dependent logic (date/time comparisons, upcoming vs past, expiry, scheduling): does the Testing Plan specify PINNED absolute dates with an injected "now", straddling a month/year boundary? Relative dates ("today + 1 day") in a time-logic test plan are NEEDS CHANGES — such tests can pass green over broken date comparisons depending on the day they run (July 2026 recent-event-names incident).
 
 ### Risk
 - What could break that the plan doesn't address?

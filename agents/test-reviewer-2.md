@@ -46,6 +46,7 @@ Reviewer 1 should have done this analysis. Verify:
 - Test data that doesn't represent real-world data shapes
 - Missing cleanup/teardown that causes flaky tests in CI
 - Tests that are coupled to each other (order-dependent)
+- **Relative-date tests over time logic** — tests that build dates with "now + N days" instead of pinned absolute dates straddling a month boundary. They can sit green over broken date comparisons depending on the calendar day they run (July 2026 recent-event-names incident: a "+1/+2 days" test hid a structurally-wrong `>=` DateTime comparison for weeks, then surfaced as "flaky CI"). Verify reviewer 1 ran check #5; boundary/ordering/expiry logic tested with relative dates is an automatic NEEDS CHANGES.
 
 ### Auditing Reviewer 1
 - Did reviewer 1 actually run the tests?
