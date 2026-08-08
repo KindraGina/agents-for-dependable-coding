@@ -95,6 +95,28 @@ The pipeline ONLY runs on plans that have passed `/finalize-plan`. This is a str
 
 **Why this gate exists:** Plans written from memory contain wrong function names, wrong return types, wrong schema fields, wrong table names — bugs that the pipeline reviewers were never designed to catch (they assume the plan is grounded). The `/finalize-plan` audit catches memory-writing by verifying every code reference has pasted source. Without this gate, memory-written plans burn pipeline cycles and ship bugs.
 
+## OBSERVATION GATE — MANDATORY, RUNS AFTER THE FINALIZE GATE
+
+The finalize gate proves the plan is *accurate*. This gate asks whether the work is *worth doing*. They are different questions and the pipeline has historically only asked the first one.
+
+**Step A — Answer this question in one line, out loud, before Phase 2:**
+
+> **What did a human observe, and when?**
+
+Acceptable answers name a real-world signal: a user report, a bug the owner hit, a screenshot, a Sentry/error-tracking entry, a failing production request, a support ticket. Cite it.
+
+**Step B — If the honest answer is "nothing — an agent found this by reading code," STOP and ask the user verbatim:**
+
+> "Nothing in this plan traces back to something anyone observed — it was found by reading code. The defect may well be real, but its impact is unproven. Options: (a) run the pipeline anyway, (b) log it in `docs/TODO.md` as a code-health item instead. Which do you want? STOPPING."
+
+Wait for the answer. Do NOT proceed on "yes"/"go ahead" alone — the user must pick (a) or (b). If they pick (b), write the TODO entry and stop; do not launch a single agent.
+
+**Step C — Record the answer verbatim in a `## Provenance` section at the top of the plan** before Phase 2 launches, so every downstream agent sees the evidentiary status of the thing it is reviewing. If the user chose (a) on an unobserved finding, the Provenance section MUST say so in those words: "Unobserved — found by code reading. Owner elected to proceed. Severity is UNKNOWN and no agent may assert otherwise."
+
+**Step D — A real-world test that contradicts the code analysis outranks the code analysis.** If at any point during the run a device repro, staging test, or manual check fails to reproduce the described failure, that is evidence AGAINST the finding — not an obstacle to reason around. STOP and surface it to the user immediately, with the contradiction stated plainly. Do not let the pipeline substitute its own unit tests as proof of real-world impact; a test that hand-drives the failure condition proves the mechanism exists, never that any user reaches it.
+
+**Why this gate exists (August 2026 Discover-race incident):** A `/cascade` ran ~10 hours and produced 16 documents for `2026-08-06-fix-empty-discover-race.md`. The code defect was real — a screen read a shared `loading` flag flipped by 8 unrelated operations and could never re-check. But no user, log, or report ever showed the symptom; an earlier session found it while tracing an unrelated question, and the plan's own `## Why it is not seen in production` section said so. The owner's staging test then failed to reproduce it, and that was treated as a puzzle to work around rather than as the strongest evidence in the room. Every one of the nine agents asked "is this fix correct?"; not one asked "should this work exist?". The owner's verdict: "you wasted my day with your made up bug." Nothing was ever committed.
+
 ## Usage
 
 ```

@@ -104,6 +104,27 @@ Run this FIRST, before evaluating references / completeness / architecture / etc
 - If YES, search for existing tests that exercise that code path. If tests exist AND pass on the current code, that code is the contract — NEEDS CHANGES unless the plan explicitly justifies the scope. Existing passing tests ARE the contract, regardless of whether the contract looks elegant.
 - The April 2026 tier-upsell incident happened because a plan labeled intentional 200-with-error-body rendering as "dead FallbackController clauses" — the contract was pinned by `event_ticket_controller_upsell_tiers_test.exs:503` and the change broke staging.
 
+### Severity Is Not Yours To Assign (HARD RULE)
+
+You review whether the plan is **correct**. You do NOT decide how **bad** the problem is, how **often** it happens, or how **urgent** it is. Those are the owner's calls and they require evidence you do not have. In `/pipeline-light` you are the ONLY plan reviewer, so there is no second pair of eyes on this — the rule matters most here.
+
+**Forbidden — never write any of these unless you are quoting an observation the plan already cites:**
+- Frequency claims: "deterministic", "near-deterministic", "happens every time", "almost always", "on every launch", "100% of users"
+- Population claims: "every user who…", "all users at signup", "affects everyone"
+- Priority claims: "release-gating", "blocks the rollout", "should ship ahead of", "critical severity", "P0"
+
+**Why these are forbidden:** they are claims about *users*, derived from reading *code*. Code tells you a failure is **possible**. Only an observation tells you it **happens**. The verification-auditor validates claims about code — it cannot check a claim about users, so an invented frequency passes every downstream gate unchallenged and reaches the owner looking audited.
+
+**What to write instead.** If you believe the plan understates impact, write exactly this shape and stop:
+
+> "Impact is unverified. The plan cites no observation. The mechanism permits [X]; whether any user reaches it is unknown and should be confirmed by the owner before this is prioritised."
+
+**If the plan's `## Provenance` section says "Unobserved — found by code reading,"** severity is UNKNOWN for the whole run. Any frequency or priority language you find — in the plan or in your own draft — is a defect. Flag it as NEEDS CHANGES.
+
+**Absence of a symptom is evidence.** If the plan records a device repro, staging test, or manual check that FAILED to reproduce the described failure, weight it as evidence against the finding. Do not construct explanations for why the test "didn't hit the window" and proceed. Flag the contradiction as unresolved.
+
+**Why this rule exists (August 2026 Discover-race incident):** reviewers escalated a real-but-unobserved code defect from "race" to "near-deterministic" to "every user whose last tab was Events, on every launch" to "release-gating for the Expo rollout" — none of it from an observation, and all of it after the owner's staging test had already failed to reproduce the bug. Ten hours and 16 documents later nothing was committed. The defect was genuine; the severity was invented by reviewers filling an empty slot.
+
 ## Output Format
 
 ```markdown
