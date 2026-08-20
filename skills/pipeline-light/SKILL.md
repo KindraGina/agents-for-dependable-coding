@@ -182,6 +182,10 @@ After the agent returns, show the user a brief status update and **immediately p
 
 This loop repeats until the reviewer issues an APPROVE verdict.
 
+**CIRCUIT BREAKER — check BEFORE launching each round:**
+1. Run `wc -l [plan-path]`. A light-mode plan over **300 lines** has outgrown light scope — pause and invoke the existing "IF THE PLAN GROWS BEYOND LIGHT SCOPE" rule (recommend switching to full `/pipeline` or splitting).
+2. If you are about to launch **round 4** without an APPROVE, pause and tell the user: "Three review rounds have not converged — for a light-scope change, that means the plan has likely outgrown its scope. I recommend splitting or switching to full `/pipeline`. Continue anyway, split, or switch?"
+
 **Each round (N = 1, 2, 3, ...):**
 
 **Step 1:** Launch the `plan-reviewer` agent.
@@ -194,7 +198,8 @@ This loop repeats until the reviewer issues an APPROVE verdict.
 **Step 4: LOOP DECISION:**
 - If APPROVE → **immediately proceed to Phase 3**. Do NOT ask for permission.
 - If NEEDS CHANGES → launch the `plan-creator` agent to revise (NEVER fix the plan yourself):
-  - Prompt: "You are the plan-creator agent in revision mode. Read the review at [review-1-path]. Revise the plan at [plan-path] to address all critical and important issues. Add a 'Revision Notes — Round N' section. Follow your instructions in .claude/agents/plan-creator.md."
+  - Prompt: "You are the plan-creator agent in revision mode. Read the review at [review-1-path]. Revise the plan at [plan-path] to address all critical and important issues. SCOPE IS FROZEN: do not add new Proposed Changes items — corrections to existing items only. Defects the review discovered that the plan's objective does not require fixing go in a `## Discovered Out of Scope` section plus docs/TODO.md, per your Scope Freeze rule. Add a 'Revision Notes — Round N' section. Follow your instructions in .claude/agents/plan-creator.md."
+  - **SCOPE-FREEZE RE-CHECK — mandatory after EVERY revision.** The pipeline NEVER changes scope — new scope needs a new plan. Compare the revised plan's `## Proposed Changes` item list against the list from before the revision. If the revision ADDED any item that is not a correction of an existing item, the revision is defective: re-launch the plan-creator to move the new item(s) into `## Discovered Out of Scope` + `docs/TODO.md`, and report those entries to the user in your next status update. Scope creep matters even more in light mode — a growing plan is by definition no longer a light-scope change. (August 2026 Android multi-tap incident: a plan absorbed discovered defects round after round, grew to ~1,900 lines, ran ~10 hours, and never fixed the reported bug.)
   - **SINGLE-REPO RE-CHECK — mandatory after EVERY revision.** The finalize-plan single-repo gate ran BEFORE the pipeline; revisions can smuggle cross-repo work in after it. Grep the revised plan's `## Proposed Changes` and numbered steps for file paths outside the launch repo (absolute paths like `~/Sites/...`, or another repo's name when it is not the launch repo). Cross-repo work may ONLY appear in a `## Cross-Repo Dependencies` section (informational — never implemented by this run). If a mainline step targets another repo, re-launch the plan-creator to move it there and report the cross-repo need to the user — reviewers cannot authorize cross-repo scope; only the user can. (July 2026 tag-taxonomy incident: a mid-pipeline revision wrote a kinlia-web fix into a mainline step and the run edited files in kinlia-web, another session's active repo.)
   - **GO BACK TO STEP 1 with N incremented.**
 

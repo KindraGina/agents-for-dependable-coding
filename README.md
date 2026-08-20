@@ -33,16 +33,48 @@ This is a set of markdown-based agent prompts and skill playbooks that turn Clau
 | `code-quality-reviewer-2` | Second code reviewer — audits code AND reviewer 1's findings |
 | `test-reviewer` | First test reviewer — coverage, quality, runs actual tests |
 | `test-reviewer-2` | Second test reviewer — audits tests AND reviewer 1's findings |
+| `runbook-reviewer` | Reviews ops runbooks (AWS CLI sequences, deployment procedures, manual migrations) for command correctness, bundled mutations, missing flags, and fragile rollbacks |
 
 ## Skills (`skills/`)
+
+### Full Pipelines
 
 | Skill | Usage | What It Does |
 |-------|-------|-------------|
 | `/pipeline` | `/pipeline docs/plans/my-plan.md` | Full autopilot: plan → review → code → verify → review → verify |
-| `/pipeline audit` | `/pipeline audit docs/plans/stalled-plan.md` | Resume a stalled plan: audit → new scoped plan → clean pipeline |
+| `/pipeline-light` | `/pipeline-light docs/plans/my-plan.md` | Lean pipeline for small, low-risk changes. Same safety gates, one reviewer per stage instead of 2-3. Roughly 3-4x cheaper than `/pipeline`. |
+| `/cascade` | `/cascade docs/plans/my-plan.md` | End-to-end chain: finalize-plan → pipeline (or pipeline-light) → critique. Run after you and the plan-creator have finished drafting. |
+| `/pipeline-audit` | `/pipeline-audit docs/plans/stalled-plan.md` | Resume a stalled plan: verification audit → new scoped plan from failures → clean pipeline run |
+
+### Plan Creation & Review
+
+| Skill | Usage | What It Does |
+|-------|-------|-------------|
+| `/plan` | `/plan docs/plans/my-plan.md` | Create a formal implementation plan using plan-creator with strict verified references |
+| `/finalize-plan` | `/finalize-plan docs/plans/my-plan.md` | Pre-pipeline gate. Verifies plan completeness, pasted evidence for every code reference, no contradictions, no cross-repo bleed. Run AFTER drafting, BEFORE `/pipeline`. |
 | `/review-plan` | `/review-plan docs/plans/my-plan.md` | Human-in-the-loop plan review (you decide what to change each round) |
+
+### Code Review & Verification
+
+| Skill | Usage | What It Does |
+|-------|-------|-------------|
 | `/review-code` | `/review-code docs/plans/my-plan.md` | Code + test reviews with verification gates (skips plan review) |
 | `/verify` | `/verify docs/plans/my-plan.md` | Verification audit only — see what's actually done vs. claimed |
+| `/critique` | `/critique docs/plans/my-plan.md` | Adversarial post-pipeline audit. Reviews the plan, code, and pipeline process with fresh eyes. Run AFTER `/pipeline` completes. |
+| `/pr-review` | `/pr-review <PR-URL-or-number>` | Review a GitHub PR: reads diff, traces callers, runs tests, audits for security, anti-patterns, and PR hygiene |
+
+### Runbook Skills
+
+| Skill | Usage | What It Does |
+|-------|-------|-------------|
+| `/finalize-runbook` | `/finalize-runbook docs/runbooks/my-runbook.md` | Pre-execution gate for ops runbooks. Verifies state claims, single-mutation commands, recovery paths. Different from `/finalize-plan` (which is for code-change plans). |
+| `/review-runbook` | `/review-runbook docs/runbooks/my-runbook.md` | Substantive runbook review by the runbook-reviewer agent. Human-in-the-loop — one round at a time. Catches AWS command issues, bundled mutations, fragile rollbacks. |
+
+### Utilities
+
+| Skill | Usage | What It Does |
+|-------|-------|-------------|
+| `/terminal-color` | `/terminal-color blue` | Change Terminal.app background color to visually distinguish terminals. Supports: red, orange, yellow, green, blue, purple, pink, gray, dark, light, reset, or hex codes. |
 
 ## Installation
 
