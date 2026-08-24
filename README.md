@@ -1,6 +1,6 @@
-# Claude Pipeline Agents
+# Agents for Dependable Coding
 
-A team of AI agents and orchestration skills for Claude Code that automate code planning, review, testing, and verification.
+A team of AI agents and orchestration skills for Claude Code that automate code planning, review, testing, and verification — with layered auditing to catch both incorrect code and dishonest agent claims.
 
 ## What This Is
 
