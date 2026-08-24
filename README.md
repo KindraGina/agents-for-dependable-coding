@@ -19,6 +19,60 @@ This is a set of markdown-based agent prompts and skill playbooks that turn Clau
         └── Agent: test-reviewer (×2 reviewers)
 ```
 
+## How It Works
+
+### Before the pipeline even starts
+
+**`/finalize-plan`** — 13-check gate that proves the plan was written from reading actual code, not from memory. Catches wrong field names, wrong return types, contradictions, missing test plans. Nothing enters the pipeline without passing this.
+
+### The full `/pipeline` flow (10 agents, sequential)
+
+1. **Pre-flight** — refuses protected branches, checks for uncommitted entanglements, confirms the code the plan targets actually exists on this branch.
+2. **Plan review loop** — 3 reviewers, each with a different lens (completeness/architecture, cross-project/data-model, production-risk/deployment). They partition the Verified References so every code claim is checked. Loops with plan-creator revisions until all 3 approve.
+3. **Implementation** — plan-coder implements using strict TDD (tests first, then code, then lint, then smoke test with real data, then self-verification with pasted grep evidence).
+4. **Post-implementation verification** — the "lie detector" auditor confirms everything the coder claimed actually exists in the code. Phantom file detection runs first and is terminating.
+5. **Code review loop** — 2 reviewers, one auditing the other. They run the full test suite themselves, run lint themselves, and do plan-to-code verification.
+6. **Test review loop** — 2 reviewers asking "could this test pass with broken code?" They independently `ls -la` every test file and paste raw terminal output.
+7. **Final audit** — the verification auditor re-runs, this time checking all 9 agents' claims. Marks each HONEST or DISHONEST.
+
+### `/pipeline-light`
+
+Same gates and auditor, but 1 reviewer per stage instead of 2-3. About 3-4x cheaper. Good for single-file fixes under ~50 lines.
+
+### `/cascade`
+
+Chains finalize → pipeline (auto-chosen) → critique in one command so you don't have to invoke each step manually.
+
+### `/critique` — Adversarial post-pipeline audit
+
+Runs after the pipeline finishes and acts as an independent outsider who owes the pipeline nothing. Its loyalty is to the user's intent.
+
+The key distinction: the verification-auditor (inside the pipeline) catches **lies** — agents claiming work they didn't do. `/critique` catches **bad judgment** — agents who did what they claimed, but the result is still wrong.
+
+What it actually does, step by step:
+
+1. **Reads the entire plan fresh** — including every override, user quote, and "must not default" marker. It's building a checklist of "what did the user actually ask for?"
+2. **Reads every review and audit file** the pipeline produced — noting what issues were raised, what escalated, and what got dismissed.
+3. **Phantom file check** — independently runs `ls -la` on every file the pipeline claimed to create or test. If any don't exist, automatic REJECT.
+4. **Live feature verification** — if the plan has Live Verification Steps, the critique agent executes them against real data itself. If any fail, automatic REJECT ("the pipeline passed all checks but the feature doesn't actually work").
+5. **Interaction-change verification gate** — if the diff touches anything a user types into or taps, and nobody actually tested it on a device/simulator, the verdict is capped at CONCERNS (cannot approve). It writes a manual test script for you instead.
+6. **Plan-vs-code fidelity** — for every user override and every plan item, finds the corresponding code and verdicts it: HONORED / VIOLATED / NOT IMPLEMENTED.
+7. **Process critique** — checks for dismissed escalations still open, contradictions that shipped, scope creep (files changed that weren't in the plan), decisions the coder was told to ask about but defaulted on instead, and hand-waved resolutions without evidence.
+
+Three possible verdicts:
+
+- **APPROVE** — plan honored, no scope creep, no contradictions, code matches plan, all interactions verified.
+- **CONCERNS** — minor issues, recommend cleanup but shippable.
+- **REJECT** — user intent violated, contradiction shipped, phantom files, or significant scope creep.
+
+The critique is what makes `/cascade` a full loop: finalize (is the plan grounded?) → pipeline (build and review it) → critique (did the pipeline actually deliver what you asked for?).
+
+### Every rule traces back to a real incident
+
+The rules in this system weren't designed theoretically — each one exists because something went wrong without it. Phantom file detection exists because 5 agents fabricated test output for a file that never existed. The scope freeze exists because a plan grew to 1,900 lines over 10 hours and the reported bug was never fixed. The "severity is not yours to assign" rule exists because reviewers invented "release-gating" severity for an unobserved finding.
+
+---
+
 ## Agents (`agents/`)
 
 | Agent | Role |
