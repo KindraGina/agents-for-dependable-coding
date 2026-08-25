@@ -148,3 +148,4 @@ Then use them in Claude Code from that project directory.
 - **Single-repo plans only.** Cross-repo dependencies are listed as informational, never acted on.
 - **Browser testing required.** Web changes need Playwright. Mobile changes need Maestro. No "verified" claims without runtime evidence.
 - **Agents must show evidence.** Test reviewers paste raw terminal output. Code reviewers run actual builds. No summaries accepted as proof.
+- **Edit over Write for existing files.** The plan-coder must use the Edit tool (targeted replacement) instead of Write (full overwrite) when modifying existing files. Write destroys git's diff context, making PRs show entire files as deleted+added even when most content is unchanged.
