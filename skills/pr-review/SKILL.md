@@ -222,6 +222,10 @@ Not a hard FAIL.
 
 Save to: `/tmp/pr-review-[number].md` (or print to the conversation if the user prefers — ask if unsure).
 
+### Step 4 — Lessons (after the review is delivered; never blocks completion)
+
+After presenting the review (and posting it to GitHub if the user asked), launch the `lesson-learner` agent in PROPOSE mode with: the review file path, the PR number, the repo path, and a one-paragraph summary of the review (verdict, notable findings, anything the checks missed or the human corrected). When it returns, show the user the numbered proposals (or "no lessons proposed") and ask in plain text: "Apply any of these? (e.g. 'apply 1 and 3', or 'skip')". On approval, re-launch `lesson-learner` in APPLY mode with the approved numbers. On 'skip' or no reply, do nothing — the proposal file remains on disk (`/tmp/pr-review-[number]-lessons.md`). If the learner errors, say so and finish normally; a learner failure never changes the review verdict.
+
 ## Output Format
 
 ```markdown

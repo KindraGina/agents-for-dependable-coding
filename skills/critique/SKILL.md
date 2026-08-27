@@ -136,6 +136,10 @@ Read the review/audit files with an eye for process failure:
 
 Output the report in the format below. Save it to the same directory as the plan, filename: `[plan-name]-critique.md`.
 
+### Step 7 — Lessons (after the verdict is presented; never blocks completion)
+
+After showing the user the critique verdict, launch the `lesson-learner` agent in PROPOSE mode with: the plan file path, the critique file path, all review/audit file paths, the repo path, and a one-paragraph summary of what the critique found. When it returns, show the user the numbered proposals (or "no lessons proposed") and ask in plain text: "Apply any of these? (e.g. 'apply 1 and 3', or 'skip')". On approval, re-launch `lesson-learner` in APPLY mode with the approved numbers. On 'skip' or no reply, do nothing — the proposal file remains on disk. If the learner errors, say so and finish normally; a learner failure never changes the critique's verdict.
+
 ## Output Format
 
 ```markdown
