@@ -114,16 +114,20 @@ Also: any test that accepts multiple status codes (`status in [200, 422]`) = FAI
 
 ---
 
-**Check 6 — Full test suite passes.**
+**Check 6 — Full test suite passes (EVERY suite CI runs, not just the default).**
 
-Run the FULL test suite for the affected project — NOT a subset, no file path argument:
+First, open the project's CI workflow (`.github/workflows/*.yaml`) and its `package.json` scripts to find EVERY test command CI runs. Run ALL of them locally — NOT a subset, no file path argument:
 - kindra: `cd kindra && mix test`
 - kinlia-web: `cd kinlia-web && yarn test:run`
-- kindraapp: `cd kindraapp && yarn test`
+- kindraapp: `cd kindraapp && yarn test` AND `cd kindraapp && yarn test:expo`
 
-Paste the FULL terminal output. Note the project's total test count. If the count is far below the project's known total, you ran a subset — re-run.
+WHY two commands for kindraapp: `yarn test` (jest.config.js) excludes all `*.expo.test.*` files via `testPathIgnorePatterns`; those component tests only run under `yarn test:expo` (jest.expo.config.js). CI's pr-tests workflow runs BOTH. A review that only runs `yarn test` can approve a PR that breaks CI — this happened with PR #394 (a CodeModal placeholder change broke an `.expo.test.` file that no local run ever executed; CI stayed red for weeks before anyone noticed).
 
-FAIL if any test fails. FAIL if you ran a subset.
+If a suite fails, check whether the failure is PRE-EXISTING (fails on the base branch too, without this PR's changes) by checking recent CI runs on the base branch or running the suite on the base branch. A pre-existing failure is not the PR author's FAIL — but report it loudly as a separate finding, because a red baseline hides new breakage.
+
+Paste the FULL terminal output of every suite. Note each suite's total test count. If a count is far below the project's known total, you ran a subset — re-run.
+
+FAIL if any test fails because of this PR. FAIL if you ran a subset or skipped one of the project's suites.
 
 ---
 
@@ -277,7 +281,7 @@ Save to: `/tmp/pr-review-[number].md` (or print to the conversation if the user 
 ## Rules
 
 - **NEVER use memory.** Every claim comes from the PR diff or a file read in this session. Quote, don't paraphrase.
-- **NEVER approve without running the tests yourself.** "The PR's CI passed" is not enough — run the full suite locally. CI catches some things; you catch others.
+- **NEVER approve without running the tests yourself.** "The PR's CI passed" is not enough — run every test suite CI runs, locally (see Check 6). CI catches some things; you catch others.
 - **NEVER approve without checking every changed symbol's callers.** Cross-project ripple is the #1 source of intern PR bugs.
 - **Be specific in failures.** "Security issue" is not enough — "SQL injection at `src/foo.ts:42` via string interpolation into the query" is.
 - **Be kind in tone.** This is for interns. Lead with what's good, then flag what needs to change. Don't pile on.
