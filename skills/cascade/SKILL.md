@@ -22,6 +22,17 @@ Every claim, every file reference, every assertion must come from reading actual
 
 ---
 
+## Stage 0 — Launch Preflight (before ANY agent is spawned)
+
+Thirty seconds of read-only shell checks that prevent hours of wasted agent rounds. Run these yourself, in order. If any fails, STOP — report it in plain language and wait for the user; do not spawn any agent.
+
+1. **The plan file exists.** `ls` the exact path given. If missing, say so and ask the user where the plan lives — do not go searching other checkouts on your own.
+2. **Right place.** Print `pwd` and `git branch --show-current` and compare against the plan's `## Target` section. Mismatch = STOP: the plan was verified against a different checkout or branch.
+3. **Dependencies are installed.** For a `package.json` repo, confirm `node_modules/` exists; for an Elixir repo, `deps/`. Missing = STOP and tell the user — an install can take 30 minutes and is the user's call, not a silent detour mid-cascade.
+4. **The test runner actually finds tests HERE.** Run each suite's collection mode from this directory — Jest: `npx jest --listTests | head` (repeat per extra config, e.g. `npx jest -c jest.expo.config.js --listTests | head`); other stacks: the equivalent list/dry-run mode. ZERO tests collected = STOP: every RED/GREEN claim the pipeline would make from this directory would be fake. **Why (Sept 13, 2026):** a cascade ran from a checkout under `.claude/worktrees/`, a path this repo's jest config silently ignores — caught only at finalize round 3, costing a mid-cascade folder move plus a 29-minute dependency install.
+
+---
+
 ## Stage 1 — Finalize the Plan
 
 **Goal:** Independent verification that the plan is pipeline-ready.

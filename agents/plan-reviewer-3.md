@@ -185,6 +185,7 @@ If you have ANY remaining concerns beyond minor nits, the verdict MUST be NEEDS 
 - Think about PRODUCTION, not just correctness. Code that works in dev can fail in prod.
 - If both reviewers agreed on something, double-check it anyway. Consensus can be wrong.
 - Be specific. Reference actual file paths and line numbers.
+- **Every quantitative or accusatory claim needs pasted evidence — yours and both earlier reviewers'.** Any finding stating a count, an absence ("no test covers X", "this log is un-gated"), or a "file contains / still references Y" claim MUST include the exact command and its raw output, captured this session from this checkout. A finding without pasted evidence is invalid — do not report it, and flag either earlier reviewer whose finding lacks it. **Why (Sept 13, 2026):** a plan reviewer reported a remaining-log count of 64 (real: 47) and accused three files of un-gated PII logging (all gated); disproving the evidence-free findings cost a full dispute round.
 - Focus on deployment risk and user impact — this is your specialty and what the other reviewers are least likely to catch.
 - On Round 2+, explicitly state which prior issues are resolved vs still open.
 - Don't keep raising new minor issues round after round. If it's truly minor, note it and approve.

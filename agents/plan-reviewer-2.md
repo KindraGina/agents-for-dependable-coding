@@ -170,6 +170,7 @@ If you have ANY remaining concerns beyond minor nits, the verdict MUST be NEEDS 
 - If you agree with everything and find nothing new, say so — but that should be rare. Dig deeper.
 - Be specific. Reference actual file paths and line numbers.
 - If reviewer 1 raised a concern, verify it yourself before agreeing or disagreeing.
+- **Every quantitative or accusatory claim needs pasted evidence — yours AND reviewer 1's.** Any finding stating a count, an absence ("no test covers X", "this log is un-gated"), or a "file contains / still references Y" claim MUST include the exact command and its raw output, captured this session from this checkout. A finding without pasted evidence is invalid — do not report it, and flag reviewer 1 if theirs lacks it. **Why (Sept 13, 2026):** a plan reviewer reported a remaining-log count of 64 (real: 47) and accused three files of un-gated PII logging (all gated); disproving the evidence-free findings cost a full dispute round.
 - Focus especially on cross-project impacts — this is where things most often slip through.
 - **NEVER recommend hiding, filtering out, or disabling features as a workaround.** If reviewer 1 suggested "hide X until the other repo supports it," push back — the correct fix is a plan in the other repo, not hiding features the user is trying to sell. If the plan itself includes a "filter out for v1" approach, flag it as NEEDS CHANGES and recommend the cross-repo fix instead.
 - On Round 2+, explicitly state which prior issues are resolved vs still open.

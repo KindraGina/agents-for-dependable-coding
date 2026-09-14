@@ -58,15 +58,17 @@ The plan structure MUST be:
 5. `## Proposed Changes`
 6. ... rest
 
-**If `## Verified References` is NOT before `## Proposed Changes`, STOP. Do NOT run Checks 2–11. Write the audit file with verdict NEEDS WORK and only the following Failed Checks entry:**
+**If `## Verified References` is MISSING or EMPTY, STOP. Do NOT run Checks 2–13. Write the audit file with verdict NEEDS WORK and only the following Failed Checks entry:**
 
-> "Check 1 (STRUCTURAL FAILURE): `## Verified References` must appear before `## Proposed Changes` in the plan. It is currently [missing / at the bottom / elsewhere]. Move it to the position above, repopulate it with pasted code from actual reads, and re-run `/finalize-plan`. No further checks were performed — fix this first."
+> "Check 1 (STRUCTURAL FAILURE): `## Verified References` is [missing / empty]. The body was written from memory and nothing in it can be trusted. Create it, populate it with pasted code from actual reads, and re-run `/finalize-plan`. No further checks were performed — fix this first."
+
+**If `## Verified References` EXISTS and is populated but sits BELOW `## Proposed Changes`:** record Check 1 as FAILED — the verdict will still be NEEDS WORK and the section must move — but do NOT stop. Run ALL remaining checks in this same round and report every finding together, so the plan-creator fixes the structure AND any substantive issues in ONE revision instead of two. **Why this refinement (Sept 13, 2026):** a cascade's round 1 rejected a plan for section order alone and skipped the rest of the audit; the substantive findings surfaced only in round 2, costing a full extra revise-and-recheck cycle on a plan whose evidence was already solid.
 
 **Special case — wrong-tool detection:** If the plan has `M_n` mutating commands (M1, M2, etc.) and no `## Proposed Changes` code-change section, this is an ops runbook (AWS CLI sequence / deploy procedure / manual migration), not a code-change plan. STOP with verdict NEEDS WORK and only this entry:
 
 > "Check 1 (WRONG TOOL): This appears to be an ops runbook (has M_n mutating commands, no `## Proposed Changes` code section). `/finalize-plan` is for code-change plans that go through `/pipeline`. Use `/finalize-runbook [path]` instead — that skill is tuned for ops runbook structure (Live Verified State, host labels, recovery flag completeness, etc.)."
 
-This check is terminating because every other check assumes the plan was written code-first. If `## Verified References` is at the bottom, the body was written from memory and the rest of the audit cannot trust anything in it. Re-running other checks on a memory-written plan produces false confidence.
+The missing/empty case is terminating because every other check assumes verified evidence exists — with none, the body was written from memory and the rest of the audit cannot trust anything in it; running further checks would produce false confidence. The mispositioned case is different: the evidence exists and can be audited wherever it sits, so the full audit runs and the reorder is just one of the round's required fixes.
 
 ---
 
@@ -236,6 +238,7 @@ If NEEDS WORK:
 - **Spot-check is not skip-check.** For Check 3 you spot-check 5 references. For Checks 6, 7, 8 you check ALL relevant items, not a sample.
 - **Be specific in failures.** "Verified References is incomplete" is not enough. "Verified References is missing entries for `EventTicket.upsell_tiers/1` and `host_offerings.product_type` referenced in Proposed Changes line N" — that's specific.
 - **Don't be polite.** READY / NEEDS WORK are the verdicts. No "looks mostly good" or "minor issues but ship it." If any check fails, it's NEEDS WORK.
+- **Hard-coded test counts are a failure.** If the plan states a suite total or pass criterion as a fixed number without a this-session measurement (command + raw output, run in the plan's `## Target` checkout) pasted in `## Verified References`, flag it: pass criteria must be relative to a measured baseline. (Sept 13, 2026: a count copied from another branch caused rejections in three separate runs in one day.)
 - **Save the audit file to the same directory as the plan.** Filename pattern: `[plan-name]-finalize-audit.md`. Future runs of `/finalize-plan` may compare to a prior audit.
 - **Confirm memory compliance explicitly at the top of the audit.** The user needs to see "I read these files in this session" to trust the verdict.
 
