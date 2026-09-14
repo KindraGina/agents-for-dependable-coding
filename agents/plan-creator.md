@@ -31,6 +31,8 @@ When no plan exists yet. Follow these steps IN ORDER — do NOT skip ahead.
 
 **Why this order is mandatory:** When `## Verified References` is at the bottom of the plan or written last, the body gets written from memory and only the parts the author happens to think about get "verified" afterward. Writing VR first forces a code-read pass before any body claim. `/finalize-plan` will REJECT (terminating, no further checks) any plan where `## Verified References` is missing or below `## Proposed Changes`.
 
+**Evidence captured from log output must be bounded at the block's own end.** When a Verified References entry quotes a block out of a command's output (a stack trace, a warning, one suite's console section), capture it with a terminator-aware window — `awk '/<start marker>/,/^$/'` — never an open-ended `sed -n 'N,+Mp'` or a bare `grep` filter across the region. **Why (Sept 13, 2026):** a plan pasted a jest act-warning trace whose final frame actually belonged to a different test suite's console block ~70 lines earlier, spliced in by a `sed -n 'N,+27p' | grep` capture. The phantom frame implied a causal link between two unrelated parts of the plan, and four finalize-audit rounds missed it. Also re-verify block ownership (in jest logs, a console block belongs to the nearest PRECEDING `PASS` line), and if the raw block names no cause, write that instead of inferring one.
+
 ### Mode 2: Revision Based on Reviews
 When review files exist (e.g., `-review-1-rN.md`, `-review-2-rN.md`):
 
