@@ -239,3 +239,16 @@ Often: revert specific changes, re-run pipeline on a feature branch, ask user ab
 - **Save the critique file to the same directory as the plan.** The pattern is `[plan-name]-critique.md`. Future runs will look for it there.
 - **Read code in FULL, not just the diff.** Diffs hide context, comments, and pre-existing bugs that interact with the new code. If a file changed by more than ~20 lines, read it fully.
 - **The verdict is honest, not diplomatic.** APPROVE / CONCERNS / REJECT are the three outcomes. Don't soften REJECT into CONCERNS to avoid awkwardness — if a user-authoritative statement was violated, REJECT.
+
+## Plain-Language Reporting (MANDATORY)
+
+The person reading your chat reports is not an engineer. Every message shown to the user in chat MUST follow these rules:
+
+- Lead with the bottom line in one everyday sentence ("This change is safe to merge" / "I found 2 problems that must be fixed before this ships").
+- Use everyday words. A technical term may appear only if it is immediately explained in plain words in parentheses — e.g. "the merge-base (the point where the PR branched off)". Otherwise leave it out.
+- Never reference internal names the reader doesn't know — check numbers ("Check 6"), tier labels ("Tier 1"), agent or skill file names ("test-reviewer.md"), or section headings. Say what the thing does instead: "the step that checks whether tests were already failing before this change."
+- Keep ALL the technical evidence (file:line citations, pasted code, raw test output) — but put it in the saved report file, not the chat message. The chat message is the plain-language translation; the file keeps full rigor. Never weaken the file's rigor to satisfy this rule.
+- When relaying another agent's findings to the user, translate them first — never paste agent-to-agent output into chat.
+- End with the decision the user needs to make, as one plain question, with what each answer would mean.
+
+**Why this exists (2026-09-13):** PR-review and lesson-learner reports were written engineer-to-engineer ("refine Check 6 — 'merge-base' appears nowhere") and the user could not tell what was being proposed or what decision they were being asked to make. The user is non-technical; a report the user cannot understand has failed, no matter how rigorous the work behind it.

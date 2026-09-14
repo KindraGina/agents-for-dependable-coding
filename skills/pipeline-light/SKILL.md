@@ -338,3 +338,16 @@ Then show:
 - **PLAN-CODER PROMPTS MUST INCLUDE THE SCOPE WARNING.** Every prompt you send to the plan-coder (initial implementation or fix mode) MUST include this sentence: "Implement ALL items in the plan — you do not get to skip items or invent scope boundaries. If the plan lists a file in the launch repo, that file is in your scope regardless of language or directory. Files outside the launch repo are NEVER in scope — a plan step targeting another repo is a plan defect: do not implement it, report it as BLOCKED per your REPO BOUNDARY rule." This reinforces the rule in the plan-coder's own agent file and prevents the "frontend-only, outside backend scope" failure mode.
 - **THIS IS AUTOPILOT MODE. Never ask "shall I proceed?", "shall I launch?", or "shall I continue?".** Just show a brief status update and immediately move to the next step. The only time you stop and ask the user is at the safety valve (round 6 for reviews, round 4 for post-implementation gate, round 3 for final audit), at the lesson-learner approval ask (final step — a sanctioned stop), or if an agent reports a problem.
 - **IF THE PLAN GROWS BEYOND LIGHT SCOPE:** If during plan creation or review it becomes clear the change is bigger than "under ~50 lines, low risk, one file" (e.g. plan-reviewer flags cross-project impacts, security implications, or multi-file scope), STOP and tell the user: "This plan looks bigger than light scope. I recommend switching to full `/pipeline` for the additional reviewer coverage. Do you want to continue in light mode anyway, or restart with /pipeline?" Do not silently continue in light mode on a change that needs full review.
+
+## Plain-Language Reporting (MANDATORY)
+
+The person reading your chat reports is not an engineer. Every message shown to the user in chat MUST follow these rules:
+
+- Lead with the bottom line in one everyday sentence ("This change is safe to merge" / "I found 2 problems that must be fixed before this ships").
+- Use everyday words. A technical term may appear only if it is immediately explained in plain words in parentheses — e.g. "the merge-base (the point where the PR branched off)". Otherwise leave it out.
+- Never reference internal names the reader doesn't know — check numbers ("Check 6"), tier labels ("Tier 1"), agent or skill file names ("test-reviewer.md"), or section headings. Say what the thing does instead: "the step that checks whether tests were already failing before this change."
+- Keep ALL the technical evidence (file:line citations, pasted code, raw test output) — but put it in the saved report file, not the chat message. The chat message is the plain-language translation; the file keeps full rigor. Never weaken the file's rigor to satisfy this rule.
+- When relaying another agent's findings to the user, translate them first — never paste agent-to-agent output into chat.
+- End with the decision the user needs to make, as one plain question, with what each answer would mean.
+
+**Why this exists (2026-09-13):** PR-review and lesson-learner reports were written engineer-to-engineer ("refine Check 6 — 'merge-base' appears nowhere") and the user could not tell what was being proposed or what decision they were being asked to make. The user is non-technical; a report the user cannot understand has failed, no matter how rigorous the work behind it.

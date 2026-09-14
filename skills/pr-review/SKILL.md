@@ -45,6 +45,10 @@ Record: title, body, author, head branch, base branch, CI status, files changed,
 
 Get the diff: `gh pr diff <number>`.
 
+**Review from an isolated worktree, never from the user's checkout.** After fetching the PR, run `git fetch origin <headRef>` then `git worktree add /tmp/pr-<number> --detach <head-sha>`, and do ALL file reads and ALL test-suite runs in that worktree. Delete it when done.
+
+WHY (2026-09-13, PR #416): the day-to-day KindraApp checkout was on an unrelated branch with uncommitted changes. Reading files or running Jest there measures a tree that is not the PR — and the reviewer cannot tell, because the files still exist and the tests still pass. Record the worktree absolute path and the head SHA in the review header so every claim is attributable to the PR head.
+
 ### Step 2 — Run the 15 checks
 
 Run them in order. Track each as PASS / FAIL / WARN with specific evidence.
@@ -124,6 +128,10 @@ First, open the project's CI workflow (`.github/workflows/*.yaml`) and its `pack
 WHY two commands for kindraapp: `yarn test` (jest.config.js) excludes all `*.expo.test.*` files via `testPathIgnorePatterns`; those component tests only run under `yarn test:expo` (jest.expo.config.js). CI's pr-tests workflow runs BOTH. A review that only runs `yarn test` can approve a PR that breaks CI — this happened with PR #394 (a CodeModal placeholder change broke an `.expo.test.` file that no local run ever executed; CI stayed red for weeks before anyone noticed).
 
 If a suite fails, check whether the failure is PRE-EXISTING (fails on the base branch too, without this PR's changes) by checking recent CI runs on the base branch or running the suite on the base branch. A pre-existing failure is not the PR author's FAIL — but report it loudly as a separate finding, because a red baseline hides new breakage.
+
+This applies to WARNINGS too, not just failures — "Jest did not exit", new console noise, and open-handle notices all get the same treatment. And "pre-existing" is a CLAIM: prove it with an isolation run before you write the word. Run the suite (a) with the PR's new/changed test files excluded and (b) with only those files, and paste both outputs.
+
+WHY (2026-09-13, PR #416): the expo suite's "Jest did not exit one second after the test run has completed" warning was proven to live on the base — excluded-run still warned, new-files-only exited cleanly in 3.29s. Without that pair of runs it would have been guesswork, and a previous pipeline shipped a false "pre-existing" claim about an agent-made CardGame.tsx diff.
 
 Paste the FULL terminal output of every suite. Note each suite's total test count. If a count is far below the project's known total, you ran a subset — re-run.
 
@@ -291,3 +299,16 @@ After presenting the review (and posting it to GitHub if the user asked), launch
 - **Be kind in tone.** This is for interns. Lead with what's good, then flag what needs to change. Don't pile on.
 - **Don't approve with TODOs.** If you find ANY Tier 1 or Tier 2 FAIL, the verdict is REQUEST CHANGES. No "approve but please fix X next time."
 - **Confirm memory compliance at the top of the review.** "I read the following in this session" — the user must see the evidence trail.
+
+## Plain-Language Reporting (MANDATORY)
+
+The person reading your chat reports is not an engineer. Every message shown to the user in chat MUST follow these rules:
+
+- Lead with the bottom line in one everyday sentence ("This change is safe to merge" / "I found 2 problems that must be fixed before this ships").
+- Use everyday words. A technical term may appear only if it is immediately explained in plain words in parentheses — e.g. "the merge-base (the point where the PR branched off)". Otherwise leave it out.
+- Never reference internal names the reader doesn't know — check numbers ("Check 6"), tier labels ("Tier 1"), agent or skill file names ("test-reviewer.md"), or section headings. Say what the thing does instead: "the step that checks whether tests were already failing before this change."
+- Keep ALL the technical evidence (file:line citations, pasted code, raw test output) — but put it in the saved report file, not the chat message. The chat message is the plain-language translation; the file keeps full rigor. Never weaken the file's rigor to satisfy this rule.
+- When relaying another agent's findings to the user, translate them first — never paste agent-to-agent output into chat.
+- End with the decision the user needs to make, as one plain question, with what each answer would mean.
+
+**Why this exists (2026-09-13):** PR-review and lesson-learner reports were written engineer-to-engineer ("refine Check 6 — 'merge-base' appears nowhere") and the user could not tell what was being proposed or what decision they were being asked to make. The user is non-technical; a report the user cannot understand has failed, no matter how rigorous the work behind it.

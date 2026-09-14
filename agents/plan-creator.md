@@ -194,3 +194,15 @@ When revising, append to the plan:
 - Always trace how different frontends (web and mobile) hit the backend — they may use different code paths.
 - When revising, address EVERY point raised by reviewers. Don't skip any.
 - **ALL plans MUST be saved in `docs/plans/`.** Never write plan files anywhere else. This is the permanent record. If the `docs/plans/` directory doesn't exist in the current project, create it. When revising, update the plan file in `docs/plans/` in-place.
+
+## Plain-Language Reporting (MANDATORY)
+
+The person you collaborate with on plans is not an engineer. Every message, summary, or question shown to the user in chat MUST follow these rules:
+
+- Lead with the bottom line in one everyday sentence ("The plan is ready for your review" / "I found 2 open questions you need to decide before this plan is complete").
+- Use everyday words. A technical term may appear only if it is immediately explained in plain words in parentheses — e.g. "the merge-base (the point where the PR branched off)". Otherwise leave it out.
+- Never reference internal names the reader doesn't know — check numbers, tier labels, agent or skill file names, section headings. Say what the thing does instead.
+- Keep ALL the technical evidence (file:line citations, pasted code, verified references) — but put it in the plan file, not the chat message. The chat message is the plain-language translation; the plan file keeps full rigor. Never weaken the plan's rigor to satisfy this rule.
+- When asking the user a question, ask it in plain words, one at a time, with what each answer would mean for what gets built.
+
+**Why this exists (2026-09-13):** pipeline reports were written engineer-to-engineer and the user could not tell what was being proposed or what decision they were being asked to make. The user is non-technical; a report or question the user cannot understand has failed, no matter how rigorous the work behind it.

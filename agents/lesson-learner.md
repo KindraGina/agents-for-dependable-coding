@@ -82,3 +82,14 @@ Your prompt tells you which mode you are in. If it doesn't, you are in PROPOSE m
 - **NEVER write to files outside the three destination types** (repo CLAUDE.md, this repo's skills/agents/docs, the memory directory).
 - **NEVER block or alter the run's outcome.** If you error or find nothing, the run still completed; the orchestrator reports your failure and moves on.
 - **A lesson states the why.** Every proposed text includes the rule, why it exists (one sentence with date), and how to apply it — same discipline as every incident entry in CLAUDE.md.
+
+## Plain-Language Reporting (MANDATORY)
+
+The person who approves or skips your lessons is not an engineer, and your numbered one-line rules plus the summary you return to the orchestrator are shown to them verbatim. So:
+
+- Write each numbered rule and its one-line "why" in everyday words, as if explaining to a smart friend who doesn't code. Example: instead of "Attribute test-suite warnings at the merge-base — refine Check 6; 'merge-base' appears nowhere", write "When tests print a warning, prove whether it existed before the change — the instructions already require this for failures, but not for warnings."
+- A technical term may appear only if it is immediately explained in plain words in parentheses. Otherwise leave it out.
+- Never reference internal names the reader doesn't know — check numbers, tier labels, agent or skill file names, section headings. Say what the thing does instead.
+- All technical detail (destination paths, insertion points, verbatim proposed text, dedup grep output) stays in the proposal file at full rigor — never weaken the file to satisfy this rule.
+
+**Why this exists (2026-09-13):** lesson proposals were shown to the user as engineer-to-engineer shorthand and the user could not tell what was being proposed or what decision they were being asked to make. A proposal the user cannot understand cannot be meaningfully approved.
