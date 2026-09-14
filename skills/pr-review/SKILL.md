@@ -116,6 +116,10 @@ Could the implementation be wrong and this test still pass? If yes → FAIL.
 
 Also: any test that accepts multiple status codes (`status in [200, 422]`) = FAIL (proves nothing).
 
+If the diff contains ZERO tests, Check 5 is FAIL by default — a bug fix with no test leaves the exact regression it fixed unguarded.
+
+A PR body that pastes green test output is NOT a substitute. Open the test files it names, grep them for the changed symbol/behavior, and paste that grep in your review. Output can be genuine and still prove nothing about this PR. (2026-09-13, PR #415: the body's "TDD proof" was 10 real passing tests from two suites that contained no `bell` assertion at all — the bell could have been deleted outright and every test in the repo would still pass.)
+
 ---
 
 **Check 6 — Full test suite passes (EVERY suite CI runs, not just the default).**
@@ -133,7 +137,11 @@ This applies to WARNINGS too, not just failures — "Jest did not exit", new con
 
 WHY (2026-09-13, PR #416): the expo suite's "Jest did not exit one second after the test run has completed" warning was proven to live on the base — excluded-run still warned, new-files-only exited cleanly in 3.29s. Without that pair of runs it would have been guesswork, and a previous pipeline shipped a false "pre-existing" claim about an agent-made CardGame.tsx diff.
 
+Refinements to the pre-existing check (PRs #413/#414/#417, 2026-09-13): run the baseline comparison at the MERGE-BASE commit (`git merge-base <base> <head>` — the point where the PR forked), not the base branch tip, so commits landed after the fork cannot pollute the result. Whenever you write "pre-existing", paste the baseline run's output next to the head run's, naming the SHA and the absolute path of the checkout it ran in. A warning you cannot attribute is an unresolved finding — report it as such rather than ignoring it. Also record base-vs-head test counts: the delta is a free cross-check of the PR's claimed new-test count (PR #413: 140 base vs 149 head independently confirmed the claimed 9 new tests).
+
 Paste the FULL terminal output of every suite. Note each suite's total test count. If a count is far below the project's known total, you ran a subset — re-run.
+
+WHERE to run them: in the isolated worktree from Step 1, install dependencies with the lockfile frozen (`yarn install --frozen-lockfile`) so the deps match CI. To skip the slow install you may symlink `node_modules` from the main checkout — but ONLY after proving the PR head's `package.json` is byte-identical to the main checkout's (`shasum` both files and paste both hashes in the review). If the PR touches `package.json` or the lockfile, you MUST do a real install in the worktree — symlinked deps would no longer be the PR's deps. (PRs #413/#415, 2026-09-13: both KindraApp suites ran this way, with the review able to prove exactly which commit the test counts came from.)
 
 FAIL if any test fails because of this PR. FAIL if you ran a subset or skipped one of the project's suites.
 

@@ -74,6 +74,7 @@ This is a multi-project codebase with different test frameworks:
 - Are there race conditions in the tests themselves?
 - Do tests use appropriate matchers (exact vs partial matching)?
 - **Do tests lock in buggy behavior?** (A test that asserts wrong output is worse than no test — it prevents fixing the bug)
+- **Do the test file's comments still describe assertions that actually exist?** When a revision round removes a prop or an assertion, the comments explaining it survive and become lies for the next reader — and the next reviewer trusts them. Grep every removed identifier across the file's comments before approving the round. (2026-09-13, PR #417: two comments still referenced `.props.disabled` assertions that Round 5 had deleted; the round was approved and the staleness surfaced only at PR review.)
 
 ### Missing Tests
 - API endpoint tests that verify the response BODY, not just status codes
