@@ -181,7 +181,16 @@ A retroactive plan without this marker = REJECT. Why: the 2026-05-26 TestFlight-
 
 ### Step 3 — Write the audit file
 
-Save to `[plan-path-without-ext]-finalize-audit.md`.
+**Write your report to BOTH of these paths, with identical content:**
+
+1. `[plan-path-without-ext]-finalize-audit-r[N].md` — the permanent record of round N. Never overwritten by a later round.
+2. `[plan-path-without-ext]-finalize-audit.md` — the CANONICAL path. **Overwrite whatever is there.**
+
+`[N]` is this round's number (round 1 → `-r1.md`, round 2 → `-r2.md`, ...). Write the full report to both paths. Do NOT move or rename an existing file to make room — a two-step move-then-copy is how the round-1 record got clobbered on Sept 14, 2026. Two plain writes, no shuffling.
+
+**The canonical file is DESIGNED to be overwritten, and the project's "never overwrite a file without asking" rule DOES NOT APPLY to it.** That rule exists to protect work that would be lost. Nothing is lost here: round N's report is preserved in full at its own `-r[N].md` path, and the canonical path is a pointer to the current verdict, not a record. Do not ask the user for permission to overwrite it, and do not instruct any sub-agent to "write to a new file instead of overwriting the previous audit."
+
+**Why this matters (Sept 14, 2026 — ESLint flat-config cascade):** `/pipeline` locates the audit by computing exactly one filename — plan path, strip `.md`, append `-finalize-audit.md` (`pipeline/SKILL.md:80`) — reads the `## Verdict:` line inside, and REFUSES TO RUN unless it says READY. A session applied the never-overwrite rule here and sent rounds 2 and 3 to new `-r2`/`-r3` filenames, explicitly instructing them "do NOT overwrite the round-1 audit." The plan passed on round 3, but the canonical path still held round 1's NEEDS WORK. The only thing standing between a stale verdict and the code-writing phase was the orchestrator noticing and overriding the gate by hand — which is the same as having no gate. If the canonical file does not hold the LATEST verdict, the gate is broken.
 
 ## Output Format
 
@@ -239,7 +248,7 @@ If NEEDS WORK:
 - **Be specific in failures.** "Verified References is incomplete" is not enough. "Verified References is missing entries for `EventTicket.upsell_tiers/1` and `host_offerings.product_type` referenced in Proposed Changes line N" — that's specific.
 - **Don't be polite.** READY / NEEDS WORK are the verdicts. No "looks mostly good" or "minor issues but ship it." If any check fails, it's NEEDS WORK.
 - **Hard-coded test counts are a failure.** If the plan states a suite total or pass criterion as a fixed number without a this-session measurement (command + raw output, run in the plan's `## Target` checkout) pasted in `## Verified References`, flag it: pass criteria must be relative to a measured baseline. (Sept 13, 2026: a count copied from another branch caused rejections in three separate runs in one day.)
-- **Save the audit file to the same directory as the plan.** Filename pattern: `[plan-name]-finalize-audit.md`. Future runs of `/finalize-plan` may compare to a prior audit.
+- **Save the audit file to the same directory as the plan, at BOTH paths** — `[plan-name]-finalize-audit-r[N].md` (this round's permanent record) and `[plan-name]-finalize-audit.md` (canonical; overwrite it). The canonical path must ALWAYS hold the LATEST round's verdict, because `/pipeline` reads that one filename and nothing else. See Step 3 — the never-overwrite rule does not apply to the canonical file.
 - **Confirm memory compliance explicitly at the top of the audit.** The user needs to see "I read these files in this session" to trust the verdict.
 
 ## Plain-Language Reporting (MANDATORY)

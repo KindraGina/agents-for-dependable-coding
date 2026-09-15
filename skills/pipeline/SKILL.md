@@ -79,6 +79,12 @@ The pipeline ONLY runs on plans that have passed `/finalize-plan`. This is a str
 
 **Step B — Look for the finalize-plan audit.** Compute the expected audit path: take the plan path, strip `.md`, append `-finalize-audit.md`. Run `ls` on it.
 
+**STALE-VERDICT CHECK — run this every time, before reading the verdict.** Also `ls` for round-numbered siblings: `[plan-path-without-ext]-finalize-audit-r*.md`. If any exist, read the `## Verdict:` line of the HIGHEST-numbered one and compare it to the canonical file's verdict.
+- If they agree → proceed normally.
+- If they DISAGREE, the canonical file is stale. **Do not resolve this yourself and do not proceed on your own judgment.** Tell the user verbatim: "The audit at `[canonical-path]` says `[verdict]`, but the latest round (`[rN-path]`) says `[verdict]`. The canonical file is out of date, so the gate is pointing at the wrong answer. I can copy round N's report over the canonical filename so the gate reads the current verdict — say `fix the audit file` and I'll do that. STOPPING."
+
+**Why (Sept 14, 2026 — ESLint flat-config cascade):** rounds 2 and 3 of `/finalize-plan` were written to `-r2`/`-r3` filenames instead of overwriting the canonical one, so the canonical path held round 1's NEEDS WORK while the plan had actually passed on round 3. The orchestrator noticed, called it a tooling quirk, and continued past the gate on its own judgment. A gate that can be reasoned past is not a gate. `finalize-plan/SKILL.md` Step 3 now requires writing both files; this check exists because plans audited before that fix still have the broken layout on disk.
+
 **Step C — If the audit file does NOT exist, REFUSE verbatim:**
 
 > "No `/finalize-plan` audit found for `[plan-path]`. Expected file: `[expected-audit-path]`. Please run `/finalize-plan [plan-path]` first and ensure the verdict is READY before invoking `/pipeline`. STOPPING."
