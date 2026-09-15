@@ -33,6 +33,30 @@ Thirty seconds of read-only shell checks that prevent hours of wasted agent roun
 
 ---
 
+## Stage 0.5 — Scope Gate: ONE PLAN, ONE PROBLEM
+
+**Run this after Stage 0 passes and BEFORE spawning the Stage 1 finalize agent.** It is the cheapest gate in the system — you read one section of one file and ask at most one question. Every round of every later stage re-reads the whole plan, so a plan carrying three problems costs roughly three times as much at every stage after this one.
+
+**Step A — Count the distinct problems the plan fixes.** Read the plan's `## Summary` and the `### Issue` / numbered items under `## Proposed Changes`. Count how many separate *problems* it fixes — not how many files it edits, not how long it is.
+
+**Step B — Apply the independence test to each pair.** Two problems belong in ONE plan only if fixing one WITHOUT the other would leave the codebase in a broken or half-finished state. Ask literally: *"If I shipped problem A's fix today and never fixed B, would A still be worth shipping on its own?"* If yes, they are independent and belong in separate plans.
+
+**The distinction that matters: a shared ROOT CAUSE is one problem. A shared DISCOVERY METHOD is not.** Three things that surfaced from the same command, the same PR review, or the same afternoon of poking around are not one problem — they are three problems you happened to find together. This is the single most common way a plan gets too big, and it never looks like scope creep from the inside, because every item is real and every item was genuinely found.
+
+**Step C — If the plan fixes MORE THAN ONE independent problem, STOP and ask the user:**
+
+> "Before I start: this plan fixes [N] separate things — [one short everyday phrase per item]. They were all found together, but each one could ship on its own without the others. Running them as one plan means every review round re-checks all [N], which is roughly [N]× the time and cost — and if one item turns out to be contentious, it holds up the others. I'd recommend splitting into [N] plans and running them separately, starting with [the one with the clearest real-world impact]. Split, or run as one? STOPPING."
+
+Wait for the answer. If the user says run as one, proceed and do not ask again for this run. Do NOT split the plan yourself — the user decides, and the Plan Creator does the splitting.
+
+**Step D — Length alone is NOT a trigger. Measure the right section.** Do not raise the scope gate because the document is long. Measure the `## Proposed Changes` section specifically — from its heading to the next `## ` heading — and ignore total file length.
+
+A long `## Verified References` section is **evidence, not scope**: the repo's rules require pasting raw command output for every code reference, and that bulk grows with rounds of auditing, not with the amount of work. A 1,100-line plan that changes 6 files for one reason is FINE and must pass this gate. A 300-line plan that fixes three unrelated things must not. The later 600-line circuit breaker in `/pipeline` measures total length and therefore cannot tell these apart — this gate can, so do the work here.
+
+**Why this gate exists (Sept 13, 2026 — expo test hygiene cascade):** a cascade ran ~4 hours on a plan that bundled three unrelated problems found by running one command (`yarn test:expo`): Sentry open handles, nine `act()` warnings, and un-gated PII `console.log` lines. The actual production-code change was eight lines in two files — delete six `console.log`s, `__DEV__`-gate two more. The plan reached 1,091 lines and needed **four finalize rounds plus three pipeline review rounds**, each re-reviewing all three problems. Scope also grew mid-run: the round-2 audit found five *more* `console.log` lines, expanding an item two rounds had already signed off on. Split into three plans, each would have been a few hundred lines, passed finalize in one or two rounds, and two of the three could have been dropped or deferred without blocking the third. Nothing in the cascade ever asked whether this should be one plan — the existing circuit breakers fire at 600 lines and at review round 4, by which point the rounds are already paid for.
+
+---
+
 ## Stage 1 — Finalize the Plan
 
 **Goal:** Independent verification that the plan is pipeline-ready.
