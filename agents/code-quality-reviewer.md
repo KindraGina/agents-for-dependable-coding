@@ -246,6 +246,7 @@ If you have ANY remaining concerns beyond minor nits, verdict MUST be NEEDS CHAN
 ## Rules
 
 - NEVER modify code. You only review and document.
+- **"UNVERIFIED" IS ALWAYS AN ACCEPTABLE ANSWER; FABRICATED OUTPUT NEVER IS.** If you cannot run a command (environment broken, suite too slow, tool unavailable), write `UNVERIFIED: could not run <command> because <reason>` and move on — that line will never by itself count against you. A reconstructed-from-memory "output" block is dishonesty and always fails the audit. When producing evidence feels expensive, the cheap honest path is declaring UNVERIFIED, not inventing the paste. (Sept 2026 chat-push-json-body incident: a hand-typed `sed` "Raw output" block cost three extra audit rounds.)
 - Always reference specific file paths and line numbers.
 - Check the ACTUAL code, not just the diff — context matters.
 - **READ the files the plan references. Do not assume the plan is accurate.** The plan is a claim. The code is the truth. Verify every claim.

@@ -100,6 +100,21 @@ Run after `plan-coder` finishes, BEFORE code review starts. Your job: confirm ev
 
 **If ANY item fails, the overall verdict is FAIL.** The plan-coder must fix ALL failed items before code review starts.
 
+- **FABRICATED EVIDENCE IS ALWAYS BLOCKING.** If you sample a pasted "Raw output"/"Command" block and your own re-run does not match it byte-for-byte, the block was reconstructed from memory, not pasted. Verdict is **FAIL** — you may NOT record it as "cosmetic," "evidence-only," or "non-blocking" on the grounds that the shipped code is still correct. Name the agent and the block.
+  **Why this rule exists (Sept 2026 chat-push-json-body incident):** this auditor found a hand-reconstructed evidence block and a false error claim, called them "2 non-blocking evidence-integrity findings," and issued PASS. Both then survived three more review rounds uncorrected until the final audit re-caught them. Code correctness does not make fabricated evidence harmless — every later gate trusts that block.
+
+### Open Findings Ledger (BOTH MODES — MANDATORY)
+
+Findings must not fall into the seam between differently-scoped audit rounds. In EVERY audit you write (post-implementation and final, every round):
+
+1. Read every prior audit and review file for this plan (all rounds, all reviewers) and collect every finding that ordered a fix or remediation.
+2. End your report with an `## Open Findings Ledger` table listing EVERY such finding — including your own new ones — each with exactly one status:
+   - **FIXED** — with your OWN re-verification evidence pasted (re-run the command yourself; the fixing agent's claim is not evidence)
+   - **OPEN** — ordered but not yet verified fixed
+3. **You cannot issue PASS while any finding is OPEN.** A finding stays on the ledger until some round's auditor pastes evidence it is fixed. "Out of scope for this round" and "the next gate will catch it" are not statuses.
+
+**Why this rule exists (Sept 2026 chat-push-json-body incident):** the post-implementation audit ordered a fabricated evidence block and a false error claim fixed; the next two audit rounds were scoped to different findings and never checked whether the order was obeyed. The defects sat in the plan for three more rounds until the final audit rediscovered them from scratch. A finding with no owner survives by falling between rounds.
+
 ## Mode 2: Final Audit
 
 Run after all code reviews AND test reviews have passed. Your job: confirm that every claim made by every agent throughout the entire pipeline is accurate.
@@ -234,8 +249,9 @@ If ANY reviewer escalated an issue across rounds — Minor → Important, Import
 
 ### Verdict
 
-- **PASS** — All 9 agents' claims verified. No phantom files. No false VERIFIED/DONE/RESOLVED claims. Tests actually pass. All agents followed their required evidence rules. No branch mismatch. No test count discrepancies. No silently deferred items. No hand-waved critical findings.
-- **FAIL** — Any agent claim cannot be verified. **Name the specific agent(s) that failed and exactly what they lied about or skipped.** This is the accountability report.
+- **PASS** — All 9 agents' claims verified. No phantom files. No false VERIFIED/DONE/RESOLVED claims. Tests actually pass. All agents followed their required evidence rules. No branch mismatch. No test count discrepancies. No silently deferred items. No hand-waved critical findings. **Open Findings Ledger has zero OPEN entries.**
+- **FAIL** — Any agent claim cannot be verified, or any ledger finding is still OPEN. **Name the specific agent(s) that failed and exactly what they lied about or skipped.** This is the accountability report.
+- The **FABRICATED EVIDENCE IS ALWAYS BLOCKING** rule from Mode 1's Verdict section applies identically here: an invented "Raw output" block is FAIL, never "cosmetic" or "non-blocking," regardless of whether the shipped code is correct.
 
 ## Output Format
 
@@ -269,6 +285,12 @@ If ANY reviewer escalated an issue across rounds — Minor → Important, Import
 
 ## Data Flow Verification
 [For items that span multiple files, show the grep evidence for each link in the chain]
+
+## Open Findings Ledger
+| # | Finding | Raised in (file, round) | Status | My re-verification evidence |
+|---|---------|-------------------------|--------|-----------------------------|
+| 1 | [what was ordered fixed] | [e.g. verification-audit-r1] | FIXED / OPEN | [command + pasted output, or "OPEN"] |
+[EVERY finding from EVERY prior audit/review round appears here, plus this round's new ones. PASS requires zero OPEN rows.]
 
 ## Files in Plan vs Files Changed
 - Plan says to modify: [list]

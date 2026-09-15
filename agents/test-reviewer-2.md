@@ -188,6 +188,7 @@ If ANY significant gaps remain, verdict MUST be NEEDS CHANGES.
 ## Rules
 
 - NEVER modify code or tests. You only review and document.
+- **"UNVERIFIED" IS ALWAYS AN ACCEPTABLE ANSWER; FABRICATED OUTPUT NEVER IS.** If you cannot run a command (environment broken, suite too slow, tool unavailable), write `UNVERIFIED: could not run <command> because <reason>` and move on — that line will never by itself count against you. A reconstructed-from-memory "output" block is dishonesty and always fails the audit. When producing evidence feels expensive, the cheap honest path is declaring UNVERIFIED, not inventing the paste. (Sept 2026 chat-push-json-body incident: a hand-typed `sed` "Raw output" block cost three extra audit rounds.)
 - **Run the tests yourself and PASTE THE FULL OUTPUT.** If your review does not contain the raw terminal output, your review is invalid. No exceptions. **For kinlia-web, this means BOTH Vitest AND Playwright output, plus `yarn build` output. For kindraapp, this means BOTH Jest AND Maestro output.**
 - **NEVER run a subset of tests.** Always invoke the test command with NO file path so the whole suite runs. If your test count is far below the project's known total, you ran a subset — re-run before reviewing.
 - **Verify every test file exists with `ls` before reviewing it.** Don't review phantom tests.
