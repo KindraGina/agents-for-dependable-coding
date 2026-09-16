@@ -97,6 +97,9 @@ A long `## Verified References` section is **evidence, not scope**: the repo's r
 
 **Wait for the pipeline to complete fully before proceeding.** The pipeline has its own internal review loops, verification auditors, and gates. Do not interfere with those.
 
+**When the pipeline reports completion, deliver its summary and IMMEDIATELY begin Stage 3 — do NOT ask.** "Want me to run the critique, or would you rather review first?" is a spec violation, not politeness: the user's single `/cascade` invocation ordered all three stages (their CLAUDE.md's /cascade exception explicitly authorizes `/critique` for this run), and the cascade is NOT COMPLETE until the critique verdict is in. The pipeline summary is a status update on the way to Stage 3, never a stopping point.
+**Why (Sept 2026 ESLint flat-config run):** the cascade stopped after pipeline-light to ask permission for the critique — adding a human round-trip to a stage that was already authorized, on a run the user expected to finish unattended.
+
 **The pipeline is confined to the repo this cascade was launched in.** If the pipeline (or any reviewer inside it) reports that another repo must change, that is information for the user, not work for this cascade — no stage may create branches or edit files in any other repo (see Rule 9). Report the cross-repo need in your next status update and again in the Stage 4 summary.
 
 ---
@@ -146,6 +149,8 @@ If the critique capped its verdict at CONCERNS because of unverified interaction
 
 ## Rules
 
+**THIS IS AUTOPILOT MODE — one invocation, all stages, no permission asks.** From `/cascade [plan]` to the Stage 4 summary, never ask "shall I proceed?", "want me to run X?", or any variant between stages. The ONLY sanctioned stops are the ones this file scripts: a failed Stage 0 preflight, the Stage 0.5 scope gate, a stale finalize verdict, finalize failing twice (Rule 4), an uncommitted-changes or cross-repo conflict (Rules 9/10), the pipeline's own internal circuit breakers and safety valves, and a critique verdict of CONCERNS or REJECT. Everything else runs straight through. Announcements (Rule 3, Rule 5's pipeline-choice report) are status updates that do NOT wait for a reply — say it and keep moving; the user can interrupt to override.
+
 1. **You are an orchestrator.** You do NOT read code, write code, review plans, or make implementation decisions. You invoke skills and agents and pass results between them.
 
 2. **Gate enforcement is non-negotiable.** If finalize-plan says NEEDS WORK, you do NOT skip to pipeline. If critique says REJECT, you do NOT report success.
@@ -154,7 +159,7 @@ If the critique capped its verdict at CONCERNS because of unverified interaction
 
 4. **Respect the user's time.** The cascade can take a while. If something fails early (finalize-plan loops twice and still fails), stop early and bring the user in rather than burning through pipeline credits on a plan that isn't ready.
 
-5. **Never invoke /pipeline or /pipeline-light without the user's awareness.** Before running Stage 2, confirm which pipeline was chosen and why. The user can override at that moment.
+5. **Never invoke /pipeline or /pipeline-light without the user's awareness.** Before running Stage 2, announce which pipeline was chosen and why — then proceed without waiting for a reply. The user can interrupt to override; silence is consent, per the AUTOPILOT rule above.
 
 6. **The Plan Creator is the thread.** It authored the plan with the user, it revises based on finalize feedback, and it runs the final critique. This continuity is by design — the Plan Creator knows the user's intent better than any other agent.
 
