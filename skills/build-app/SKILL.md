@@ -41,7 +41,7 @@ If no platform is provided, ask the user which one.
 | `build-prereq-auditor` | Runs `expo-doctor`, `expo install --check`, bundles JS locally, scans changed files for smart quotes, validates patch filenames match installed package versions |
 | `env-var-auditor` | Greps the codebase for every `EXPO_PUBLIC_` reference, cross-references against `.env`, `eas.json` env block for the target profile, and the EAS dashboard env list. Flags any var used in code but missing from the build profile |
 | `sentry-config-auditor` | Verifies `ios/sentry.properties` org/project, `app.config.ts` Sentry plugin org/project, DSN in code matches Sentry dashboard, `SENTRY_AUTH_TOKEN` exists as EAS env, and `.env.sentry-build-plugin` is sane |
-| `commit-state-auditor` | Verifies HEAD is on the intended branch, no uncommitted changes that were meant for the build, shows the exact commit SHA that will be built |
+| `commit-state-auditor` | Verifies HEAD is on the intended branch, the checkout is the one the build will actually run from, the tree is not behind its remote (stale-tree check), no uncommitted changes that were meant for the build, shows the exact commit SHA that will be built |
 | `build-log-analyzer` | Runs ONLY on build failure. Fetches the EAS log, identifies the failing phase, maps to known root causes, proposes a specific fix at a specific file:line. Does NOT apply fixes |
 | `build-postmortem-updater` | Runs after every build (success or failure). Appends new learnings to `~/Sites/CLAUDE.md` and `~/.claude/skills/build-app/patterns.md`. Avoids duplicates |
 
@@ -83,7 +83,7 @@ If PASS → continue to Step 4.
 
 ### Step 4: Launch `commit-state-auditor`
 
-- Prompt: "You are the commit-state-auditor agent. Target platform: [platform]. Target build profile: [profile]. Confirm git state is safe for a build (right branch, no relevant uncommitted changes, show the exact commit SHA that will be built). Write your report to `/tmp/build-app-commit-audit.md`. Follow your instructions in `~/.claude/agents/commit-state-auditor.md`."
+- Prompt: "You are the commit-state-auditor agent. Target platform: [platform]. Target build profile: [profile]. The build will run from this checkout: [absolute path of the checkout being built — e.g. /Users/ginalevy/Sites/kindraapp-tf-build for testflight]. Confirm git state is safe for a build (right checkout, right branch, not behind the remote, no relevant uncommitted changes, show the exact commit SHA that will be built). Write your report to `/tmp/build-app-commit-audit.md`. Follow your instructions in `~/.claude/agents/commit-state-auditor.md`."
 
 WAIT for completion. Read the report and extract the verdict.
 
