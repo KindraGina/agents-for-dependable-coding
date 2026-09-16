@@ -38,7 +38,7 @@ If no platform is provided, ask the user which one.
 
 | Agent | Role |
 |-------|------|
-| `build-prereq-auditor` | Runs `expo-doctor`, `expo install --check`, bundles JS locally, scans changed files for smart quotes, validates patch filenames match installed package versions |
+| `build-prereq-auditor` | First verifies installed `node_modules` matches `yarn.lock` (dependency-freshness check — stale installs make every other check unreliable), then runs `expo-doctor`, `expo install --check`, bundles JS locally, scans changed files for smart quotes, validates patch filenames match installed package versions |
 | `env-var-auditor` | Greps the codebase for every `EXPO_PUBLIC_` reference, cross-references against `.env`, `eas.json` env block for the target profile, and the EAS dashboard env list. Flags any var used in code but missing from the build profile |
 | `sentry-config-auditor` | Verifies `ios/sentry.properties` org/project, `app.config.ts` Sentry plugin org/project, DSN in code matches Sentry dashboard, `SENTRY_AUTH_TOKEN` exists as EAS env, and `.env.sentry-build-plugin` is sane |
 | `commit-state-auditor` | Verifies HEAD is on the intended branch, the checkout is the one the build will actually run from, the tree is not behind its remote (stale-tree check), no uncommitted changes that were meant for the build, shows the exact commit SHA that will be built |

@@ -28,6 +28,21 @@ Before doing anything else:
 
 ## Checks (run ALL of them, in order)
 
+### Check 0: Installed Dependencies Match the Lockfile (runs FIRST — every later check depends on it)
+
+Every other check in this file reads `node_modules` (expo-doctor, `expo install --check`, the JS bundle, patch versions). If the installed tree is stale — e.g. a merge changed `package.json`/`yarn.lock` and nobody re-ran `yarn install` — every later check measures the WRONG tree and can report green against libraries that won't match the build. `/build-app` never runs `yarn install` itself, so this check is the only thing standing between a stale install and a wasted credit.
+
+Run (read-only; you may NOT run `yarn install` yourself):
+```bash
+ls -la node_modules/.yarn-integrity yarn.lock 2>/dev/null
+yarn check --integrity 2>&1 | tail -5
+```
+
+- **PASS:** `yarn check --integrity` succeeds AND `yarn.lock` is not newer than `node_modules/.yarn-integrity`.
+- **CRITICAL FAIL:** integrity check fails, `node_modules/` or `.yarn-integrity` is missing, or `yarn.lock`'s modification time is newer than `.yarn-integrity`'s (the lockfile changed after the last install). Report: "Installed dependencies in [absolute path] do not match yarn.lock — run `yarn install` in this checkout, then re-run this audit. Every check below this one is unreliable until then." Still run the remaining checks and report their results, but mark each as MEASURED AGAINST A STALE TREE.
+
+**Why this check exists (Sept 2026, ESLint flat-config merge):** a merge into `testflight` changed dependencies; the tf-build checkout had current code but a `node_modules` installed before the merge. Nothing in `/build-app` would have caught it — the auditors read the stale tree and could have green-lit a build against libraries the build wouldn't actually have. Discovered only because a session thought to look. Same lesson as the stale-git check in `commit-state-auditor.md` Step 1.5: "clean" and "current" are different properties, for installed libraries just as for code.
+
 ### Check 1: Expo Doctor
 
 Run:
