@@ -43,6 +43,9 @@ Use `gh` CLI:
 
 Record: title, body, author, head branch, base branch, CI status, files changed, additions/deletions, commit messages.
 
+**UNCHANGED-PR SHORT-CIRCUIT — check this before doing anything else.** If a prior `/pr-review` run reviewed this PR (a posted review comment or a review file from a previous run — both record the head SHA they reviewed), compare that SHA to the PR's CURRENT head SHA (`gh pr view <number> --json headRefOid`). Compare SHAs ONLY — never GitHub's "updated X ago" timestamp, which also ticks when a review is posted, a label changes, or the base branch moves. If the SHAs are identical, the code has not changed: do NOT redo the 15 checks. Instead run just the merge-freshness part of Check 10 (the base branch keeps moving even when the PR doesn't) and report: "Head SHA `[sha]` is unchanged since my [date] review — verdict [X] stands. Merge check against the current `[base]` tip: [result]." That is the whole review.
+**Why (PR #415, 2026-09-14):** GitHub showed "Updated 17 hours ago," but the only update was the previous review being posted. A full re-review — all 15 checks, four test-suite runs — was redone to reach the byte-identical verdict. The timestamp lies; the head SHA does not.
+
 Get the diff: `gh pr diff <number>`.
 
 **Review from an isolated worktree, never from the user's checkout.** After fetching the PR, run `git fetch origin <headRef>` then `git worktree add /tmp/pr-<number> --detach <head-sha>`, and do ALL file reads and ALL test-suite runs in that worktree. Delete it when done.
@@ -141,7 +144,7 @@ Refinements to the pre-existing check (PRs #413/#414/#417, 2026-09-13): run the 
 
 Paste the FULL terminal output of every suite. Note each suite's total test count. If a count is far below the project's known total, you ran a subset — re-run.
 
-WHERE to run them: in the isolated worktree from Step 1, install dependencies with the lockfile frozen (`yarn install --frozen-lockfile`) so the deps match CI. To skip the slow install you may symlink `node_modules` from the main checkout — but ONLY after proving the PR head's `package.json` is byte-identical to the main checkout's (`shasum` both files and paste both hashes in the review). If the PR touches `package.json` or the lockfile, you MUST do a real install in the worktree — symlinked deps would no longer be the PR's deps. (PRs #413/#415, 2026-09-13: both KindraApp suites ran this way, with the review able to prove exactly which commit the test counts came from.)
+WHERE to run them: in the isolated worktree from Step 1, install dependencies with the lockfile frozen (`yarn install --frozen-lockfile`) so the deps match CI. To skip the slow install you may symlink `node_modules` from ANY local checkout of the project (e.g. `~/Sites/KindraApp` or `~/Sites/kindraapp-tf-build`) — the safety comes from the proof, not from which folder: BOTH the PR head's `package.json` AND its `yarn.lock` must be byte-identical to the donor checkout's (`shasum` all four files and paste all four hashes in the review; the lockfile matters because it, not `package.json`, determines what is actually installed). If either file differs, or the PR touches `package.json` or the lockfile, you MUST do a real install in the worktree — symlinked deps would no longer be the PR's deps. (PRs #413/#415, 2026-09-13/14: the main checkout was on a different branch with a different dependency list, so the tf-build copy was the valid donor — proven, then used.)
 
 FAIL if any test fails because of this PR. FAIL if you ran a subset or skipped one of the project's suites.
 
@@ -183,6 +186,17 @@ FAIL if the author resolved a product decision unilaterally without evidence of 
 Check the PR's CI status: `gh pr view <number> --json statusCheckRollup`. Every check must be `SUCCESS` or `NEUTRAL`. Any FAILURE / ERROR = FAIL.
 
 If CI hasn't run yet, WARN and ask the user to wait for CI before merging.
+
+**MERGE-FRESHNESS: a green badge is not a green merge.** CI proved the PR against the code it FORKED FROM — the base branch has kept moving since. In every review (including the unchanged-PR short-circuit in Step 1), run a practice merge against the base branch's CURRENT tip:
+
+```bash
+git fetch origin <base>
+git merge-tree --write-tree origin/<base> <head-sha>
+```
+
+(Non-zero exit / conflict markers in the output = conflicts. On older git without `merge-tree --write-tree`, do a throwaway `git merge --no-commit --no-ff` in a detached temp worktree and abort it.) Report how many commits the base has advanced since the PR forked (`git rev-list --count <merge-base>..origin/<base>`). Conflicts = FAIL — the PR cannot merge as-is. A clean practice merge with a much-moved base is a PASS with the advance count noted, so the merger knows the tested-against code and the merged-into code differ.
+
+**Why (PR #415, 2026-09-14):** `testflight` had advanced 12 commits while the PR sat open. The badge was green against the fork point; nothing in this checklist required proving it still merged cleanly against the branch as it exists today. The reviewer did the practice merge on their own initiative — this makes it mandatory.
 
 ---
 
