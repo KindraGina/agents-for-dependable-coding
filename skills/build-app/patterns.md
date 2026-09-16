@@ -325,6 +325,19 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
 - **Restoration plan (not yet applied at build time):** `/Users/ginalevy/Sites/KindraApp/docs/plans/2026-08-25-restore-testflight-env-block.md`. Restoring the 5 vars is additive and safe: `eas.json` `env` is EAS's own injection, and Expo's dotenv loading does not override an already-set var, so the two paths coexist (META-002 point 4). Note `eas.json` is an ASK-FIRST file — the restoration needs owner approval, not an auto-fix.
 - **Supersedes:** DECISION-007's claim that the testflight profile "deliberately" omits these vars. The dotenv path is real and load-bearing; the *omission* was not a decision. See DECISION-012.
 
+### META-007 — `eas.json` `build.testflight` declares no `environment`, so EAS resolves dashboard secrets from the default environment
+
+- **First seen:** 2026-09-16 (builds 06dbe7c7 iOS 178 + c95ed54c Android 20, testflight, commit f30c7d5e — both SUCCEEDED; flagged pre-flight by two independent auditors)
+- **Last seen:** 2026-09-16
+- **Occurrences:** 1
+- **Phase:** Pre-flight (env-var / sentry config audit) — would surface at Run Fastlane / Run Gradle
+- **Platform:** both
+- **Log signature:** N/A at audit time. If it ever bites, the runtime signature is the FASTLANE-001 / GRADLE-001 one: `Auth token is required for this request` during the Sentry source-map upload step.
+- **Root cause:** `build.production` in `eas.json` sets `"environment": "production"`; `build.testflight` sets no `environment` key at all. Without it, EAS resolves dashboard environment variables from the project's default environment rather than a named one. Today the build works only because `SENTRY_AUTH_TOKEN` happens to exist as a Secret in ALL THREE environments (development / preview / production) on the `kinliadev` project (DECISION-010). That redundancy — not the config — is what is holding this up.
+- **Fix:** Owner decision, ASK FIRST (`eas.json` is ASK-FIRST infra per CLAUDE.md). Proposed: add `"environment": "preview"` (or whichever named environment the testflight profile should own) to `build.testflight` in `eas.json`, so secret resolution is explicit rather than incidental. Do NOT auto-edit.
+- **Pre-flight catchable?** Yes — and it WAS caught here, by two auditors independently. Keep the check: for every build profile in `eas.json`, assert an explicit `environment` key; report its absence as a FRAGILITY finding (not a build blocker), worded as "resolution falls back to the default environment" rather than "vars are missing".
+- **Notes:** Distinct from META-006 (the testflight `env` **block** of `EXPO_PUBLIC_*` vars lost in a revert at `a55116fb`) and from META-001 (the April 2026 incident where the token existed on the wrong EAS *project*). This one is about the wrong *environment within the right project*. All three are the same family: "it resolved to something, therefore it resolved to the right thing" is never sound for EAS secrets. Failure mode if it regresses is silent until the source-map upload step, i.e. a full build credit burned before anyone learns.
+
 ## Phase: Skill Orchestrator Bugs (build-app skill)
 
 These entries are NOT EAS-build failures — they are bugs in the `build-app` skill's monitoring/automation scripts that wasted agent time or produced misleading status during otherwise-successful builds. The skill author should fix these in `~/.claude/skills/build-app/`.
@@ -345,15 +358,15 @@ These entries are NOT EAS-build failures — they are bugs in the `build-app` sk
 ### SKILL-002 — `eas-cli build:view --non-interactive` is not a valid flag
 
 - **First seen:** 2026-05-02 (build d7098699-4eae-4eac-bc41-3cb761ac0239)
-- **Last seen:** 2026-05-02
-- **Occurrences:** 1
+- **Last seen:** 2026-09-16 (builds 06dbe7c7 iOS 178 / c95ed54c Android 20, commit f30c7d5e — recurred, non-blocking)
+- **Occurrences:** 2
 - **Phase:** Skill orchestration (monitor loop)
 - **Platform:** N/A
 - **Log signature:** `error: unknown option '--non-interactive'` (or silent non-zero exit, depending on eas-cli version)
 - **Root cause:** The build-app skill's monitor example uses `npx eas-cli build:view <id> --non-interactive`, but `build:view` only accepts `--json` (and other view-specific flags). The flag was dropped/never accepted by `build:view` in current eas-cli; the command exits non-zero before producing output, so the monitor poll fails every iteration.
 - **Fix:** In the skill's monitor snippet, use `npx eas-cli build:view <id> --json` (no `--non-interactive`). Reserve `--non-interactive` for `build` and `submit` subcommands where it IS valid.
 - **Pre-flight catchable?** Yes — a one-time smoke test (`npx eas-cli build:view <known-id> --non-interactive`) when authoring the skill would catch this. Should be added to skill CI.
-- **Notes:** Sister bug to SKILL-001 — both surfaced in the same monitor loop on the same build. Together they prevented the skill from observing build progress; the user had to refresh the EAS dashboard manually.
+- **Notes:** Sister bug to SKILL-001 — both surfaced in the same monitor loop on the same build. Together they prevented the skill from observing build progress; the user had to refresh the EAS dashboard manually. **2026-09-16 recurrence:** still true on the current eas-cli — `npx eas-cli build:view <id> --non-interactive` exits with `Nonexistent flag: --non-interactive`, while `build:list --non-interactive` DOES accept it. The asymmetry is the trap: do not infer flag support on one subcommand from another. The skill snippet has not been fixed since 2026-05-02.
 
 ### SKILL-003 — `eas-cli submit:view` does not exist
 
@@ -406,6 +419,19 @@ These entries are NOT EAS-build failures — they are bugs in the `build-app` sk
 - **Fix:** Update the skill's time estimate to "10–35 minutes" for iOS production (and consider similar widening for Android). Note that the dataset is small (3 known production builds, 2 of which were faster failures), so re-tighten the range as more successful production data accrues.
 - **Pre-flight catchable?** N/A — this is a calibration issue, not a verifiable precondition. Update from observed data.
 - **Notes:** Faster-than-documented is a benign surprise compared to the inverse, but the user explicitly called it out for skill accuracy.
+
+### SKILL-007 — `/build-app` never runs an install; `build-prereq-auditor` only READS a possibly-stale `node_modules`
+
+- **First seen:** 2026-09-16 (builds 06dbe7c7 iOS 178 + c95ed54c Android 20, testflight, commit f30c7d5e — caught and remediated pre-flight, both SUCCEEDED)
+- **Last seen:** 2026-09-16
+- **Occurrences:** 1
+- **Phase:** Skill orchestration (pre-flight sequencing)
+- **Platform:** N/A (skill gap)
+- **Log signature:** N/A — there is no error. The tell is an auditor PASS on a checkout whose `node_modules` predates its `yarn.lock`/`package.json`.
+- **Root cause:** The owner asked directly, "I thought `/build-app` now automatically does the yarn install, right?" — it does not, and the skill never claimed to in a way anyone had checked. `build-prereq-auditor` only READS `node_modules` (e.g. comparing patch filenames against installed versions for PODS-001, or nested native-module copies for DOCTOR-007); nothing in the skill installs. On this run `testflight` had just merged PR #420, which changed `package.json` and `yarn.lock`; the build checkout had pulled but not reinstalled, so `node_modules` was stale. The orchestrator ran `yarn install --frozen-lockfile` manually before the auditors. Had it not, every `node_modules`-reading auditor would have measured the PREVIOUS dependency tree and could have returned PASS against the wrong thing — same class as SKILL-006 (fix applied in the wrong checkout): an auditor confidently validating something other than what EAS will build.
+- **Fix (skill change, not yet made):** Either (A) `/build-app` runs `yarn install --frozen-lockfile` in the build checkout (absolute path, per SKILL-006) as a mandatory step before any auditor runs, or (B) `build-prereq-auditor` FAILS when the installed tree is older than its manifests. (B)'s check is known feasible — on this run, when explicitly asked, the auditor compared `node_modules/.yarn-integrity` mtime against `yarn.lock` and `package.json` and verified all 1891 lockfile entries resolve. It is simply not mandatory today. Recommend doing both: install first, then assert freshness.
+- **Pre-flight catchable?** Yes, cheaply — `node_modules/.yarn-integrity` mtime vs `yarn.lock`/`package.json` mtime, run in the build checkout's absolute path. Any auditor that reads `node_modules` should refuse to report PASS without this assertion.
+- **Notes:** Highest-risk trigger is exactly this run's shape: a freshly merged PR that touches dependencies, followed by a pull-without-install in the dedicated build worktree (`/Users/ginalevy/Sites/kindraapp-tf-build`). Related: SKILL-006, DOCTOR-006, DOCTOR-007, PODS-001.
 
 ## Successful Builds — Notable Decisions
 
@@ -506,6 +532,32 @@ These entries are NOT EAS-build failures — they are bugs in the `build-app` sk
   5. The 8-package expo-doctor React Native Directory advisory present and correctly treated as ADVISORY (DOCTOR-005 / META-003).
 - **Implication:** This is the current known-good testflight reference. Any auditor that would have FAILED this exact configuration is mis-specified — with one exception: `env-var-auditor`'s FAIL on the missing testflight `env` block was **correct as a fragility finding** and should be kept, reworded from "vars are missing" to "the redundant `eas.json` source was lost at `a55116fb`; the build depends solely on `.env` surviving in the upload archive." Restoration is tracked at `/Users/ginalevy/Sites/KindraApp/docs/plans/2026-08-25-restore-testflight-env-block.md` and requires owner approval (`eas.json` is ASK-FIRST).
 
+### DECISION-013 — OPEN EXPOSURE (owner-deferred): an App Store Connect API private key is tracked in git and uploads to the EAS builder
+
+- **Recorded:** 2026-09-16 (builds 06dbe7c7 iOS 178 + c95ed54c Android 20, testflight, commit f30c7d5e)
+- **Status:** **NOT RESOLVED.** Owner decision 2026-09-16: explicitly judged not worth blocking the build; remediation DEFERRED to 2026-09-17. Recorded here so it cannot quietly become "the way things are".
+- **Finding:** `keys/ApiKey_3TOKLSS7RIR8.p8` — an App Store Connect API private key — is tracked in git (since commit `398acd44`) and has no entry in `.easignore`, so it is uploaded to the remote EAS builder on every single build. `.easignore` correctly excludes `credentials.json`, `credentials/`, and `.env.sentry-build-plugin`, but has no `keys` entry. Its gitignore status is irrelevant: `.easignore` REPLACES `.gitignore` for the upload archive (DECISION-009). This is a concrete instance of DECISION-009's general mechanism, not a new mechanism.
+- **Remediation order when it is done (order matters — do not reorder):**
+  1. **Revoke and reissue the key in App Store Connect first.** Treat the existing key as compromised; it is in git history and has been shipped to remote builders repeatedly. Every later step is cosmetic until this one is done.
+  2. Remove the key file from the working tree.
+  3. Add `keys/` to BOTH `.easignore` and `.gitignore`.
+  4. Then decide separately whether to purge git history (a rewrite is a bigger call than the first three steps and should not be bundled with them).
+- **Implication:** Do NOT record this as fixed in any future post-mortem without evidence of step 1. Do NOT edit `.easignore` to "handle it" on the way past — `.easignore` is ASK-FIRST infra: propose, do not auto-edit. Related: DECISION-006, DECISION-009, DECISION-010 (a prior credential exposure whose revocation step was likewise the one that lagged).
+
+### DECISION-014 — Build record: 06dbe7c7 (iOS testflight 178) + c95ed54c (Android 20) succeeded
+
+- **Recorded:** 2026-09-16
+- **Builds:** `06dbe7c7-f31f-4fc6-bc3d-8b089c1a8c29` — iOS, `testflight` profile, build 178, FINISHED, auto-submitted to ASC `6748651413` (submission FINISHED). `c95ed54c-5513-4d98-abe9-ffb77637111e` — Android, `testflight` profile, build 20, FINISHED, APK artifact (no auto-submit — expected, see DECISION-012).
+- **Built from:** `/Users/ginalevy/Sites/kindraapp-tf-build`, branch `testflight`, commit `f30c7d5e`, version 1.80.11. All four pre-flight auditors PASSED.
+- **Non-default / fragile state these builds succeeded WITH (know this before theorizing about a future failure):**
+  1. `node_modules` was stale on arrival (PR #420 had just merged, changing `package.json` + `yarn.lock`); the orchestrator ran `yarn install --frozen-lockfile` MANUALLY before the auditors. The skill does not do this for you — SKILL-007.
+  2. `build.testflight` has no `environment` key; dashboard secrets resolved from the default environment and worked only because `SENTRY_AUTH_TOKEN` exists in all three environments on `kinliadev` — META-007.
+  3. `build.testflight` still has no `env` block; `EXPO_PUBLIC_*` still reaches the bundle solely via dotenv inlining of the tracked `.env` — META-006 / DECISION-007 / DECISION-012, still unrestored.
+  4. `keys/ApiKey_*.p8` uploaded with the archive — DECISION-013, owner-deferred, still open.
+  5. Upload archive ~190 MB, with an EAS size warning on every build — see "Future cleanup".
+- **Implication:** This is the current known-good testflight reference; supersedes DECISION-012 as the newest one. Any auditor that would have FAILED this exact configuration is mis-specified — except the META-007 `environment` finding, which is a correct FRAGILITY report and should stay.
+
 ## Future cleanup (low priority)
 
 - **Repo upload size sweep:** Android production upload archive on 2026-05-02 was 847 MB (vs 272 MB for iOS). Repo root has 700+ untracked debugging screenshots (`af-*.png`, `audio-*.png`, `account-*.png`, etc.) accumulated from prior sessions. EAS warned but did not fail. Add these globs to `.easignore` (or clean them up) in a future session to reduce upload time. Not urgent — does not affect build correctness.
+- **Upload archive still oversized as of 2026-09-16** (builds 06dbe7c7 / c95ed54c): ~190 MB, and EAS emitted its archive-size warning on BOTH platforms. Raised on every build; costs upload time on every build. The likely cause is that `.easignore` does not exclude enough — remember it REPLACES `.gitignore` (DECISION-009), so everything you assume `.gitignore` is keeping out of the archive is in fact being uploaded. **Pair this work with DECISION-013** (adding `keys/` to `.easignore`): both are `.easignore` edits and should be one reviewed change rather than two drive-by ones. `.easignore` is ASK-FIRST infra — **propose the diff and get owner approval; do not auto-edit it mid-build.**
