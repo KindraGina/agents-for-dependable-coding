@@ -38,6 +38,7 @@ Reviewer 1 should have done this analysis. Verify:
 
 ### Things Reviewer 1 Might Miss
 - Tests that pass by coincidence (right result, wrong reason)
+- **Tests that never reach the stage they are named for.** When the code under test has sequential stages (validate, then branch/dispatch), a fixture that fails an earlier stage short-circuits and the later stage is never exercised — the test passes, the name lies, and the later code is unpinned. For every negative test, name the exact guard that produced the rejection and confirm the fixture satisfies all earlier guards; require at least one test proven to reach each stage. **Why (Sept 17, 2026, password-reset run):** three tests named `apple` / `facebook_client` / `facebook` all stopped at the "no stored token" check because their fixture rows had a nil stored token, so nothing pinned the provider dispatch list — it could have been deleted with the suite green.
 - **Tests that assert the wrong thing** — e.g., checking the response status but not the response body
 - **Tests that lock in buggy behavior** — asserting a wrong output as correct
 - Missing negative tests (verifying that forbidden actions are rejected)

@@ -88,6 +88,7 @@ If the plan has a `## Live Verification Steps` section:
 ### Phase 7: Failure Handling
 If any step fails:
 - Save the error details. Don't just retry blindly.
+- **Never pipe a test or build run through `tail`/`head`.** Run it unpiped, or `2>&1 | tee <scratchpad>/run.log` and read the log. If a run reports failures, paste the COMPLETE failure block before re-running anything. **Why (Sept 17, 2026, password-reset run):** a full-suite run reported "3149 tests, 1 failure" whose detail was lost to a `tail -15` pipe; five later runs across five different seeds were clean, so the failure could never be diagnosed and shipped as an unresolved "plausible flake." A truncated failure is an unreproducible failure.
 - If the SAME error occurs 3 times, it's likely a structural issue, not a code bug. Consider:
   - "column does not exist" → database schema mismatch, need migration
   - "relation does not exist" → missing table, need migration
