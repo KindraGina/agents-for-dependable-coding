@@ -48,6 +48,9 @@ Record: title, body, author, head branch, base branch, CI status, files changed,
 
 Get the diff: `gh pr diff <number>`.
 
+**If `gh pr diff` refuses the PR, diff locally — do not review a partial diff.** `gh` errors with `diff exceeded the maximum number of files (300)` on very large PRs and prints nothing. Fall back to `MB=$(git merge-base origin/<base> <head-sha>)` then `git diff $MB <head-sha>` inside the review worktree, and state in the review's "What I read this session" that the diff came from the local comparison and name both SHAs.
+**Why (PR #423, 2026-09-17):** a 415-file prettier reformat could not be fetched with `gh pr diff` at all; the skill named no fallback, so the reviewer had to improvise the one command that makes the rest of the checklist possible.
+
 **Review from an isolated worktree, never from the user's checkout.** After fetching the PR, run `git fetch origin <headRef>` then `git worktree add /tmp/pr-<number> --detach <head-sha>`, and do ALL file reads and ALL test-suite runs in that worktree. Delete it when done.
 
 WHY (2026-09-13, PR #416): the day-to-day KindraApp checkout was on an unrelated branch with uncommitted changes. Reading files or running Jest there measures a tree that is not the PR — and the reviewer cannot tell, because the files still exist and the tests still pass. Record the worktree absolute path and the head SHA in the review header so every claim is attributable to the PR head.
@@ -55,6 +58,10 @@ WHY (2026-09-13, PR #416): the day-to-day KindraApp checkout was on an unrelated
 ### Step 2 — Run the 15 checks
 
 Run them in order. Track each as PASS / FAIL / WARN with specific evidence.
+
+**Tool-generated commits get REPRODUCED, not read.** If a commit is the output of a formatter or auto-fixer (`prettier --write`, `eslint --fix`, codegen), check out its PARENT in a throwaway worktree, re-run the exact tool, and `git diff` the result against the commit. A byte-for-byte match is complete proof for that commit; paste the command and the empty diff. Then run the 15 checks by hand only on the PR's hand-written commits, listing them by SHA.
+When an auto-fix removes imports or variables, a linter with `no-undef` disabled will not catch a wrong removal: also diff `npx tsc --noEmit` output (line numbers stripped) between the merge-base and the head and paste the delta.
+**Why (PR #423, 2026-09-17):** a 415-file, 27,143-line reformat was fully verified this way in minutes; reading it line by line was not possible and would have proved less.
 
 ---
 
@@ -144,7 +151,7 @@ Refinements to the pre-existing check (PRs #413/#414/#417, 2026-09-13): run the 
 
 Paste the FULL terminal output of every suite. Note each suite's total test count. If a count is far below the project's known total, you ran a subset — re-run.
 
-WHERE to run them: in the isolated worktree from Step 1, install dependencies with the lockfile frozen (`yarn install --frozen-lockfile`) so the deps match CI. To skip the slow install you may symlink `node_modules` from ANY local checkout of the project (e.g. `~/Sites/KindraApp` or `~/Sites/kindraapp-tf-build`) — the safety comes from the proof, not from which folder: BOTH the PR head's `package.json` AND its `yarn.lock` must be byte-identical to the donor checkout's (`shasum` all four files and paste all four hashes in the review; the lockfile matters because it, not `package.json`, determines what is actually installed). If either file differs, or the PR touches `package.json` or the lockfile, you MUST do a real install in the worktree — symlinked deps would no longer be the PR's deps. (PRs #413/#415, 2026-09-13/14: the main checkout was on a different branch with a different dependency list, so the tf-build copy was the valid donor — proven, then used.)
+WHERE to run them: in the isolated worktree from Step 1, install dependencies with the lockfile frozen (`yarn install --frozen-lockfile`) so the deps match CI. To skip the slow install you may symlink `node_modules` from ANY local checkout of the project (e.g. `~/Sites/KindraApp` or `~/Sites/kindraapp-tf-build`) — the safety comes from the proof, not from which folder: BOTH the PR head's `package.json` AND its `yarn.lock` must be byte-identical to the donor checkout's (`shasum` all four files and paste all four hashes in the review; the lockfile matters because it, not `package.json`, determines what is actually installed). If either file differs, or the PR touches `package.json` or the lockfile, you MUST do a real install in the worktree — symlinked deps would no longer be the PR's deps. (PRs #413/#415, 2026-09-13/14: the main checkout was on a different branch with a different dependency list, so the tf-build copy was the valid donor — proven, then used.) A carve-out for non-dependency `package.json` edits (e.g. a prettier config key) was considered and REJECTED on 2026-09-17 — owner decision: the install costs seconds with a warm cache, every exception adds a judgment surface a session can reason itself past, and a from-scratch install doubles as the guaranteed-clean environment that exposed the Sept 2026 stale-`node_modules` false "upstream bug." The rule stays absolute; do not re-propose the exception.
 
 FAIL if any test fails because of this PR. FAIL if you ran a subset or skipped one of the project's suites.
 
