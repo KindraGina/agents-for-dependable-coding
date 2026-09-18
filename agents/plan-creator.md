@@ -139,6 +139,7 @@ What could go wrong.
 - E2E tests if applicable
 - Tests are written FIRST (TDD)
 - If the feature involves time-dependent logic (upcoming vs past, expiry, scheduling, any date/time comparison): specify PINNED absolute test dates with an injected "now", chosen to straddle a month/year boundary — never relative dates like "today + 1 day". (July 2026 recent-event-names incident: a relative-date test passed mid-month over a broken DateTime comparison and only failed at the next month boundary.)
+- **At least one new test must EXECUTE in the environment where the defect lives.** Name the suite/config each new test runs under. If the change fixes behavior in a particular test suite, config, or runtime, a test that only reads files or inspects config objects from a *different* suite cannot detect a regression — include one test that asserts the fixed behavior at runtime inside the affected suite. **Why (Sept 18, 2026, Jest open-handle plan):** all 17 planned tests were static file/config assertions in the ts-jest suite while the leak lived in the jest-expo suite. Since Jest exits 0 with leaked handles, the fix could have silently stopped working with every test still green. Test review round 1 rejected the plan for it.
 
 ## Live Verification Steps
 How to verify this feature works with real data (not mocked). These steps
