@@ -33,10 +33,20 @@ In April 2026, Apple rejected every App Store submission because the production 
 ### Step 1: Find every EXPO_PUBLIC_ var used in code
 
 ```bash
-grep -rEho 'EXPO_PUBLIC_[A-Z0-9_]+' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' src/ App.tsx index.ts app.config.ts 2>/dev/null | sort -u > /tmp/build-app-env-used.txt
+# Scan the WHOLE repo and EXCLUDE noise — never enumerate include-paths by hand.
+# (2026-09-18: the old hand-listed form `src/ App.tsx index.ts app.config.ts` missed
+#  `contexts/`, where contexts/authContext.tsx:31 reads EXPO_PUBLIC_PHONE_COUNTRY_CODE,
+#  and missed welcome.tsx at repo root. An include-list under-reports silently as the
+#  repo layout changes, producing a false PASS with no error. See patterns.md META-008.)
+grep -rEho 'EXPO_PUBLIC_[A-Z0-9_]+' \
+  --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \
+  --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=ios --exclude-dir=android \
+  --exclude-dir=__tests__ --exclude-dir=.expo --exclude-dir=dist \
+  . 2>/dev/null | sort -u > /tmp/build-app-env-used.txt
 ```
 
-Save this as your **REQUIRED** list.
+Save this as your **REQUIRED** list. Print the exact command you ran and the number of files
+searched in your report, so a reviewer can see what was and was not scanned.
 
 ### Step 2: Read eas.json and extract the target profile's env block
 

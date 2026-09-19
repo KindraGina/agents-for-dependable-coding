@@ -61,8 +61,8 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
 ### DOCTOR-005 — The expected 8-package Directory advisory (and its drift from `docs/TODO.md`)
 
 - **First seen:** 2026-08-05 (build a0a56da9-da5b-4f4d-adcc-4a924c168baf, iOS testflight, build 172, v1.80.11, commit 8376d9c3, project `kinliadev` — build SUCCEEDED)
-- **Last seen:** 2026-08-05 (same build)
-- **Occurrences:** 1
+- **Last seen:** 2026-09-18 (builds c4c09357 iOS 179 + b3b5d2e6 Android vc21, testflight, commit 8f188d09 — both SUCCEEDED)
+- **Occurrences:** 2
 - **Phase:** Expo Doctor (pre-flight only — not an EAS build step)
 - **Platform:** both
 - **Log signature:** `✖ Validate packages against React Native Directory package metadata` with `17/18 checks passed`
@@ -70,6 +70,7 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
 - **Fix:** None at build time — the correct response is REPORT-AND-PASS (see META-003). The only real fix is replacing the libraries, which is backlog work, not build work. Do NOT add packages to the exclude list.
 - **Pre-flight catchable?** Yes — `build-prereq-auditor` Check 1 already surfaces it. The auditor must classify it as **ADVISORY / expected**, and should diff the observed package list against this entry's list of 8: an identical list = expected state, PASS; a NEW name appearing = a genuinely new dependency-health regression worth flagging loudly.
 - **Notes / open follow-up (backlog drift):** These 8 packages are **not listed** in `docs/TODO.md` → "Legacy Library Refactor". The backlog and the live doctor output have drifted apart — the TODO section was written before the July 2026 migrations landed (PRs #345/#346/#349/#356/#357/#359) and was never reconciled against what doctor actually still reports. Owner follow-up (not a build blocker): reconcile `docs/TODO.md`'s Legacy Library Refactor list with this 8-package set so the backlog reflects reality. Until then, treat THIS entry as the authoritative expected-advisory list. See META-003 for why the advisory must never be a FAIL.
+- **Update 2026-09-18 (list drift — the diff the auditor is supposed to do, done):** the observed advisory is no longer the 8 packages above. Current output: **7 "Untested on New Architecture"** (`react-native-branch`, `react-native-calendar-events`, `react-native-fs`, `react-native-orientation-locker`, `react-native-rate`, `react-native-text-input-mask`, `react-native-version-check` — unchanged) and **5 "Unmaintained"**: `@react-native-community/blur`, `react-native-fs`, `react-native-rate`, `react-native-text-input-mask`, `rn-fetch-blob`. `@react-native-community/blur` is a **NEW name** not in the originally recorded set — this entry previously recorded 4 unmaintained packages. Total distinct flagged packages is now **9**. The new name is a genuine dependency-health signal per this entry's own "a NEW name appearing = flag it loudly" rule, and it was recorded in `docs/TODO.md` by PR #424 on 2026-09-18. It is still ADVISORY, still not a build blocker, still must not be suppressed. **Authoritative expected set going forward = the 9 above** (7 untested / 5 unmaintained, with overlap).
 
 ### DOCTOR-006 — Upstream Expo patch releases drift the pins between builds
 
@@ -324,6 +325,7 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
 - **Why this is a meta-lesson:** META-002 through META-005 are all "a static read was mistaken for a runtime outcome." This is the inverse failure of the same family: a runtime outcome (build works) was mistaken for evidence that the static config was *intended*. "It works" does not establish "this is how it was designed." A prior post-mortem entry canonized an accident as a decision; the only thing that could have caught that was reading the file's history instead of its contents.
 - **Restoration plan (not yet applied at build time):** `/Users/ginalevy/Sites/KindraApp/docs/plans/2026-08-25-restore-testflight-env-block.md`. Restoring the 5 vars is additive and safe: `eas.json` `env` is EAS's own injection, and Expo's dotenv loading does not override an already-set var, so the two paths coexist (META-002 point 4). Note `eas.json` is an ASK-FIRST file — the restoration needs owner approval, not an auto-fix.
 - **Supersedes:** DECISION-007's claim that the testflight profile "deliberately" omits these vars. The dotenv path is real and load-bearing; the *omission* was not a decision. See DECISION-012.
+- **RESOLVED 2026-08-27 — verified at build commit 8f188d09 on 2026-09-18:** the block was restored by `1f25cafb` ("fix(eas): restore testflight env block lost in 2026-05-15 merge reapply (#409)", 2026-08-27). `build.testflight.env` again holds all 5 vars: `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_TARGET_ENV`, `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME`, `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `EXPO_PUBLIC_PHONE_COUNTRY_CODE`, and their values are byte-identical to the git-tracked `.env` (no drift between the two sources). The `env-var-auditor` fragility FAIL this entry authorized is therefore **no longer applicable at HEAD** — do not re-raise it without re-reading `eas.json`. The restoration plan doc is now closed out. The meta-lesson (read the file's history before calling an absence deliberate) stands unchanged. See META-010 for how this resolution went unnoticed for three weeks.
 
 ### META-007 — `eas.json` `build.testflight` declares no `environment`, so EAS resolves dashboard secrets from the default environment
 
@@ -337,6 +339,55 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
 - **Fix:** Owner decision, ASK FIRST (`eas.json` is ASK-FIRST infra per CLAUDE.md). Proposed: add `"environment": "preview"` (or whichever named environment the testflight profile should own) to `build.testflight` in `eas.json`, so secret resolution is explicit rather than incidental. Do NOT auto-edit.
 - **Pre-flight catchable?** Yes — and it WAS caught here, by two auditors independently. Keep the check: for every build profile in `eas.json`, assert an explicit `environment` key; report its absence as a FRAGILITY finding (not a build blocker), worded as "resolution falls back to the default environment" rather than "vars are missing".
 - **Notes:** Distinct from META-006 (the testflight `env` **block** of `EXPO_PUBLIC_*` vars lost in a revert at `a55116fb`) and from META-001 (the April 2026 incident where the token existed on the wrong EAS *project*). This one is about the wrong *environment within the right project*. All three are the same family: "it resolved to something, therefore it resolved to the right thing" is never sound for EAS secrets. Failure mode if it regresses is silent until the source-map upload step, i.e. a full build credit burned before anyone learns.
+
+### META-008 — `env-var-auditor`'s hard-coded scan paths miss `contexts/`, where a required var is actually read
+
+- **First seen:** 2026-09-18 (builds c4c09357 iOS 179 + b3b5d2e6 Android vc21, testflight, commit 8f188d09 — both SUCCEEDED; caught pre-flight by the auditor widening its own scan)
+- **Last seen:** 2026-09-18
+- **Occurrences:** 1
+- **Affects:** `env-var-auditor` (`~/.claude/agents/env-var-auditor.md`, Step 1)
+- **Phase:** Pre-flight (env var audit)
+- **Platform:** both
+- **Log signature:** `grep -rEho 'EXPO_PUBLIC_[A-Z0-9_]+' --include='*.ts' ... src/ App.tsx index.ts app.config.ts` — the tell is a REQUIRED list that is shorter than reality, with no error of any kind.
+- **Root cause:** Step 1 enumerates directories by hand (`src/ App.tsx index.ts app.config.ts`). The Kindra repo's live React Context layer lives in `contexts/` (the shipping architecture — see CLAUDE.md), not under `src/`, and `contexts/authContext.tsx:31` reads `EXPO_PUBLIC_PHONE_COUNTRY_CODE`. `welcome.tsx` at repo root is likewise outside the list. A hand-maintained path list silently under-reports as the repo's layout changes; the auditor then compares an incomplete REQUIRED list against the PROVIDED list and reports "no gaps" — a false PASS that is invisible because nothing errors.
+- **Fix:** Scan the whole repo and exclude noise instead of enumerating includes. Applied 2026-09-18 to `~/.claude/agents/env-var-auditor.md` Step 1:
+  `grep -rEho 'EXPO_PUBLIC_[A-Z0-9_]+' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=ios --exclude-dir=android --exclude-dir=__tests__ --exclude-dir=.expo . | sort -u`
+  On this run the widened scan (done manually by the auditor before the spec was fixed) found 5 required vars, all 5 provided — verdict unchanged, but only by luck.
+- **Pre-flight catchable?** N/A — this IS the pre-flight tool. The auditor should additionally print the exact scan command and the resolved file list count, so a reviewer can see what was and was not searched.
+- **Notes:** Same family as META-004 — an auditor rule hard-coded to an incidental fact (there, a log string; here, a directory layout) that rots silently and fails toward a green result. Prefer exclude-lists over include-lists for any repo-wide scan. Consequence if it had bitten: a genuinely missing `EXPO_PUBLIC_*` var reaches the bundle as `undefined`, which is the April 2026 `cloud_name = undefined` crash class (DECISION-002).
+
+### META-009 — Which auditors must be re-run after a mid-run merge into the build branch
+
+- **First seen:** 2026-09-18 (builds c4c09357 iOS 179 + b3b5d2e6 Android vc21, testflight; audits started at `eedf1a5b`, PRs #425/#426 merged mid-run, build shipped from `8f188d09`)
+- **Last seen:** 2026-09-18
+- **Occurrences:** 1
+- **Affects:** `build-app` skill orchestration; all four auditors
+- **Phase:** Pre-flight
+- **Platform:** both
+- **Log signature:** N/A — the tell is an audit report whose `HEAD:` line does not equal the commit EAS uploads. On this run `build-app-env-audit.md` and `build-app-sentry-audit.md` still read `HEAD: eedf1a5b` while the build went out at `8f188d09`.
+- **Root cause:** Auditors are a snapshot of one commit. If anything merges into the build branch after they run, every PASS is about a tree that is no longer the one being uploaded. Re-running all four unconditionally is slow (the prereq auditor alone builds two ~9.6 MB bundles); re-running none is how a stale PASS ships.
+- **Fix (decision rule — re-run by what the merge actually touched):** diff the new commits against the audited commit (`git diff --name-only <audited> <new>`) and re-run:
+  - **`commit-state-auditor` — ALWAYS.** Its entire subject is HEAD, branch sync, open PRs and tree cleanliness. Any new commit invalidates it unconditionally.
+  - **`build-prereq-auditor` — ALWAYS.** It validates the bundle, expo-doctor, patches, lockfile freshness and native version stamps against the actual tree. Any source change can break the bundle; any `package.json`/`yarn.lock` change also requires a re-install first (SKILL-007).
+  - **`env-var-auditor` — only if the diff touches** `eas.json`, `.env`, `.easignore`, `app.config.ts`, or adds/removes any `EXPO_PUBLIC_` reference (`git diff <audited> <new> -S'EXPO_PUBLIC_'`).
+  - **`sentry-config-auditor` — only if the diff touches** `eas.json`, `app.config.ts`, `ios/sentry.properties`, `android/sentry.properties`, `App.tsx`, `.env.sentry-build-plugin`, or `@sentry/*` in `package.json`.
+  On this run PRs #425/#426 changed only test and docs files, so prereq + commit-state were re-run and env/Sentry were correctly carried forward — but the carried-forward reports still say `eedf1a5b`, which is the part to fix.
+- **Pre-flight catchable?** Yes — cheap and mandatory: immediately before invoking `eas-cli build`, assert that every audit report's recorded HEAD equals `git rev-parse HEAD`. Any mismatch that was not explicitly justified by this entry's diff rule is a HARD STOP. When an audit is deliberately carried forward, the orchestrator must stamp the report with "carried forward from `<sha>` to `<sha>`; diff touched none of <file list>" so the gap is documented rather than invisible.
+- **Notes:** Related: SKILL-006 (right commit, wrong checkout) and SKILL-007 (right tree, stale `node_modules`). All three are the same question — "is the thing I validated the thing EAS will build?" — and all three are answered by making the auditor state the absolute path AND the commit it measured.
+
+### META-010 — A post-mortem build record repeated a prior entry's config claim without re-reading the file (stale for 3 weeks)
+
+- **First seen:** 2026-09-18 (discovered while writing the post-mortem for builds c4c09357 / b3b5d2e6, commit 8f188d09)
+- **Last seen:** 2026-09-18
+- **Occurrences:** 1
+- **Affects:** `build-postmortem-updater` (this agent), and by inheritance `~/Sites/CLAUDE.md`
+- **Phase:** Post-mortem
+- **Platform:** N/A
+- **Log signature:** N/A — the tell is a pattern-file claim about current config state that no command in the report ever verified.
+- **What happened:** DECISION-014 (recorded 2026-09-16) listed as fragile state #3 that `build.testflight` "still has no `env` block ... still unrestored", carried forward from DECISION-012 / META-006. It was false: `1f25cafb` (PR #409) restored the block on 2026-08-27, three weeks and at least one shipped build earlier. The same stale claim was also sitting in `~/Sites/CLAUDE.md`. Verification is one command: `git show <build-commit>:eas.json`. Nobody ran it, because the claim was inherited rather than measured.
+- **Required hardening:** When a post-mortem build record restates a configuration fact from an earlier entry, it must **re-verify that fact against the build commit and paste the command**, exactly like a plan's `## Verified References` (`~/Sites/CLAUDE.md` → Plan Verification Rule 1). Specifically: any bullet of the form "still X / still unresolved / still open" requires a fresh check at the build commit, and the entry should cite it. If it cannot be checked, write "not re-verified this run" rather than asserting continuity.
+- **Why this is a meta-lesson:** META-006's own lesson was "'it works' does not establish 'it was designed that way' — read the history." This is the next failure in that chain: *a pattern file's own prior entry is not evidence either.* The pattern library exists to stop repeated mistakes; an unverified claim inside it has the same authority as a verified one to the next reader, so it propagates faster than it would have in chat. Stale entries in this file are more dangerous than missing ones.
+- **Notes:** Corrections applied 2026-09-18 to META-006 (RESOLVED note), DECISION-014 (inline CORRECTION), and the corresponding `~/Sites/CLAUDE.md` subsection. Nothing was rewritten — corrections are appended and dated so the original error stays visible.
 
 ## Phase: Skill Orchestrator Bugs (build-app skill)
 
@@ -553,9 +604,35 @@ These entries are NOT EAS-build failures — they are bugs in the `build-app` sk
   1. `node_modules` was stale on arrival (PR #420 had just merged, changing `package.json` + `yarn.lock`); the orchestrator ran `yarn install --frozen-lockfile` MANUALLY before the auditors. The skill does not do this for you — SKILL-007.
   2. `build.testflight` has no `environment` key; dashboard secrets resolved from the default environment and worked only because `SENTRY_AUTH_TOKEN` exists in all three environments on `kinliadev` — META-007.
   3. `build.testflight` still has no `env` block; `EXPO_PUBLIC_*` still reaches the bundle solely via dotenv inlining of the tracked `.env` — META-006 / DECISION-007 / DECISION-012, still unrestored.
+     - **CORRECTION 2026-09-18:** point 3 was FALSE when written. `git merge-base --is-ancestor 1f25cafb f30c7d5e` returns true, and `git show f30c7d5e:eas.json` shows `build.testflight.env` with all 5 `EXPO_PUBLIC_*` keys. The block had already been restored on 2026-08-27 by `1f25cafb` (PR #409), three weeks before that build. The claim was copied forward from DECISION-012/META-006 without re-reading the file. See META-010.
   4. `keys/ApiKey_*.p8` uploaded with the archive — DECISION-013, owner-deferred, still open.
   5. Upload archive ~190 MB, with an EAS size warning on every build — see "Future cleanup".
 - **Implication:** This is the current known-good testflight reference; supersedes DECISION-012 as the newest one. Any auditor that would have FAILED this exact configuration is mis-specified — except the META-007 `environment` finding, which is a correct FRAGILITY report and should stay.
+
+### DECISION-015 — Jest `__mocks__` are invisible to Metro: `src/__mocks__/@sentry/react-native.js` does not reach the shipped bundle
+
+- **Recorded:** 2026-09-18 (builds c4c09357 iOS 179 + b3b5d2e6 Android vc21, testflight, commit 8f188d09 — both SUCCEEDED)
+- **Decision / ground truth:** PR #425 added `src/__mocks__/@sentry/react-native.js` to stop a Jest open-handle hang in the Expo suite. Placing a manual mock for a *real, shipped* native SDK inside `src/` looks alarming — if Metro picked it up, the app would ship with Sentry stubbed out and crash reporting would silently die. It does not. Verified empirically on this build, not reasoned about:
+  1. The only references are `jest.expo.config.js:36` (`moduleNameMapper`) and test files under `__tests__/fixes/`. No module in the app import graph imports it.
+  2. `metro.config.js` is `getSentryExpoConfig(__dirname)` + `sourceExts.push('cjs')` + the reanimated wrapper — it adds no `roots`, `watchFolders` or `extraNodeModules`. Metro resolves strictly by import graph; `__mocks__` auto-mocking is a **jest-haste-map** behavior, not a Metro one.
+  3. **The proof is in the artifact:** `grep -c "src/__mocks__"` = **0** in both `/tmp/ba-ios.js` and `/tmp/ba-android.js`, while the real `@sentry/react-native` appears 5 times in the iOS bundle.
+- **Why it matters:** "Is this test-only file in the production bundle?" is answerable in one command against the emitted bundle. Do not settle it by reading config or by reasoning about resolver semantics — **grep the bundle.** The same one-liner answers the question for any future mock, fixture, or dev-only module.
+- **Implication / how to apply:** Keep the mock where it is. If a future change adds `roots`/`watchFolders`/`extraNodeModules` to `metro.config.js`, or moves the mock into a directory that *is* on the import graph, this conclusion expires and must be re-tested the same way. Recommended standing check for `build-prereq-auditor` (it ran it manually as Check 9 this time): for each `__mocks__`/test-only path added since the last shipped build, `grep -c` that path in both emitted bundles and require 0.
+
+### DECISION-016 — Build record: c4c09357 (iOS testflight 179) + b3b5d2e6 (Android vc21) succeeded
+
+- **Recorded:** 2026-09-18
+- **Builds:** `c4c09357-f01a-4b30-99a2-fa3ac4e4f1ee` — iOS, `testflight` profile, build 179, auto-submitted to ASC `6748651413`. `b3b5d2e6-bc13-4938-b380-4ce36a338dd6` — Android, `testflight` profile, versionCode 21, APK artifact (no auto-submit — expected, see DECISION-012).
+- **Built from:** `/Users/ginalevy/Sites/kindraapp-tf-build`, branch `testflight`, commit `8f188d09` (merge of PR #426), version 1.80.11. All four pre-flight auditors PASSED. Contents: 6 merged PRs since the last shipped build (`f30c7d5e`), 438 files, of which only #421 (deleted profile photos reappearing) and #422 (theme-box save navigation) are behavior changes; #423 is a mechanical lint sweep.
+- **State these builds succeeded WITH (re-verified this run, not inherited — see META-010):**
+  1. `build.testflight.env` **IS present** with all 5 `EXPO_PUBLIC_*` vars, byte-identical to the git-tracked `.env` (restored 2026-08-27 at `1f25cafb` / PR #409). This supersedes the "no env block" state recorded in DECISION-012 and DECISION-014.
+  2. `build.testflight` still has **no `environment` key** — dashboard secrets resolve from the default environment and work only because `SENTRY_AUTH_TOKEN` exists in all three `kinliadev` environments. META-007, unchanged, still an open fragility.
+  3. `SENTRY_DISABLE_AUTO_UPLOAD` is set **nowhere** in the repo, so source maps DID upload for this testflight build, to org `kinlia` / project `kinlia-staging`. This is a change from DECISION-008's recorded testflight posture (`=true`), which was already gone at `a55116fb` (2026-08-05).
+  4. Sentry token validity was **NOT live-pinged** — the EAS variable is SECRET-visibility so the CLI returns `*****` and there is no value to ping with. Verified present + secret + project-scoped + updated 2026-08-05. This is a standing gap in META-001's hardening #3 for secret-visibility variables; presence remains the only evidence obtainable from the CLI.
+  5. Two audit reports (env, Sentry) were carried forward from `eedf1a5b` across the mid-run merge of PRs #425/#426 — justified (diff was tests + docs only) but unstamped. See META-009.
+  6. `keys/ApiKey_*.p8` still tracked in git and still uploaded to the EAS builder — DECISION-013, owner-deferred to 2026-09-17, **not re-verified as fixed this run.**
+  7. expo-doctor advisory is now **9 packages** (7 untested / 5 unmaintained, overlapping), up from the 8 recorded — DOCTOR-005 update.
+- **Implication:** This is the current known-good testflight reference; supersedes DECISION-014. Any auditor that would have FAILED this exact configuration is mis-specified — except the META-007 `environment` finding and the DECISION-013 key exposure, which are correct standing reports.
 
 ## Future cleanup (low priority)
 
