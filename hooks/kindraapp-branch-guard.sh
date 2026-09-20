@@ -23,7 +23,35 @@
 # still clean" does not, because "status" occupies the subcommand slot.
 cmd=$(jq -r '.tool_input.command // empty')
 ASK='{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"Branch-changing or work-discarding git command in a shared checkout - other sessions/cascades may be live. Confirm with Gina first."}}'
-g() { printf '%s' "$cmd" | grep -qE -- "$1"; }
+
+# 2026-09-20, second false-positive class: agents write review/audit documents
+# via bash heredocs, and those documents QUOTE dangerous git commands verbatim
+# as pasted evidence (the repo rules require it). Heredoc bodies are DATA the
+# shell never executes — strip them before matching, so only executed text is
+# inspected. Handles <<TAG, <<-TAG, <<'TAG', <<"TAG"; the terminator may be
+# tab-indented (<<- form). A real git command before/after a heredoc, or on
+# the heredoc's opening line itself, is still seen.
+cmd_exec=$(printf '%s\n' "$cmd" | awk '
+  strip {
+    line=$0; sub(/^\t+/, "", line)
+    if (line == tag) strip=0
+    next
+  }
+  /<<-?[ \t]*["'"'"']?[A-Za-z_]/ {
+    rest=$0
+    sub(/.*<<-?[ \t]*/, "", rest)
+    sub(/^["'"'"']/, "", rest)
+    tag=""
+    for (i=1; i<=length(rest); i++) {
+      c=substr(rest, i, 1)
+      if (c ~ /[A-Za-z0-9_]/) tag=tag c; else break
+    }
+    if (tag != "") strip=1
+    print; next
+  }
+  { print }
+')
+g() { printf '%s' "$cmd_exec" | grep -qE -- "$1"; }
 
 # git-subcommand anchor: `git` + any global flags (two-token -C/-c forms first
 # so their arguments are consumed) + the subcommand as the FIRST non-flag word.
