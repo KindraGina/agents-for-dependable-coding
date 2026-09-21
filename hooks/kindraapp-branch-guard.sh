@@ -51,11 +51,33 @@ cmd_exec=$(printf '%s\n' "$cmd" | awk '
   }
   { print }
 ')
+# 2026-09-20, third false-positive class: guard words inside QUOTED STRING
+# ARGUMENTS — a lesson-learner dedup grep like  grep -n "git stash\|stash" ...
+# carries "git stash" as a search pattern, and commit messages / sed exprs do
+# the same. Quoted spans are data handed to a program, not commands the shell
+# runs, so strip them before matching (double-quoted spans first — they may
+# contain apostrophes — then single-quoted, whose bodies never contain escapes
+# by shell semantics). A real dangerous command's subcommand is never inside
+# the quotes (`git checkout "my branch"` keeps `git checkout` outside), so
+# stripping cannot hide it. The one true execution-inside-quotes form,
+# `bash|sh|zsh -c "git checkout ..."`, is caught by the backstop below, which
+# re-checks the UNSTRIPPED text whenever a shell -c invocation is present.
+cmd_exec=$(printf '%s' "$cmd_exec" | sed -E 's/"(\\.|[^"\\])*"//g' | sed -E "s/'[^']*'//g")
 g() { printf '%s' "$cmd_exec" | grep -qE -- "$1"; }
+graw() { printf '%s' "$cmd" | grep -qE -- "$1"; }
 
 # git-subcommand anchor: `git` + any global flags (two-token -C/-c forms first
 # so their arguments are consumed) + the subcommand as the FIRST non-flag word.
 PRE='\bgit(\s+-C\s+\S+|\s+-c\s+\S+|\s+--?\S+)*\s+'
+
+# Backstop: shell -c executes its quoted argument. If the command invokes
+# bash/sh/zsh -c AND the raw (unstripped) text contains a guarded git
+# subcommand, ask — quote-stripping must not hide a real execution.
+if graw '\b(bash|sh|zsh)\s+(-[A-Za-z]+\s+)*-c\b' \
+   && { graw "${PRE}(checkout|switch|rebase|clean|stash)\b" || graw "${PRE}reset\b[^|;&]*--(hard|merge|keep)" || graw "${PRE}restore\b"; }; then
+  echo "$ASK"
+  exit 0
+fi
 
 # Branch moves: checkout/switch in ANY form (the " -- " path-restore form
 # discards uncommitted edits, so it is deliberately NOT exempt), gh pr checkout,
