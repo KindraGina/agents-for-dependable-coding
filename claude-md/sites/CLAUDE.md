@@ -289,6 +289,11 @@ Applies to the main session, all subagents, pipeline agents (plan-creator must i
 - Let clear naming speak for itself
 - When modifying code, comment your changes, not surrounding code you didn't touch
 
+### Citing Other Code From a Comment
+- **Point at code by a unique searchable string, not a line number** ("the `hideOnSinglePage` guard in rc-pagination", not `holders.js:466`). Line numbers drift on the next merge.
+- **Never quote a search result the comment itself would match.** State the fact ("this app uses no LocaleProvider") instead of the grep and its zero-match count. Once written, the comment is the match.
+  Why (2026-09-20, kindra `docs/plans/2026-09-20-fix-stale-jest-suites.md`): a comment recording a zero-match grep for `LocaleProvider` became its own only match, and a sibling `holders.js:466-467` cite went stale by 3 lines on merge.
+
 ### Why This Matters
 Conversation context is lost after our session ends. Future developers (including you) won't know why a change was made unless it's in the code.
 
@@ -310,6 +315,8 @@ Conversation context is lost after our session ends. Future developers (includin
    - Does the new function handle all edge cases the old one did?
    - Did I run the old function's tests against the new function?
    - Did I test with real data, not just unit tests?
+- **Repairing an existing test needs a real negative control, not a mental one.** If a test was red because its query, selector, or assertion was wrong (not because behavior changed), fixing it is guaranteed green and proves nothing. Before calling it fixed: break the app behavior the test guards, run it and show it fail, revert (empty `git diff`), run again and show it pass. Paste both runs. If no break makes it fail, it is a smoke test — say so in the test's comment.
+  Why (2026-09-20, kindra `docs/plans/2026-09-20-fix-stale-jest-suites.md`): six Jest tests queried antd-4 class names against antd 3. The negative control showed 3 of 6 failing as predicted and one that could not detect either regression.
 
 ## Deployment
 

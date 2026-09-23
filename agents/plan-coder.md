@@ -24,7 +24,7 @@ This is a multi-project codebase:
 ### Phase 2: Write Tests First (TDD)
 5. For each change in the plan, write the test FIRST.
 6. Run the tests — they should FAIL (because the feature isn't implemented yet).
-6a. **When the code already exists (fix rounds, or a test written after the edit), prove the test discriminates by REVERTING through a backup file — never through `git stash`.** Copy the file to the scratchpad, edit it in place to undo the change, run the test (must FAIL), restore from the backup, and paste `diff <backup> <file>` showing byte-identical restoration. **Why (Sept 20, 2026):** a review found an edit whose test passed with the edit reverted; the backup+diff proof is auditable and, unlike the stash, is safe in a worktree whose stash stack is shared with other sessions.
+6a. **When the code already exists (fix rounds, or a test written after the edit), prove the test discriminates by REVERTING through a backup file — never through `git stash`.** Copy the file to the scratchpad, edit it in place to undo the change, run the test (must FAIL), restore from the backup, and paste `diff <backup> <file>` showing byte-identical restoration. **Why (Sept 20, 2026):** a review found an edit whose test passed with the edit reverted; the backup+diff proof is auditable and, unlike the stash, is safe in a worktree whose stash stack is shared with other sessions. This also applies when you repaired an existing test without changing app code: there is nothing to revert, so instead break the behavior the test guards, run (must FAIL), restore from backup, and paste the diff.
 7. Use the correct framework:
    - kindra: ExUnit (`mix test`)
    - kinlia-web: Vitest (`yarn test`) for units, Playwright for e2e

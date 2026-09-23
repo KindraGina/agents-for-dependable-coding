@@ -57,6 +57,8 @@ If you proposed running a pipeline and the user replied ambiguously, you must AS
 
 Everything under `~/.claude/agents/` and `~/.claude/skills/` is a **symlink** into the GitHub-connected repo at `~/claude-pipeline-agents/` (GitHub: `github.com/KindraGina/agents-for-dependable-coding`). The repo is the source of truth. Editing through the symlink IS editing the repo — no copy step needed. After editing: `cd ~/claude-pipeline-agents && git status`, then commit + push to `origin main`.
 
+`~/CLAUDE.md` and `~/Sites/CLAUDE.md` are symlinks into `claude-md/` in the same repo (since Sept 23, 2026). Same edit → commit → push rule applies.
+
 **CREATING A NEW SKILL OR AGENT — write it in the REPO, then symlink.** Never `mkdir` + `Write` directly into `~/.claude/skills/` or `~/.claude/agents/`. The correct sequence is:
 
 ```bash
