@@ -85,6 +85,7 @@ Reviewer 1 should have done this analysis. Verify:
 
 ### Fix-to-Test Mapping Audit
 - **Reviewer 1 must have provided a fix-to-test mapping (every fix → specific named test).** If they didn't, flag as CRITICAL — they skipped mandatory coverage verification.
+- **Reviewer 1 must have answered "would this fail with the fix reverted?" per named test, not once for the suite,** and checked each title against its assertions (their check #6). A suite-level "yes" is not evidence; flag it as a gap and do the per-test pass yourself. (Sept 23, 2026, kindra SMS-blast-history run: two individual tests failed this while the suite-level answer was "yes.")
 - **Audit the mapping:** For each fix → test pair reviewer 1 listed, read the actual test. Does the assertion actually prove the fix works? Would the test fail if the fix were reverted?
 - If reviewer 1 accepted vague coverage like "may be covered by integration tests" or "covered at integration level" without naming specific tests, flag as CRITICAL — vague coverage claims are not evidence.
 - Provide YOUR OWN fix-to-test mapping and compare to reviewer 1's. Note any fixes that reviewer 1 mapped to a test but you disagree that the test actually proves the fix.

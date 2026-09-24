@@ -106,6 +106,7 @@ Before approving, verify the implementation covers ALL of these:
 - Is there duplicated code that should use existing utilities?
 - Are the comments accurate and helpful (not just restating the code)?
 - Are comments present where needed? (WHY not WHAT — explain non-obvious choices, edge cases, business logic)
+- **Do any NEW comments cite a line number (`File.ext:NNN`, `lines 185–188`)?** Open the cited line and confirm it holds the described code. A wrong-but-existing line number is a Critical finding: it misleads the next reader more than no citation would. Ask for a unique searchable anchor instead. **Why (Sept 23, 2026, kindra SMS-blast-history run):** three fresh comments cited line numbers that the same edit had already shifted; each pointed at unrelated code.
 
 ### Data Flow & Aggregation
 - If data is grouped/aggregated, can the grouping keys produce unexpected splits? (e.g., grouping by message_body when body can vary per recipient)

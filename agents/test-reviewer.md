@@ -49,6 +49,9 @@ This is a multi-project codebase with different test frameworks:
    - Any boundary/ordering/expiry test built on relative dates is an automatic NEEDS CHANGES.
    - **Why this check exists (July 2026 recent-event-names incident):** the pipeline's own test used "+1/+2 days" mid-month and went green over a structurally-wrong `>=` DateTime comparison; it only started failing at the next month boundary, read as "flaky CI," and blocked staging deploys. A relative-date test satisfies "fails without the fix" on the day it's written while proving nothing.
 
+6. **Answer questions 1–2 for EVERY test, in writing — not once for the suite.** Your review must list each new or changed test by name with a one-line answer to "would this fail with the fix reverted?" and what it proves. A test that asserts something is absent in the default state (an element not rendered before any interaction, a field nil before any call) is vacuously true with or without the fix — it must perform the real interaction (expand, click, call) first. And the test's title and comments must state exactly what its assertions prove; a title that contradicts its own assertion is NEEDS CHANGES.
+   - **Why this check exists (Sept 23, 2026, kindra SMS-blast-history run):** a Jest test asserted an expanded-row testid was absent on initial render — true with the feature fully reverted, since expanded content never renders until a row is expanded. Its replacement was titled "the automated row has no expand control" while asserting two expand icons exist. The suite-level question above was already in this file; it was answered "yes" for the suite while two individual tests failed it. Two of three code-review rounds went to this.
+
 ## What You Review
 
 ### Coverage
