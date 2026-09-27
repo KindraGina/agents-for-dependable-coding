@@ -484,6 +484,19 @@ These entries are NOT EAS-build failures — they are bugs in the `build-app` sk
 - **Pre-flight catchable?** Yes, cheaply — `node_modules/.yarn-integrity` mtime vs `yarn.lock`/`package.json` mtime, run in the build checkout's absolute path. Any auditor that reads `node_modules` should refuse to report PASS without this assertion.
 - **Notes:** Highest-risk trigger is exactly this run's shape: a freshly merged PR that touches dependencies, followed by a pull-without-install in the dedicated build worktree (`/Users/ginalevy/Sites/kindraapp-tf-build`). Related: SKILL-006, DOCTOR-006, DOCTOR-007, PODS-001.
 
+### SKILL-008 — Tester handoff shipped a STALE artifact link (previous build's APK) because the build ran `--no-wait` and the link was copied before it finished
+
+- **First seen:** 2026-09-18 (build b3b5d2e6 Android vc21, testflight, commit 8f188d09 — build SUCCEEDED; discovered 2026-09-27 when the Android tester reported the profile fixes were missing)
+- **Last seen:** 2026-09-27
+- **Occurrences:** 1
+- **Phase:** Handoff (after Phase 4 — not a build step)
+- **Platform:** Android (APK sideload — iOS is immune because TestFlight always serves the latest processed build)
+- **Log signature:** N/A — no error anywhere. The tell is a tester report of the shape "fix X is on iOS but not on Android" for a JS-only change, while `eas build:list` shows both platforms built from the same commit.
+- **Root cause:** Android 21 was started at 17:35 PT with `--no-wait` and finished at 17:49 PT. In that window the only downloadable testflight-profile APK on the dashboard was Android 20 (2026-09-16, commit `f30c7d5e`), and that is the link the tester received. Nothing looked wrong because both APKs stamp `versionName 1.80.11` and only differ in `versionCode` (20 vs 21), which the Android Settings screen does not show. The tester spent time on a "missing fix" investigation, and the owner suspected the build itself. Diagnosis: `adb shell dumpsys package life.kindra | grep versionCode` on the device printed `20`. Confirmed by `eas build:list --json`: PRs #421/#422 are ancestors of `8f188d09` (vc21) and NOT of `f30c7d5e` (vc20).
+- **Fix (skill change, applied 2026-09-27 to SKILL.md Phase 4):** the artifact link handed to a tester must be pulled from `eas build:view <build-id> --json` for THAT build id AFTER status is `finished`, never from the dashboard list or a previous `build:list`. The handoff message must name the build id, the git commit, the `versionCode` / build number, and the artifact URL together, and must tell the tester how to confirm it on-device (`adb shell dumpsys package life.kindra | grep versionCode`), because `versionName` alone cannot distinguish consecutive builds.
+- **Pre-flight catchable?** No — it is a post-build handoff step. Catchable at handoff: refuse to send any link whose `build:view` `id` does not match the build id captured in Phase 3.
+- **Notes:** Same family as SKILL-006 (the right check run against the wrong thing) — here the right tester received the wrong artifact. Related: DECISION-016 (the build record for vc21 is correct; only the handoff was stale). If a tester ever reports a platform-only regression for a JS-only change, check `versionCode` on the device BEFORE opening the code.
+
 ## Successful Builds — Notable Decisions
 
 ### DECISION-001 — newArchEnabled is false on purpose
@@ -632,6 +645,7 @@ These entries are NOT EAS-build failures — they are bugs in the `build-app` sk
   5. Two audit reports (env, Sentry) were carried forward from `eedf1a5b` across the mid-run merge of PRs #425/#426 — justified (diff was tests + docs only) but unstamped. See META-009.
   6. `keys/ApiKey_*.p8` still tracked in git and still uploaded to the EAS builder — DECISION-013, owner-deferred to 2026-09-17, **not re-verified as fixed this run.**
   7. expo-doctor advisory is now **9 packages** (7 untested / 5 unmaintained, overlapping), up from the 8 recorded — DOCTOR-005 update.
+- **Handoff note (added 2026-09-27):** the Android tester was sent the vc20 APK link (previous build) instead of this build's vc21 link — the build was correct, the link was stale. See SKILL-008. Correct artifact: `https://expo.dev/artifacts/eas/H565vEYhEZYHbaMTL4x9sf-P_Z7WcSgaMOEVPWGOSkw.apk`.
 - **Implication:** This is the current known-good testflight reference; supersedes DECISION-014. Any auditor that would have FAILED this exact configuration is mis-specified — except the META-007 `environment` finding and the DECISION-013 key exposure, which are correct standing reports.
 
 ## Future cleanup (low priority)

@@ -158,6 +158,7 @@ When status changes from `in progress` → `finished` or `errored`:
 - **finished:** Show the user the success summary:
   - iOS: "Build [number] completed. Auto-submitted to App Store Connect — go to ASC to release to TestFlight or the App Store."
   - Android: "Build [number] completed. Download the AAB from `[Application Archive URL]` and upload to Google Play Console."
+  - **Tester handoff (mandatory for any artifact a human will sideload — see patterns.md SKILL-008):** only after status is `finished`, run `npx eas-cli build:view <build-id> --json` for the build id captured in Phase 3 and take the artifact URL from THAT output — never from the dashboard list or an earlier `build:list`, which still shows the previous build while this one is in progress. The handoff message must contain, together: build id, git commit, `versionCode` (Android) or build number (iOS), and the artifact URL, plus the on-device check `adb shell dumpsys package life.kindra | grep versionCode`. Consecutive builds share the same `versionName`, so a version string alone cannot tell the tester which build they installed. Refuse to send a link whose `build:view` id does not match the Phase 3 build id.
   - Then run Phase 5 (post-mortem) and stop.
 
 - **errored:** Run Phase 4.5 (failure handling) before Phase 5.
