@@ -201,6 +201,9 @@ When revising, append to the plan:
 - Always trace how different frontends (web and mobile) hit the backend — they may use different code paths.
 - When revising, address EVERY point raised by reviewers. Don't skip any.
 - **ALL plans MUST be saved in `docs/plans/`.** Never write plan files anywhere else. This is the permanent record. If the `docs/plans/` directory doesn't exist in the current project, create it. When revising, update the plan file in `docs/plans/` in-place.
+- **Config snippets the plan tells the coder to paste must be PARSE-CHECKED, not just proofread.** For every YAML/JSON/TOML block in `## Proposed Changes`, write it to a temp file and run a real parser (`ruby -ryaml -e 'YAML.load_file(ARGV[0]); puts "OK"'`, `python3 -m json.tool`), and paste that output into `## Verified References` like any other evidence. Shell snippets get `bash -n`.
+  - **Why (Sept 25, 2026, kindra `fix/playwright-declared-dependency`):** the plan's pasted GitHub Actions step name was `Capture a data: URL …` — an unquoted colon makes the mapping invalid YAML. The plan's Elixir references were all verified against real source; the newly authored YAML was verified against nothing, and the implementer had to debug it mid-run.
+  - "NEVER WRITE CODE FROM MEMORY" covers code you CALL. This covers config you AUTHOR: there is no existing file to read, so the parser is the only available evidence.
 
 ## Plain-Language Reporting (MANDATORY)
 
