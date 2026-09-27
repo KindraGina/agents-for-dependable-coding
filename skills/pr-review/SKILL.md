@@ -67,6 +67,12 @@ When an auto-fix removes imports or variables, a linter with `no-undef` disabled
 
 **Why (PR #429, 2026-09-25):** the scoped delta was the review's strongest evidence — exactly 3 `react-hooks/rules-of-hooks` errors removed, 0 added — and the `tsc` delta showed all 71 new errors were a project-wide test-typing condition shared by 155 existing files, not a PR defect.
 
+**"Moved, not changed" claims get proven with a stripped diff.** When a PR says code was relocated, wrapped, or extracted with behavior unchanged, run
+`diff <(git show <merge-base>:<file> | grep -v '^\s*//' | grep -v '^\s*$') <(git show <head>:<file> | grep -v '^\s*//' | grep -v '^\s*$')`
+and paste the surviving hunks — that output IS the exhaustive list of real changes. Adjust the comment marker to the file's language (`//` for TS/JS, `#` for Elixir and shell, `{/*` for JSX block comments); the pattern above is the TypeScript form. Cross-check with a count of the key accessor (`grep -c "obj\." `) at both commits.
+
+**Why (PR #430, 2026-09-27):** one command collapsed an +80/−11 refactor of a Stripe checkout screen to three hunks (signature, removed guard, new wrapper) and proved all 16 `ticketingOptions.` reads byte-identical. It was the most efficient check in that review and was improvised, not prescribed.
+
 ---
 
 #### Tier 1 — Must Pass
@@ -76,6 +82,12 @@ When an auto-fix removes imports or variables, a linter with `no-undef` disabled
 Compare the PR's body description to the actual diff. Does the description describe what the code does? Is there scope creep (diff includes changes unrelated to the description)? Are acceptance criteria stated? Is a ticket linked?
 
 FAIL if: description is missing, generic ("fixes stuff"), or describes work that isn't in the diff. WARN if: diff includes unrelated changes beyond the stated scope.
+
+**Author-declared untested surfaces are a named gate, not prose.** Grep the PR body and any linked plan for `not run`, `not tested`, `no access`, `pending QA`, `untested`. For each one, name in the review the platform/path left unexercised and the exact manual steps that must pass before promotion. Honest disclosure is not coverage: it does not become a Tier 1 FAIL, but it MUST appear as a gate the merger cannot skim past.
+
+When the base is a staging branch (`testflight`, `develop`), scope the verdict: "APPROVE for merge to `<base>` only — NOT cleared for production until `<gate>` passes."
+
+**Why (PR #430, 2026-09-27):** the Stripe checkout screen was refactored and verified on Android only; iOS `applePay` and the payment-sheet lifecycle were device-unexercised on an app with no over-the-air rollback. Every check passed, so an unscoped APPROVE would have read as production-ready.
 
 ---
 
@@ -265,6 +277,10 @@ WARN if a contract changed but no docs touched. Not a hard FAIL.
 
 Not a hard FAIL.
 
+**Split the size number into code and docs, and read large docs-only files in a targeted way.** Report reviewable code lines separately from documentation lines. For a docs-only file over ~500 lines: read its header/status block, grep it for status and QA markers (`READY`, `NOT RUN`, `QA`, `TODO`, `DONE`), include it in the Check 3 secret scan — and do NOT read the body line by line. Say precisely that in "What I read this session", naming the line ranges you did read. (This is the one sanctioned exception to the "read in full" line in the output template.)
+
+**Why (PR #430, 2026-09-27):** 4,426 of 4,815 lines were docs (a 4,273-line plan) around 375 lines of reviewable code. The targeted read cost minutes and found the actual defect — the plan's status header still instructed the next reader to re-review it as not-ready, weeks after the code shipped and Android QA passed.
+
 ---
 
 ### Step 3 — Write the review
@@ -282,7 +298,7 @@ After presenting the review (and posting it to GitHub if the user asked), launch
 
 ## What I read this session
 - PR metadata: `gh pr view [number]` — pulled
-- PR diff: `gh pr diff [number]` — read in full
+- PR diff: `gh pr diff [number]` — read in full (docs-only files over ~500 lines: targeted read per Check 15, with the line ranges actually read stated here)
 - Files I opened in this repo: [list with paths]
 - Test output: ran `[command]` — full output pasted below
 
