@@ -63,6 +63,10 @@ Run them in order. Track each as PASS / FAIL / WARN with specific evidence.
 When an auto-fix removes imports or variables, a linter with `no-undef` disabled will not catch a wrong removal: also diff `npx tsc --noEmit` output (line numbers stripped) between the merge-base and the head and paste the delta.
 **Why (PR #423, 2026-09-17):** a 415-file, 27,143-line reformat was fully verified this way in minutes; reading it line by line was not possible and would have proved less.
 
+**Diff the linter and type-checker output between merge-base and head on EVERY PR, not only auto-fix commits.** Paste the delta. A dirty baseline is not a reason to skip this — the delta is the only lint fact about the PR a repo with pre-existing errors can give you. Use a machine-readable output format so the two runs diff cleanly. If the full-tree lint run crashes in a borrowed `node_modules` (the Sept-2026 stale-`node_modules` `@typescript-eslint` crash), confirm the crash is identical at merge-base and head, then scope the run to the PR's touched files and say in the review that it was scoped and why. If the repo has no working linter or type checker at all (as of 2026-09-27, kindra: no JS linter, and `mix format` crashes on its own config), state that as a review finding instead of silently skipping the step.
+
+**Why (PR #429, 2026-09-25):** the scoped delta was the review's strongest evidence — exactly 3 `react-hooks/rules-of-hooks` errors removed, 0 added — and the `tsc` delta showed all 71 new errors were a project-wide test-typing condition shared by 155 existing files, not a PR defect.
+
 ---
 
 #### Tier 1 — Must Pass
@@ -84,6 +88,10 @@ For EVERY symbol the PR adds, modifies, or removes (exported functions, types, c
 3. For each caller: does the PR's change still work for that caller? If a function's signature changed, do callers pass the new args? If a field was renamed, do queries still find it?
 
 FAIL if any caller would break.
+
+4. Grep WITHOUT `--include` filters as well — `grep -rn "<oldName>" --exclude-dir=node_modules --exclude-dir=.git` — so comments, `docs/*.md`, workflow YAML, and scripts are covered. A rename is not complete when only the compiler-visible references were updated.
+
+**Why (PR #429, 2026-09-25):** a complete, lint-clean rename still left the old file name in a code comment (`contexts/communities.tsx:1001`) and in `docs/TODO.md:48`. Code-only greps returned zero. Report such hits as Check 14 warnings, not Check 2 failures.
 
 ---
 
@@ -129,6 +137,10 @@ Also: any test that accepts multiple status codes (`status in [200, 422]`) = FAI
 If the diff contains ZERO tests, Check 5 is FAIL by default — a bug fix with no test leaves the exact regression it fixed unguarded.
 
 A PR body that pastes green test output is NOT a substitute. Open the test files it names, grep them for the changed symbol/behavior, and paste that grep in your review. Output can be genuine and still prove nothing about this PR. (2026-09-13, PR #415: the body's "TDD proof" was 10 real passing tests from two suites that contained no `bell` assertion at all — the bell could have been deleted outright and every test in the repo would still pass.)
+
+**Run a negative control on the PR's new tests.** In the review worktree, break each behavior the new tests claim to guard (flip a comparison, swap a branch), run ONLY the new test file, and paste which named tests failed; then revert and paste both an empty `git status --porcelain` and the green re-run. A behavior no breakage can make fail is a smoke test — say so in the review.
+
+**Why (PR #429, 2026-09-25):** three one-character breakages each failed specific tests (1, then 3 of 14) in seconds, upgrading "the assertions look concrete" into proof. This mirrors the negative-control rule already in `~/Sites/CLAUDE.md` → Testing, which covers repaired tests but not reviewed ones.
 
 ---
 
