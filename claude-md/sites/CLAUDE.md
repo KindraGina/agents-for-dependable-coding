@@ -60,7 +60,7 @@ If the user has authorized "the upgrade plan" or "the deployment" in conversatio
 
 ## Kindra Production DB — current posture (as of 2026-05-24)
 
-Updated after the prod PG13 → PG16 upgrade ran cleanly on 2026-05-24. Keep this current — if any field changes, update here AND in the relevant memory file.
+Updated after the prod PG13 → PG16 upgrade ran cleanly on 2026-05-24; snapshot + nightly-dump lines corrected 2026-09-28. Keep this current — if any field changes, update here AND in the relevant memory file.
 
 - **Engine:** PostgreSQL 16.13 (was 13.20 prior to 2026-05-24 upgrade)
 - **Instance identifier:** `kindra-dating-db-prod-02`
@@ -70,7 +70,8 @@ Updated after the prod PG13 → PG16 upgrade ran cleanly on 2026-05-24. Keep thi
 - **Parameter group:** `kindra-prod-pg16-no-force-ssl` (custom — `rds.force_ssl=0`). Known temporary divergence from AWS default `default.postgres16` (which has `rds.force_ssl=1`). The eventual TLS fix flips both staging and prod back to default param groups; until then, `force_ssl=0` is required for the app to connect.
 - **Deletion protection:** ON (enabled 2026-05-24)
 - **CA cert:** `rds-ca-rsa2048-g1` (valid until 2027-05-11)
-- **Most recent manual snapshot:** `kindra-prod-pre-pg16-20260523` (rollback safety net — retain for at least a week post-upgrade)
+- **Manual snapshots:** NONE exist as of 2026-09-27 (`aws rds describe-db-snapshots --snapshot-type manual` returns empty; the pre-upgrade `kindra-prod-pre-pg16-20260523` is gone). Only the 7-day automated window covers prod. The last pre-PG16 copy anywhere is a PG13-era `pg_dump` archived on the prod box at `/home/ubuntu/backups-archive/20260524_020001/` — getting it off the box is an open owner decision.
+- **Server-side nightly dump:** `/home/ubuntu/kindra_backup.sh` (cron `0 2 * * *` UTC) silently produced 0-byte dumps from 2026-05-25 to 2026-09-27 because its v14 `pg_dump` refused PG16; repaired 2026-09-28 (PG16 client, cleanup-first, dump validation). Runbook: kindra `docs/plans/2026-09-27-prod-disk-and-nightly-backup-repair-runbook.md`. Lesson: after a DB major-version upgrade, check every client tool on every box, not just the app.
 - **Staging mirror:** RDS instance `kindra-dating-staging-2`, custom param group `kindra-staging-pg16-no-force-ssl` (same `force_ssl=0` divergence). **RDS master is `postgres`** (not `kindraadmin01` — staging was created with a different master at instance birth; doesn't affect the app, which uses `DATA_DB_USER=kindraadmin01` in `.env`).
 
 **Open follow-up:** TLS in Phoenix + flip both envs back to default param groups. Tracked at `docs/plans/2026-05-11-postgres-ssl-fix.md` on the `chore/postgres-ssl` worktree. Nothing is "done" until that ships.
