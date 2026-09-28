@@ -61,8 +61,8 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
 ### DOCTOR-005 — The expected 8-package Directory advisory (and its drift from `docs/TODO.md`)
 
 - **First seen:** 2026-08-05 (build a0a56da9-da5b-4f4d-adcc-4a924c168baf, iOS testflight, build 172, v1.80.11, commit 8376d9c3, project `kinliadev` — build SUCCEEDED)
-- **Last seen:** 2026-09-18 (builds c4c09357 iOS 179 + b3b5d2e6 Android vc21, testflight, commit 8f188d09 — both SUCCEEDED)
-- **Occurrences:** 2
+- **Last seen:** 2026-09-28 (builds d5a6917a iOS 180 + a6c496f9 Android vc22, testflight, commit a0626277 — both SUCCEEDED)
+- **Occurrences:** 3
 - **Phase:** Expo Doctor (pre-flight only — not an EAS build step)
 - **Platform:** both
 - **Log signature:** `✖ Validate packages against React Native Directory package metadata` with `17/18 checks passed`
@@ -71,6 +71,8 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
 - **Pre-flight catchable?** Yes — `build-prereq-auditor` Check 1 already surfaces it. The auditor must classify it as **ADVISORY / expected**, and should diff the observed package list against this entry's list of 8: an identical list = expected state, PASS; a NEW name appearing = a genuinely new dependency-health regression worth flagging loudly.
 - **Notes / open follow-up (backlog drift):** These 8 packages are **not listed** in `docs/TODO.md` → "Legacy Library Refactor". The backlog and the live doctor output have drifted apart — the TODO section was written before the July 2026 migrations landed (PRs #345/#346/#349/#356/#357/#359) and was never reconciled against what doctor actually still reports. Owner follow-up (not a build blocker): reconcile `docs/TODO.md`'s Legacy Library Refactor list with this 8-package set so the backlog reflects reality. Until then, treat THIS entry as the authoritative expected-advisory list. See META-003 for why the advisory must never be a FAIL.
 - **Update 2026-09-18 (list drift — the diff the auditor is supposed to do, done):** the observed advisory is no longer the 8 packages above. Current output: **7 "Untested on New Architecture"** (`react-native-branch`, `react-native-calendar-events`, `react-native-fs`, `react-native-orientation-locker`, `react-native-rate`, `react-native-text-input-mask`, `react-native-version-check` — unchanged) and **5 "Unmaintained"**: `@react-native-community/blur`, `react-native-fs`, `react-native-rate`, `react-native-text-input-mask`, `rn-fetch-blob`. `@react-native-community/blur` is a **NEW name** not in the originally recorded set — this entry previously recorded 4 unmaintained packages. Total distinct flagged packages is now **9**. The new name is a genuine dependency-health signal per this entry's own "a NEW name appearing = flag it loudly" rule, and it was recorded in `docs/TODO.md` by PR #424 on 2026-09-18. It is still ADVISORY, still not a build blocker, still must not be suppressed. **Authoritative expected set going forward = the 9 above** (7 untested / 5 unmaintained, with overlap).
+- **Update 2026-09-28 (builds d5a6917a iOS 180 / a6c496f9 Android vc22, commit a0626277 — the diff, done again):** the advisory is now **10 distinct packages**, presented by expo-doctor as two overlapping lists: **7 "Untested on New Architecture"** (`react-native-branch`, `react-native-calendar-events`, `react-native-fs`, `react-native-orientation-locker`, `react-native-rate`, `react-native-text-input-mask`, `react-native-version-check` — unchanged since 2026-08-05) and **6 "Unmaintained"** (`@react-native-community/blur`, `react-native-fs`, `react-native-rate`, `react-native-render-html`, `react-native-text-input-mask`, `rn-fetch-blob`). The NEW name versus the 2026-09-18 set is **`react-native-render-html`**, which was flagged Unmaintained and was absent from `docs/TODO.md` → Legacy Library Refactor (Dependency Health Rule 4 again — the TODO list only ever contained what a tool had already flagged). Added to `docs/TODO.md` by **PR #432** on 2026-09-28. Still ADVISORY, still not a build blocker, still must not be suppressed. **Authoritative expected set going forward = the 10 above (7 untested / 6 unmaintained, 3 packages appear on both lists).**
+- **Counting rule (added 2026-09-28) — the two lists OVERLAP; never sum them.** `react-native-fs`, `react-native-rate` and `react-native-text-input-mask` appear under BOTH headings. On this run the orchestrator reported "13 libraries" (6 + 7) when the true distinct count was **10**, and implied all 13 were unmaintained when only **6** are. That confused the owner and overstated the debt. Always report the distinct union count AND the unmaintained subset separately, e.g. "10 flagged, of which 6 unmaintained". Also state, every time, that the 7 "Untested on New Architecture" entries are **moot while `app.config.ts` sets `newArchEnabled: false`** (DECISION-001) — they describe a configuration this app does not run. The actionable dependency-health signal is the Unmaintained list only.
 
 ### DOCTOR-006 — Upstream Expo patch releases drift the pins between builds
 
@@ -235,7 +237,21 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
 
 ## Phase: Upload / Submit
 
-(none recorded yet)
+### QUEUE-001 — Long `IN_QUEUE` waits are NORMAL, on both the build queue and the ASC submission queue — do not diagnose them as failures
+
+- **First seen:** 2026-09-28 (builds d5a6917a iOS testflight 180 + a6c496f9 Android vc22, commit a0626277 — both FINISHED successfully)
+- **Last seen:** 2026-09-28
+- **Occurrences:** 1
+- **Phase:** Queue / Upload / Submit (before the build machine starts, and after the build finishes)
+- **Platform:** both
+- **Log signature:** `eas build:view` status stuck at `new` / `in-queue` with no log output, or `eas submit` / the ASC dashboard showing `IN_QUEUE` long after the build reports `FINISHED`. There is no error text — the absence of movement is the whole signal.
+- **Observed baselines (record, so nobody re-investigates them):**
+  - **Android build queue: ~53 minutes** waiting (19:02 → ~19:55 UTC) on the NORMAL-priority (free/standard) tier before the build started. Expo's status page was all-operational and nothing else in this account was queued — i.e. the wait was pure shared-tier contention, not an account or config problem.
+  - **iOS auto-submit: still `IN_QUEUE` 65+ minutes** after the build reached FINISHED (submission `9cf3c66a`). Auto-submit enqueues the upload to App Store Connect; ASC processing is Apple's queue and is independent of EAS.
+- **Root cause:** Not a defect. NORMAL-priority EAS concurrency is shared; queue depth varies by time of day. Apple's ASC ingestion has its own independent backlog.
+- **Fix:** None — wait. Do not cancel and re-run: a cancelled-and-restarted build goes to the BACK of the same queue and, if it had already started, burns a credit for nothing.
+- **Pre-flight catchable?** N/A. This is a monitoring-behavior rule: while status is `new`/`in-queue`, poll at a low frequency and report "queued, N minutes, this is normal up to ~1 hour" rather than escalating. Escalate only if (a) Expo's status page reports an incident, (b) the wait exceeds ~2 hours with an operational status page, or (c) status flips to `errored`/`canceled`.
+- **Notes:** The practical consequence for `/build-app`: a `--no-wait` build's elapsed wall time is NOT the build time, and TestFlight availability lags the FINISHED status by the ASC queue on top of Apple's own processing. Do not promise a tester a build "in 20 minutes". Related: SKILL-004 (build-time estimate too narrow), SKILL-008 (never hand out an artifact link before the build id you started reports finished).
 
 ## Meta-Lessons (auditor / pipeline bugs)
 
@@ -273,12 +289,13 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
 ### META-003 — Auditor FALSE FAIL: expo-doctor React Native Directory advisory treated as a build blocker
 
 - **First seen:** 2026-07-27 (builds 9f54e9fb iOS + c1600acf Android, both SUCCEEDED, commit e9222059, testflight profile)
-- **Last seen:** 2026-07-27
-- **Occurrences:** 1
+- **Last seen:** 2026-09-28 (builds d5a6917a iOS 180 + a6c496f9 Android vc22, commit a0626277 — both SUCCEEDED)
+- **Occurrences:** 2
 - **Affects:** `build-prereq-auditor` (expo-doctor check)
 - **What happened:** The expo-doctor "React Native Directory" advisory (17 of 18 checks passing; the Directory check flags legacy packages) was risk of being classified as a FAIL. It is NOT a build blocker — both builds succeeded with the advisory present.
 - **Ground truth:** Per the no-suppression policy (owner decision 2026-07-14, PR #342), `expo.doctor.reactNativeDirectoryCheck.exclude` in `package.json` stays EMPTY. That means the Directory advisory is the **standing, owner-decided expected state** on every build — it is surfaced on purpose and is NOT suppressed. expo-doctor's Directory check does not abort the EAS build; it is advisory metadata about dependency health.
 - **Required hardening:** Prereq auditors must classify the React Native Directory advisory as **ADVISORY / expected**, not FAIL. The correct action is to report it (feeding the `docs/TODO.md` Legacy Library Refactor backlog) and PASS. A FAIL on this advisory would block every build indefinitely, which contradicts the no-suppression + no-block owner posture.
+- **Recurrence 2026-09-28 (it happened again, one level up):** `build-prereq-auditor` returned a formal **FAIL verdict** whose ONLY constituent finding was this by-design Directory advisory — every other check passed and both builds went on to succeed. Because the verdict string was FAIL, the `/build-app` orchestrator hard-stopped and asked the owner for permission to continue, over a condition the owner themself created and cannot ever clear without violating the no-suppression policy (PR #342). **This advisory is a STANDING KNOWN CONDITION: it must be reported in every audit summary and must never produce a FAIL verdict or a full stop.** Required wording in the auditor's verdict line: `PASS (with expected standing advisory: N packages flagged by React Native Directory, M unmaintained — see DOCTOR-005)`. The orchestrator presents that line and continues without a gate. A stop is warranted ONLY if the advisory's package list contains a name not in DOCTOR-005's authoritative set — and even then it is a loud report, not a build blocker. See SKILL-009.
 - **Note — supersedes the DOCTOR-003 fix for this repo:** DOCTOR-003's original fix ("add packages to the `reactNativeDirectoryCheck.exclude` list") is now AGAINST policy — the exclude list stays empty (PR #342). The Directory advisory is expected and must not be suppressed nor treated as a blocker. Keep DOCTOR-003 for its diagnostic signature, but do not apply its suppression fix.
 
 ### META-004 — Auditor near-FALSE-FAIL: local bundle check greps for a string RN 0.81's CLI never prints
@@ -330,14 +347,15 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
 ### META-007 — `eas.json` `build.testflight` declares no `environment`, so EAS resolves dashboard secrets from the default environment
 
 - **First seen:** 2026-09-16 (builds 06dbe7c7 iOS 178 + c95ed54c Android 20, testflight, commit f30c7d5e — both SUCCEEDED; flagged pre-flight by two independent auditors)
-- **Last seen:** 2026-09-16
-- **Occurrences:** 1
+- **Last seen:** 2026-09-28 (builds d5a6917a iOS 180 + a6c496f9 Android vc22, commit a0626277 — both SUCCEEDED)
+- **Occurrences:** 2
 - **Phase:** Pre-flight (env-var / sentry config audit) — would surface at Run Fastlane / Run Gradle
 - **Platform:** both
 - **Log signature:** N/A at audit time. If it ever bites, the runtime signature is the FASTLANE-001 / GRADLE-001 one: `Auth token is required for this request` during the Sentry source-map upload step.
 - **Root cause:** `build.production` in `eas.json` sets `"environment": "production"`; `build.testflight` sets no `environment` key at all. Without it, EAS resolves dashboard environment variables from the project's default environment rather than a named one. Today the build works only because `SENTRY_AUTH_TOKEN` happens to exist as a Secret in ALL THREE environments (development / preview / production) on the `kinliadev` project (DECISION-010). That redundancy — not the config — is what is holding this up.
 - **Fix:** Owner decision, ASK FIRST (`eas.json` is ASK-FIRST infra per CLAUDE.md). Proposed: add `"environment": "preview"` (or whichever named environment the testflight profile should own) to `build.testflight` in `eas.json`, so secret resolution is explicit rather than incidental. Do NOT auto-edit.
 - **Pre-flight catchable?** Yes — and it WAS caught here, by two auditors independently. Keep the check: for every build profile in `eas.json`, assert an explicit `environment` key; report its absence as a FRAGILITY finding (not a build blocker), worded as "resolution falls back to the default environment" rather than "vars are missing".
+- **Recurrence 2026-09-28:** re-observed at commit `a0626277` and re-reported as a FRAGILITY (not a blocker) by `env-var-auditor` — `build.testflight` still has no `environment` key while `build.production` sets `"environment": "production"`. This time the `sentry-config-auditor` went further and closed the "does it actually inject?" question empirically: `SENTRY_AUTH_TOKEN` is present as a Secret in **all three** dashboard environments (development / preview / production) on `kinliadev`, and the **2026-09-19 build logs show source-map uploads succeeding**. So the redundancy described above is confirmed still in place and still load-bearing. Recommended remedy is unchanged and remains **ASK-FIRST**: add `"environment": "preview"` to `build.testflight` in `eas.json` as a separate owner-approved change, never mid-build. Verdict wording going forward: FRAGILITY, reported, non-blocking — it must not gate a build on its own (same class of over-gating as META-003 / SKILL-009).
 - **Notes:** Distinct from META-006 (the testflight `env` **block** of `EXPO_PUBLIC_*` vars lost in a revert at `a55116fb`) and from META-001 (the April 2026 incident where the token existed on the wrong EAS *project*). This one is about the wrong *environment within the right project*. All three are the same family: "it resolved to something, therefore it resolved to the right thing" is never sound for EAS secrets. Failure mode if it regresses is silent until the source-map upload step, i.e. a full build credit burned before anyone learns.
 
 ### META-008 — `env-var-auditor`'s hard-coded scan paths miss `contexts/`, where a required var is actually read
@@ -497,6 +515,21 @@ These entries are NOT EAS-build failures — they are bugs in the `build-app` sk
 - **Pre-flight catchable?** No — it is a post-build handoff step. Catchable at handoff: refuse to send any link whose `build:view` `id` does not match the build id captured in Phase 3.
 - **Notes:** Same family as SKILL-006 (the right check run against the wrong thing) — here the right tester received the wrong artifact. Related: DECISION-016 (the build record for vc21 is correct; only the handoff was stale). If a tester ever reports a platform-only regression for a JS-only change, check `versionCode` on the device BEFORE opening the code.
 
+### SKILL-009 — Orchestrator full-stopped on a by-design auditor FAIL, then mis-summed two overlapping warning lists
+
+- **First seen:** 2026-09-28 (builds d5a6917a iOS testflight 180 + a6c496f9 Android vc22, commit a0626277 — both SUCCEEDED; zero credits lost, cost was owner time and confusion)
+- **Last seen:** 2026-09-28
+- **Occurrences:** 1
+- **Phase:** Pre-flight orchestration (`/build-app` Phase 2 — auditor verdict handling)
+- **Platform:** both
+- **Log signature:** A `build-prereq-auditor` report whose verdict line reads `FAIL` while its only failing check is `Validate packages against React Native Directory package metadata`.
+- **Root cause:** Two separate defects in how the orchestrator consumed the audit.
+  1. **Over-gating.** The orchestrator branches on the auditor's verdict *string*, not on whether any finding is actionable. The empty `reactNativeDirectoryCheck.exclude` list is an owner decision (PR #342, 2026-07-14) that guarantees this check reports non-clean on **every build, forever**. Gating on it means every build stops to ask permission for a condition that can never be cleared. See META-003.
+  2. **Bad arithmetic on overlapping sets.** expo-doctor prints two lists — "Unmaintained" (6) and "Untested on New Architecture" (7) — that share 3 package names. The orchestrator added them into "13 libraries" and presented that as the dependency-debt figure. True distinct count was **10**, and only **6** are unmaintained. The owner read "13 unmaintained libraries" and was understandably alarmed.
+- **Fix (skill change):** In `/build-app` Phase 2, classify findings before acting on a verdict. A finding matching DOCTOR-005's standing advisory is **report-and-continue**, never a gate — the orchestrator prints it in the pre-flight summary and proceeds. Only findings outside DOCTOR-005's authoritative package set, or FAILs from other checks, may stop the run. When reporting the advisory, print: distinct union count, the unmaintained subset count, the new-since-last-build names (if any), and the sentence "the New-Architecture warnings are inert — `app.config.ts` sets `newArchEnabled: false` (DECISION-001)". Never print a sum of the two lists.
+- **Pre-flight catchable?** N/A — this is the orchestrator's own bug, not a repo condition. Catchable by review of the Phase 2 branch logic.
+- **Notes:** Same family as META-003 (auditor-side version of the over-gate) and META-004 (a rule keyed to a tool's output shape rather than to whether anything is actually wrong). The arithmetic half is its own lesson: **when a tool prints two categorized lists, assume they overlap until you have deduplicated them** — report the union and the actionable subset, not the sum.
+
 ## Successful Builds — Notable Decisions
 
 ### DECISION-001 — newArchEnabled is false on purpose
@@ -648,7 +681,23 @@ These entries are NOT EAS-build failures — they are bugs in the `build-app` sk
 - **Handoff note (added 2026-09-27):** the Android tester was sent the vc20 APK link (previous build) instead of this build's vc21 link — the build was correct, the link was stale. See SKILL-008. Correct artifact: `https://expo.dev/artifacts/eas/H565vEYhEZYHbaMTL4x9sf-P_Z7WcSgaMOEVPWGOSkw.apk`.
 - **Implication:** This is the current known-good testflight reference; supersedes DECISION-014. Any auditor that would have FAILED this exact configuration is mis-specified — except the META-007 `environment` finding and the DECISION-013 key exposure, which are correct standing reports.
 
+### DECISION-017 — Build record: d5a6917a (iOS testflight 180) + a6c496f9 (Android vc22) succeeded
+
+- **Recorded:** 2026-09-28
+- **Builds:** `d5a6917a-30d2-4976-b279-442aa747a4a3` — iOS, `testflight` profile, build 180, FINISHED, auto-submit to ASC scheduled as submission `9cf3c66a` (still `IN_QUEUE` 65+ min after the build finished — normal, see QUEUE-001). `a6c496f9-7e29-4fc2-b612-13d7a7e1384b` — Android, `testflight` profile, versionCode 22, FINISHED, APK artifact (no auto-submit — expected, see DECISION-012).
+- **Built from:** `/Users/ginalevy/Sites/kindraapp-tf-build`, branch `testflight`, commit `a0626277` (merge of PR #431). All four pre-flight auditors ran sequentially; reports at `/tmp/build-app-prereq-audit.md`, `/tmp/build-app-env-audit.md`, `/tmp/build-app-sentry-audit.md`, `/tmp/build-app-commit-audit.md`.
+- **State these builds succeeded WITH:**
+  1. expo-doctor React Native Directory advisory present and NOT suppressed — **10 distinct packages, 6 of them unmaintained** (DOCTOR-005 update 2026-09-28). The prereq auditor returned a formal FAIL verdict on this alone and the orchestrator stopped to ask the owner; that stop was unnecessary — see META-003 recurrence and SKILL-009.
+  2. `react-native-render-html` newly flagged Unmaintained and missing from `docs/TODO.md`; added by **PR #432** the same day. Third instance of Dependency Health Rule 4 (the TODO list only contains what a tool already flagged).
+  3. `build.testflight` still has **no `environment` key** while `build.production` sets `"environment": "production"` — META-007, unchanged, still an open FRAGILITY. `SENTRY_AUTH_TOKEN` is present as a Secret in all three `kinliadev` dashboard environments, and the 2026-09-19 build logs show source-map uploads succeeding, so injection is empirically confirmed. Proposed remedy (`"environment": "preview"`) is an **ASK-FIRST `eas.json` change** and was deliberately NOT applied mid-build.
+  4. `app.config.ts:290` sets Sentry `url: 'https://sentry.io/'` — the trailing slash produces a cosmetic warning only; uploads work. Not fixed, not a blocker.
+  5. `newArchEnabled: false` (DECISION-001) — which is why the 7 "Untested on New Architecture" doctor entries are inert.
+  6. `keys/ApiKey_*.p8` still tracked in git and still uploaded to the EAS builder — DECISION-013, owner-deferred, **not re-verified this run** (stated as not re-verified rather than asserted, per META-010).
+- **Android queue baseline:** ~53 minutes `IN_QUEUE` before the build machine picked it up, with Expo status all-operational and an otherwise empty account queue. Recorded as normal — QUEUE-001.
+- **Implication:** This is the current known-good testflight reference; supersedes DECISION-016. Any auditor that would have FAILED-and-BLOCKED this exact configuration is mis-specified — the only standing correct reports here are the META-007 `environment` fragility and the DECISION-013 key exposure, and neither is a blocker.
+
 ## Future cleanup (low priority)
 
 - **Repo upload size sweep:** Android production upload archive on 2026-05-02 was 847 MB (vs 272 MB for iOS). Repo root has 700+ untracked debugging screenshots (`af-*.png`, `audio-*.png`, `account-*.png`, etc.) accumulated from prior sessions. EAS warned but did not fail. Add these globs to `.easignore` (or clean them up) in a future session to reduce upload time. Not urgent — does not affect build correctness.
 - **Upload archive still oversized as of 2026-09-16** (builds 06dbe7c7 / c95ed54c): ~190 MB, and EAS emitted its archive-size warning on BOTH platforms. Raised on every build; costs upload time on every build. The likely cause is that `.easignore` does not exclude enough — remember it REPLACES `.gitignore` (DECISION-009), so everything you assume `.gitignore` is keeping out of the archive is in fact being uploaded. **Pair this work with DECISION-013** (adding `keys/` to `.easignore`): both are `.easignore` edits and should be one reviewed change rather than two drive-by ones. `.easignore` is ASK-FIRST infra — **propose the diff and get owner approval; do not auto-edit it mid-build.**
+- **Sentry `url` trailing slash (noted 2026-09-28, builds d5a6917a / a6c496f9):** `app.config.ts:290` sets `url: 'https://sentry.io/'`. The trailing slash makes the Sentry plugin emit a cosmetic warning on every build; uploads succeed regardless. One-character fix (`https://sentry.io`), but `app.config.ts` edits require `npx expo prebuild --clean` before the next build, so bundle it with other config work rather than doing it as a drive-by.
