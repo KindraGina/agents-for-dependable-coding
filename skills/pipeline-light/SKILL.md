@@ -34,7 +34,7 @@ Explicit invocation means ONE of:
 - The user typed `/pipeline` or `/pipeline-light` in their CURRENT message
 - The user typed "run the pipeline" / "kick off the pipeline" / "start the pipeline" in their CURRENT message
 - The user explicitly approved a previous proposal that named the pipeline by saying "yes run the pipeline" or "yes /pipeline" — naming the action
-- You were invoked by an in-progress `/cascade` run that the user started by explicitly typing `/cascade` — the cascade's description states it runs the pipeline as Stage 2, so naming `/cascade` IS naming the pipeline. This exception applies ONLY to `/cascade`; any other skill or session calling you programmatically still requires fresh confirmation.
+- You were invoked by an in-progress `/cascade` OR `/cascade-light` run that the user started by explicitly typing that command — each cascade's description states it runs the pipeline as a stage, so naming the cascade IS naming the pipeline. This exception applies ONLY to `/cascade` and `/cascade-light`; any other skill or session calling you programmatically still requires fresh confirmation. **Why (2026-09-28, kindra momence-rendered-text cascade):** this bullet said "ONLY to `/cascade`" while `skills/cascade-light/SKILL.md:92` asserted the gate already recognized `/cascade-light` — a direct contradiction that risks stalling an unattended cascade-light run on a permission round-trip.
 
 NOT explicit invocation:
 - "continue" / "proceed" / "go ahead" / "yes" — these are ambiguous and DO NOT count, even if you proposed running the pipeline in the previous turn
