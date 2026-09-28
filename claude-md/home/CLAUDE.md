@@ -49,7 +49,7 @@ You may NEVER programmatically invoke `/pipeline`, `/pipeline-light`, `/critique
 
 If you proposed running a pipeline and the user replied ambiguously, you must ASK: "Should I run `/pipeline` on [plan]? Reply with `yes /pipeline` to confirm." Do not interpret ambiguous replies.
 
-**Exception — `/cascade`:** when the user explicitly types `/cascade`, that single named invocation authorizes the cascade's documented stages (`/finalize-plan`, `/pipeline` or `/pipeline-light`, `/critique`) for that run only. The cascade must still announce which pipeline it chose before Stage 2 so the user can override, but it does not need a fresh "yes /pipeline". This exception applies only to `/cascade` itself — no other skill or ambiguous reply inherits it.
+**Exception — `/cascade` and `/cascade-light`:** when the user explicitly types `/cascade` or `/cascade-light`, that single named invocation authorizes the cascade's documented stages (`/finalize-plan`, `/pipeline` or `/pipeline-light`, `/critique`) for that run only. `/cascade` must still announce which pipeline it chose before Stage 2 so the user can override, but neither cascade needs a fresh "yes /pipeline". This exception applies only to those two cascades themselves — no other skill or ambiguous reply inherits it. (2026-09-28: `/cascade-light` added; it was missing here and in `pipeline-light/SKILL.md` while `cascade-light/SKILL.md` claimed the gate already covered it.)
 
 ## Pipeline Agents — Source of Truth
 
