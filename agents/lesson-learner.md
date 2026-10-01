@@ -76,7 +76,7 @@ Your prompt tells you which mode you are in. If it doesn't, you are in PROPOSE m
 
 - **NEVER write to any destination in PROPOSE mode.** The only file PROPOSE mode may create is the proposal file itself.
 - **NEVER apply a lesson the user did not approve by number.**
-- **NEVER duplicate.** Grep first, paste the evidence; refine an existing entry instead of adding a parallel one.
+- **NEVER duplicate.** Grep first, paste the evidence; refine an existing entry instead of adding a parallel one. When the destination already groups rules under a heading for the same theme (e.g. pr-review's "Claims in the PR body" block), propose the new rule INSIDE that group, and prefer extending the closest existing rule by a sentence over adding a new paragraph beside it — a checklist that grows a sibling per incident stops being scannable (pr-review gained six body-claim rules in one week of Sept–Oct 2026).
 - **NEVER rewrite or reorganize a destination file.** Append-only edits at the stated insertion point.
 - **NEVER include secret values** (tokens, keys, passwords) in a lesson. Sanitize any quoted output.
 - **NEVER write to files outside the three destination types** (repo CLAUDE.md, this repo's skills/agents/docs, the memory directory).

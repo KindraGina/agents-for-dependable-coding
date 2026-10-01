@@ -59,6 +59,8 @@ WHY (2026-09-13, PR #416): the day-to-day KindraApp checkout was on an unrelated
 
 Run them in order. Track each as PASS / FAIL / WARN with specific evidence.
 
+**Evidence runs — do these on every PR before the 15 checks.** Each one produces a pasted delta the checks below lean on.
+
 **Tool-generated commits get REPRODUCED, not read.** If a commit is the output of a formatter or auto-fixer (`prettier --write`, `eslint --fix`, codegen), check out its PARENT in a throwaway worktree, re-run the exact tool, and `git diff` the result against the commit. A byte-for-byte match is complete proof for that commit; paste the command and the empty diff. Then run the 15 checks by hand only on the PR's hand-written commits, listing them by SHA.
 When an auto-fix removes imports or variables, a linter with `no-undef` disabled will not catch a wrong removal: also diff `npx tsc --noEmit` output (line numbers stripped) between the merge-base and the head and paste the delta.
 **Why (PR #423, 2026-09-17):** a 415-file, 27,143-line reformat was fully verified this way in minutes; reading it line by line was not possible and would have proved less.
@@ -68,6 +70,12 @@ When an auto-fix removes imports or variables, a linter with `no-undef` disabled
 **Why (PR #429, 2026-09-25):** the scoped delta was the review's strongest evidence — exactly 3 `react-hooks/rules-of-hooks` errors removed, 0 added — and the `tsc` delta showed all 71 new errors were a project-wide test-typing condition shared by 155 existing files, not a PR defect.
 
 **Why (PR #431, 2026-09-28):** the format and file-list notes cost two wasted lint runs. The PR #429 proposal had named `--format json`; it was trimmed as tooling trivia when that lesson was applied, and the next review paid for it.
+
+**A file the PR ADDS as a copy of an existing file needs its ORIGINAL linted at the merge-base too.** The touched-file list only contains the new copy, so every pre-existing finding inside it is guaranteed to appear as introduced. For each added file that is a near-copy of an existing one (Metro `.ios.*`/`.android.*` platform forks, duplicated screens, `*.v2.ts`), add the source original's path to the merge-base run and subtract its findings before reporting a delta; say in the review which findings were inherited by copy.
+
+**Why (PR #436, 2026-10-01):** the scoped delta showed 4 "new" findings in `App.ios.js` and `UploadThemeResponse.ios.js` (`eqeqeq`, three unused/deps warnings). Linting the base `App.js` and `UploadThemeResponse.js` reproduced all four verbatim — inherited, not introduced. Without that extra run the PR would have been reported as adding lint errors it did not write.
+
+**Claims in the PR body — each one gets reproduced in this session or labeled unverified in the review.** A statement in the body or a linked plan is a hypothesis until a command run here confirms it; the rules below name the command for each common kind of claim. Verify the claims the fix's correctness depends on, not every passing mention.
 
 **"Moved, not changed" claims get proven with a stripped diff.** When a PR says code was relocated, wrapped, or extracted with behavior unchanged, run
 `diff <(git show <merge-base>:<file> | grep -v '^\s*//' | grep -v '^\s*$') <(git show <head>:<file> | grep -v '^\s*//' | grep -v '^\s*$')`
@@ -82,6 +90,14 @@ and paste the surviving hunks — that output IS the exhaustive list of real cha
 **A claim about a dependency the PR (or an earlier commit) REMOVED is still a verifiable claim — greppability is not the test.** When a root cause is "the old library did X with this prop," you cannot grep it: resolve the exact pinned version from the removing commit's parent lockfile (`git show <sha>^:yarn.lock`), fetch that version's source (`curl -sL https://unpkg.com/<pkg>@<version>/<file>`), and paste the lines that settle it. Never accept an inferred contract for deleted code.
 
 **Why (KindraApp PR #435, 2026-10-01):** the body claimed `react-native-button` applied `style` to its outer touchable. One `curl` of `react-native-button@3.1.0` (the version pinned before the July swap) showed it applied `style` to the inner `Text` — same as the replacement — and that what the swap actually dropped was the library's default `textAlign: 'center'`. The whole fix was built on the wrong mechanism.
+
+**A PR that REPLACES a library with hand-written code must be reviewed against the old library's source, not just its prop contract.** Read the outgoing library at its pinned version — `node_modules/<pkg>/...` while it is still installed, otherwise `curl` unpkg per the rule above — including its stylesheet, `defaultProps`, and platform-specific file, and report for each value it applied unasked whether the replacement carries it over. Matching the props is half the contract; this enforces the Rule 2 addendum in `~/Sites/CLAUDE.md` at review time.
+
+**Why (PR #436, 2026-10-01):** five replacements were judged sound only by opening `@alessiocancian/react-native-actionsheet/lib/ActionSheetIOS.js` and `react-native-rate/ios/RNRate.m`, which showed the new code builds the identical review URL and forwards identical options — and incidentally proved the body's claim that the old actionsheet imports the deprecated blur. Nothing in this checklist asked for that read; the sibling failure it guards against cost three months in PR #435.
+
+**Native-linking and build-config claims in the body get reproduced, per platform.** A statement like "this stops iOS from linking X" or "Y is iOS-only now" is computed from config, so no amount of diff reading confirms it. In the review worktree run `npx expo-modules-autolinking react-native-config --platform ios --json` and `--platform android --json` (and `npx expo-modules-autolinking resolve --platform <p>` for Expo modules), plus `npx expo install --check` for SDK-compatibility claims, and paste the presence/absence result for each platform named in the body.
+
+**Why (PR #436, 2026-10-01):** the body's claims that `react-native-text-input-mask` no longer links on iOS but still does on Android, and that `expo-blur` links on iOS only, were confirmed in seconds by exactly these commands — the only evidence available for them. The commands were improvised; nothing in this checklist asked for them.
 
 ---
 
