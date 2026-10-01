@@ -76,10 +76,9 @@ A long `## Verified References` section is **evidence, not scope**: the repo's r
 2. The Plan Creator revises the plan.
 3. Re-run `/finalize-plan` on the revised plan.
 4. **Keep looping** (finalize → Plan Creator revision → finalize) until the verdict is READY.
-5. Safety valve: if after **5 rounds** the plan still gets NEEDS WORK, **STOP** and report to the user:
-   - What finalize-plan keeps flagging.
-   - What the Plan Creator has tried across all rounds.
-   - Ask the user how to proceed.
+5. **Early stop is triggered by NO PROGRESS, not by round count.** Before launching round N+1, compare round N's NEEDS WORK findings with round N−1's. If any finding is the SAME item the previous round already flagged (same file, same claim, same evidence block), the loop is stuck: **STOP** and report to the user what keeps being flagged and what the Plan Creator tried. If every finding is new (typically paste repairs the previous revision introduced), the plan is converging — keep looping without asking.
+6. Hard ceiling: if after **5 rounds** the plan still gets NEEDS WORK, **STOP** and report the same way, whatever the findings.
+   **Why (2026-10-01, momence-rendered-text and check-verification-code cascades):** the old rule stopped on round COUNT ("fails twice"), which fired on plans that were converging — the momence plan took four finalize rounds and the check-verification plan three, and in both the later rounds flagged only fresh paste repairs the previous revision had introduced. Each stop was a human round-trip in the middle of a run the user expected to finish unattended. Round count never distinguished "stuck" from "two paste fixes from READY"; a repeated finding does.
 
 ---
 
@@ -145,7 +144,7 @@ If the critique capped its verdict at CONCERNS because of unverified interaction
 
 ## Rules
 
-**THIS IS AUTOPILOT MODE — one invocation, all stages, no permission asks.** From `/cascade-light [plan]` to the Stage 4 summary, never ask "shall I proceed?", "want me to run X?", or any variant between stages. The ONLY sanctioned stops are the ones this file scripts: a failed Stage 0 preflight, the Stage 0.5 scope gate, a stale finalize verdict, finalize failing twice (Rule 4), the needs-full-pipeline escalation (Rule 5), the protected-branch check (Rule 7), an uncommitted-changes or cross-repo conflict (Rules 9/10), the pipeline's own internal circuit breakers and safety valves, and a critique verdict of CONCERNS or REJECT. Everything else runs straight through. Announcements (Rule 3) are status updates that do NOT wait for a reply — say it and keep moving; the user can interrupt to override.
+**THIS IS AUTOPILOT MODE — one invocation, all stages, no permission asks.** From `/cascade-light [plan]` to the Stage 4 summary, never ask "shall I proceed?", "want me to run X?", or any variant between stages. The ONLY sanctioned stops are the ones this file scripts: a failed Stage 0 preflight, the Stage 0.5 scope gate, a stale finalize verdict, finalize stalling on a repeated finding or hitting its 5-round ceiling (Rule 4), the needs-full-pipeline escalation (Rule 5), the protected-branch check (Rule 7), an uncommitted-changes or cross-repo conflict (Rules 9/10), the pipeline's own internal circuit breakers and safety valves, and a critique verdict of CONCERNS or REJECT. Everything else runs straight through. Announcements (Rule 3) are status updates that do NOT wait for a reply — say it and keep moving; the user can interrupt to override.
 
 1. **You are an orchestrator.** You do NOT read code, write code, review plans, or make implementation decisions. You invoke skills and agents and pass results between them.
 
@@ -153,7 +152,7 @@ If the critique capped its verdict at CONCERNS because of unverified interaction
 
 3. **Report what's happening.** Before each stage, tell the user what you're about to do. After each stage, tell the user what happened. One sentence each — not a wall of text.
 
-4. **Respect the user's time.** The cascade can take a while. If something fails early (finalize-plan loops twice and still fails), stop early and bring the user in rather than burning through pipeline credits on a plan that isn't ready.
+4. **Respect the user's time.** The cascade can take a while. If something fails early (finalize-plan flags the same item in two consecutive rounds, or hits its 5-round ceiling — Stage 1 steps 5–6), stop early and bring the user in rather than burning through pipeline credits on a plan that isn't ready.
 
 5. **Always uses /pipeline-light.** This is the lightweight cascade — it never escalates to the full `/pipeline`. If the plan turns out to need the full pipeline, stop and tell the user to run `/cascade` instead.
 
