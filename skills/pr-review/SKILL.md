@@ -75,6 +75,10 @@ and paste the surviving hunks — that output IS the exhaustive list of real cha
 
 **Why (PR #430, 2026-09-27):** one command collapsed an +80/−11 refactor of a Stripe checkout screen to three hunks (signature, removed guard, new wrapper) and proved all 16 `ticketingOptions.` reads byte-identical. It was the most efficient check in that review and was improvised, not prescribed.
 
+**Claims about code the PR does NOT touch get verified too, or labeled unverified.** A PR body that says "matching what X already does" / "same as the existing Y path" is asserting a fact about untouched code. For each such claim the fix's correctness depends on (not every passing file mention), grep that code at the head SHA and paste the confirming line — or, if the supporting reasoning is an inference (including one the author's own plan labels as inferred), say so explicitly in the review. Not a FAIL when the author was honest; it is a recorded caveat so a later reader never upgrades the claim to verified fact.
+
+**Why (PR #434, 2026-09-29):** the body claimed parity with the cold-start push path, which still contains a literal `resetTo('YourProfile')` in `contexts/notifications.tsx`; the plan's argument that the line is dead rested on an explicitly inferred backend string. The claim did not affect this PR's one changed line, but nothing in this checklist required checking it.
+
 ---
 
 #### Tier 1 — Must Pass
