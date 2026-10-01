@@ -147,6 +147,14 @@ Before marking any bug as understood or planning a fix:
    - Write tests BEFORE implementation (TDD)
    - If a plan doesn't have tests, it's not complete
 
+7. **Find the bug's ORIGIN before designing the fix — a regression has a birthday**
+   - If the thing used to work, find the commit that broke it: `git log --follow -- <file>`, `git log -S'<token>'`, `git blame`, or `git bisect` — and PASTE the output. Reasoning about what "probably changed" is forbidden; the PR #435 plan reasoned its way to an origin story and it was wrong.
+   - State the MECHANISM in one sentence: what that commit changed and why it produces this symptom. The fix must address the mechanism, not the symptom.
+   - Ask what ELSE the introducing commit broke the same way (every call site, every sibling screen, every other library in the same batch). One symptom is usually the first-noticed instance, not the only one.
+   - If it never worked, say "never worked" and name the commit that added the feature.
+   - A library's behavior is everything it does, not just what it does with the props you pass in — origin tracing is how a dropped default gets found (see Dependency Health → Rule 2 addendum).
+   **Why (2026-10-01, KindraApp PR #435, "Forgot Password?" off-center):** the label had been centered until the 2026-07-13 library swap (`8931025c`) replaced `react-native-button` with a hand-written component that dropped the library's default `textAlign: 'center'`, `fontSize: 17`, `fontWeight: '500'`. One `git log` on the file would have found that in a minute. The plan instead reasoned from the current code alone, invented a prop-contract story that fit the symptom, and shipped a wrapper that moved zero pixels — and never asked the real question, which was that fourteen other screens had changed the same day. Tracing the origin is what turns one symptom into the actual defect.
+
 ## Working Style
 
 - **Treat every task as complex until proven otherwise.** Never assume something is simple. Investigate thoroughly, trace the full path, and do the work — don't take shortcuts or dismiss problems as "not a code issue" without verifying.

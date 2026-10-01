@@ -100,6 +100,9 @@ Which of kindra/kinlia-web/kindraapp are touched and why.
 ## Current Behavior
 How things work now (with file paths and line numbers).
 
+## Origin
+REQUIRED for every bug fix. If the behavior used to work: the commit that introduced the defect (SHA, date, one-line subject), the PASTED `git log` / `git log -S` / `git blame` / `git bisect` output that identifies it, and the mechanism in one sentence (what that commit changed → why this symptom). Then "What else that commit broke the same way:" with the grep that enumerates sibling call sites, and each one's status. If it never worked: "Never worked — feature added in <SHA>." Never reason to an origin; paste the command that found it. The fix in `## Proposed Changes` must address the mechanism named here. See `~/Sites/CLAUDE.md` Bug Investigation Checklist step 7.
+
 ## Verified References
 Every existing function, association, return type, or data structure referenced
 in this plan was verified by reading the actual code. Evidence:
