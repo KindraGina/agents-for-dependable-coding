@@ -224,6 +224,9 @@ Check the PR's CI status: `gh pr view <number> --json statusCheckRollup`. Every 
 
 If CI hasn't run yet, WARN and ask the user to wait for CI before merging.
 
+**"Not yet" and "never" are different findings — distinguish them.** An empty `statusCheckRollup` can mean a run is queued OR that no run was ever created. Run `gh run list --branch <headRefName> --limit 10` and read the workflow's `on:` block; if the trigger matches this PR and still no run exists, say so explicitly and name the likely cause (fork / first-time-contributor approval gate, workflow added after the push, path filter). Then state what must happen for a run to appear (usually a new push, e.g. the conflict-resolution merge commit).
+**Why (KindraApp PR #433, 2026-09-29):** `pr-tests.yaml` triggers on `pull_request` to `testflight`, yet zero runs existed for the head branch. "Wait for CI" would have told the merger to wait for something that was never going to arrive; the diagnosis was improvised because nothing here asked for it.
+
 **MERGE-FRESHNESS: a green badge is not a green merge.** CI proved the PR against the code it FORKED FROM — the base branch has kept moving since. In every review (including the unchanged-PR short-circuit in Step 1), run a practice merge against the base branch's CURRENT tip:
 
 ```bash
