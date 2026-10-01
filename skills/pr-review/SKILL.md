@@ -79,6 +79,10 @@ and paste the surviving hunks — that output IS the exhaustive list of real cha
 
 **Why (PR #434, 2026-09-29):** the body claimed parity with the cold-start push path, which still contains a literal `resetTo('YourProfile')` in `contexts/notifications.tsx`; the plan's argument that the line is dead rested on an explicitly inferred backend string. The claim did not affect this PR's one changed line, but nothing in this checklist required checking it.
 
+**A claim about a dependency the PR (or an earlier commit) REMOVED is still a verifiable claim — greppability is not the test.** When a root cause is "the old library did X with this prop," you cannot grep it: resolve the exact pinned version from the removing commit's parent lockfile (`git show <sha>^:yarn.lock`), fetch that version's source (`curl -sL https://unpkg.com/<pkg>@<version>/<file>`), and paste the lines that settle it. Never accept an inferred contract for deleted code.
+
+**Why (KindraApp PR #435, 2026-10-01):** the body claimed `react-native-button` applied `style` to its outer touchable. One `curl` of `react-native-button@3.1.0` (the version pinned before the July swap) showed it applied `style` to the inner `Text` — same as the replacement — and that what the swap actually dropped was the library's default `textAlign: 'center'`. The whole fix was built on the wrong mechanism.
+
 ---
 
 #### Tier 1 — Must Pass
@@ -159,6 +163,10 @@ A PR body that pastes green test output is NOT a substitute. Open the test files
 **Run a negative control on the PR's new tests.** In the review worktree, break each behavior the new tests claim to guard (flip a comparison, swap a branch), run ONLY the new test file, and paste which named tests failed; then revert and paste both an empty `git status --porcelain` and the green re-run. A behavior no breakage can make fail is a smoke test — say so in the review.
 
 **Why (PR #429, 2026-09-25):** three one-character breakages each failed specific tests (1, then 3 of 14) in seconds, upgrading "the assertions look concrete" into proof. This mirrors the negative-control rule already in `~/Sites/CLAUDE.md` → Testing, which covers repaired tests but not reviewed ones.
+
+**A passing negative control proves the test guards the property the code sets — not that the property fixes the bug.** When the reported defect is positional/visual (something is off-center, overlapping, clipped, invisible), a style-property assertion is only valid if that property is the one that moves the pixels. Build the before/after node trees from the merge-base and head source and compute actual geometry with the platform's layout engine — `yoga-layout` in Node for React Native, a real browser for web — and paste both coordinate sets. Identical geometry = the PR is a visual no-op = Check 5 FAIL, however green the suite is.
+
+**Why (KindraApp PR #435, 2026-10-01):** the PR wrapped "Forgot Password?" in a `View` with `alignItems: 'center'` and tested exactly that property; the negative control passed. Yoga showed the Text node's left edge at the same x at BOTH commits — only the touch target resized. The real fix was `textAlign: 'center'` on the label. Running the layout engine was improvised; nothing here asked for it.
 
 ---
 
