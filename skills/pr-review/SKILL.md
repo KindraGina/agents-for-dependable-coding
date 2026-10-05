@@ -71,6 +71,10 @@ When an auto-fix removes imports or variables, a linter with `no-undef` disabled
 
 **Why (PR #431, 2026-09-28):** the format and file-list notes cost two wasted lint runs. The PR #429 proposal had named `--format json`; it was trimmed as tooling trivia when that lesson was applied, and the next review paid for it.
 
+**The zsh word-splitting trap applies to every command in this review, not just the lint file list.** Never store a multi-word command in a variable (`J="npx jest --config x"; $J file` runs a program literally named `npx jest --config x`) — spell the command out or define a shell function. Write `${R}:path`, never `$R:path` (zsh reads `:l`, `:h`, `:t` after a variable as modifiers). Quote any word that begins with `=` (`echo '=====X'`). And never pipe a run through `grep` without also capturing its exit code — "command not found" disappears in the filter and an empty result looks like a clean one.
+
+**Why (PR #438, 2026-10-05):** all three cost a re-run; the first negative-control pass printed nothing because every test command failed to start, invisibly.
+
 **A file the PR ADDS as a copy of an existing file needs its ORIGINAL linted at the merge-base too.** The touched-file list only contains the new copy, so every pre-existing finding inside it is guaranteed to appear as introduced. For each added file that is a near-copy of an existing one (Metro `.ios.*`/`.android.*` platform forks, duplicated screens, `*.v2.ts`), add the source original's path to the merge-base run and subtract its findings before reporting a delta; say in the review which findings were inherited by copy.
 
 **Why (PR #436, 2026-10-01):** the scoped delta showed 4 "new" findings in `App.ios.js` and `UploadThemeResponse.ios.js` (`eqeqeq`, three unused/deps warnings). Linting the base `App.js` and `UploadThemeResponse.js` reproduced all four verbatim — inherited, not introduced. Without that extra run the PR would have been reported as adding lint errors it did not write.
@@ -86,6 +90,10 @@ and paste the surviving hunks — that output IS the exhaustive list of real cha
 **Claims about code the PR does NOT touch get verified too, or labeled unverified.** A PR body that says "matching what X already does" / "same as the existing Y path" is asserting a fact about untouched code. For each such claim the fix's correctness depends on (not every passing file mention), grep that code at the head SHA and paste the confirming line — or, if the supporting reasoning is an inference (including one the author's own plan labels as inferred), say so explicitly in the review. Not a FAIL when the author was honest; it is a recorded caveat so a later reader never upgrades the claim to verified fact.
 
 **Why (PR #434, 2026-09-29):** the body claimed parity with the cold-start push path, which still contains a literal `resetTo('YourProfile')` in `contexts/notifications.tsx`; the plan's argument that the line is dead rested on an explicitly inferred backend string. The claim did not affect this PR's one changed line, but nothing in this checklist required checking it.
+
+**"Untouched code" includes the sibling repos — local or on GitHub.** When the body or plan marks a claim the fix depends on as "can't be checked from this repo" because it lives in the backend or web app, that is not the end of the road. If the repo is on this machine (`~/Sites/kindra`, `~/Sites/kinlia-web`), read it at its production branch without a checkout: `git -C <repo> fetch origin <branch>`, then `git -C <repo> show origin/<branch>:<path>` / `git -C <repo> grep -n '<token>' origin/<branch> -- lib/`. If it is not local, read it on GitHub: `gh api repos/KindraConnect/<repo>/contents/<path>?ref=<branch> --jq .content | base64 -d`, or a shallow clone into the scratchpad. Paste the lines, name the branch and SHA, and state what you did not read (e.g. staging). Only if neither route exists is the claim labeled unverified.
+
+**Why (PR #438, 2026-10-05):** the fix's one real risk — a server reply carrying an empty photo list for an account that has photos, which would wrongly hide its picture — was left as an open question by the author. Four files read in `kindra` at `origin/master` showed the profile picture is a row of the same, unfiltered photo list, so the case cannot occur on those paths. The author had write access to that repo on GitHub the whole time; nothing in this checklist, or in their session, pointed outside the PR's repo.
 
 **A claim about a dependency the PR (or an earlier commit) REMOVED is still a verifiable claim — greppability is not the test.** When a root cause is "the old library did X with this prop," you cannot grep it: resolve the exact pinned version from the removing commit's parent lockfile (`git show <sha>^:yarn.lock`), fetch that version's source (`curl -sL https://unpkg.com/<pkg>@<version>/<file>`), and paste the lines that settle it. Never accept an inferred contract for deleted code.
 
@@ -176,7 +184,7 @@ If the diff contains ZERO tests, Check 5 is FAIL by default — a bug fix with n
 
 A PR body that pastes green test output is NOT a substitute. Open the test files it names, grep them for the changed symbol/behavior, and paste that grep in your review. Output can be genuine and still prove nothing about this PR. (2026-09-13, PR #415: the body's "TDD proof" was 10 real passing tests from two suites that contained no `bell` assertion at all — the bell could have been deleted outright and every test in the repo would still pass.)
 
-**Run a negative control on the PR's new tests.** In the review worktree, break each behavior the new tests claim to guard (flip a comparison, swap a branch), run ONLY the new test file, and paste which named tests failed; then revert and paste both an empty `git status --porcelain` and the green re-run. A behavior no breakage can make fail is a smoke test — say so in the review.
+**Run a negative control on the PR's new tests.** In the review worktree, break each behavior the new tests claim to guard (flip a comparison, swap a branch), run ONLY the new test file, and paste which named tests failed; then revert and paste both an empty `git status --porcelain` and the green re-run. A behavior no breakage can make fail is a smoke test — say so in the review. Finish or isolate every background run (lint, tsc, the baseline suite) before mutating the worktree for the control; results collected while the files were broken are void and must be re-run (PR #438, 2026-10-05: one head lint/tsc pass thrown away for this).
 
 **Why (PR #429, 2026-09-25):** three one-character breakages each failed specific tests (1, then 3 of 14) in seconds, upgrading "the assertions look concrete" into proof. This mirrors the negative-control rule already in `~/Sites/CLAUDE.md` → Testing, which covers repaired tests but not reviewed ones.
 
@@ -241,6 +249,10 @@ FAIL if found.
 Grep the diff and commit messages for: "I picked the safer option," "defaulted to X for now," "going with Path A," or any indication the author defaulted on a decision that should have gone to the product owner.
 
 FAIL if the author resolved a product decision unilaterally without evidence of asking.
+
+**A label is not evidence of asking.** Also grep the diff, code comments, and linked plan for `owner decision`, `owner confirmed`, `owner correction`, `per the owner`, `the user decided`. A plan written in the author's own Claude session calls the author "the owner" or "the user", so these labels alone cannot tell you whether the product owner decided anything. A decision that names WHO decided and HOW passes — "Gina, verbal, Oct 1 standup" is as good as a Slack link; verbal decisions are normal here. A decision attributed only to "the owner" / "the user" gets listed in the review under its own heading as "needs the product owner's confirmation". This is not a FAIL — the author did surface the decision — but it must not be reported as decided.
+
+**Why (PR #438, 2026-10-05):** four product decisions (never delete the last photo and its alert wording; theme photos don't count; a photo-less profile shows name only; app-side guard only) were labeled "owner decision", alongside "Observed by the owner, reported in the session of 2026-10-01" — the intern's session. The phrase list above would have passed all four.
 
 ---
 
