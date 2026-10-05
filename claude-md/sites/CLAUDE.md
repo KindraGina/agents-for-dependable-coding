@@ -205,7 +205,7 @@ Before marking any bug as understood or planning a fix:
 - **Why this matters:** `yarn add` installs the latest version, which may be built for a newer SDK. The package will install without errors but can cause fatal runtime crashes because it expects different React Native internals than what the current SDK provides.
 
 ### What happened (expo-image incident, April 2026):
-`yarn add expo-image` installed v3.0.11 (built for a newer SDK). The app uses SDK 53, which requires ~2.4.1. The version mismatch caused a FATAL `IncompatibleClassChangeError` crash on Android — the app died the moment it tried to display any image, affecting every Android user.
+`yarn add expo-image` installed v3.0.11 (built for a newer SDK). At the time the app used SDK 53, which required ~2.4.1. (Corrected 2026-10-05: KindraApp has been on SDK 54 with `expo-image ~3.0.11` since `7476b455`, 2026-07-28 — these numbers are the incident's history, not today's target; `package.json` is the source of truth.) The version mismatch caused a FATAL `IncompatibleClassChangeError` crash on Android — the app died the moment it tried to display any image, affecting every Android user.
 
 ### Before every build, run compatibility check:
 ```bash
