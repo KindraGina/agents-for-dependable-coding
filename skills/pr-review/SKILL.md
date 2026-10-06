@@ -123,11 +123,13 @@ Compare the PR's body description to the actual diff. Does the description descr
 
 FAIL if: description is missing, generic ("fixes stuff"), or describes work that isn't in the diff. WARN if: diff includes unrelated changes beyond the stated scope.
 
-**Author-declared untested surfaces are a named gate, not prose.** Grep the PR body and any linked plan for `not run`, `not tested`, `no access`, `pending QA`, `untested`. For each one, name in the review the platform/path left unexercised and the exact manual steps that must pass before promotion. Honest disclosure is not coverage: it does not become a Tier 1 FAIL, but it MUST appear as a gate the merger cannot skim past.
+**Author-declared untested surfaces are a named gate, not prose.** Grep the PR body and any linked plan for `not run`, `not tested`, `no access`, `pending QA`, `untested`. For each one, name in the review the platform/path left unexercised and the exact manual steps that must pass before promotion. Honest disclosure is not coverage: it does not become a Tier 1 FAIL, but it MUST appear as a gate the merger cannot skim past. Also grep the raw body (`gh pr view <n> --json body -q .body`) for `<!--` and unfilled template text: a section that promises evidence — screenshots, a screen recording, device logs — with nothing attached is the same kind of gap. WARN, and name what is missing; when that evidence is the only pixel proof of a visual fix, the missing platform joins the gate above.
 
 When the base is a staging branch (`testflight`, `develop`), scope the verdict: "APPROVE for merge to `<base>` only — NOT cleared for production until `<gate>` passes."
 
 **Why (PR #430, 2026-09-27):** the Stripe checkout screen was refactored and verified on Android only; iOS `applePay` and the payment-sheet lifecycle were device-unexercised on an app with no over-the-air rollback. Every check passed, so an unscoped APPROVE would have read as production-ready.
+
+**Why (KindraApp PR #435 round 2, 2026-10-05):** the "Screenshots (Android)" section held the literal `<!-- drag the five screenshots here in the GitHub editor -->` and five filenames, no images; for a text-alignment fix those screenshots were the only proof it looked right. It was spotted by chance — GitHub hides HTML comments when rendering, so only the raw body shows it.
 
 ---
 
@@ -136,7 +138,7 @@ When the base is a staging branch (`testflight`, `develop`), scope the verdict: 
 For EVERY symbol the PR adds, modifies, or removes (exported functions, types, components, routes, DB columns, API endpoints):
 
 1. List the symbols touched (grep the diff for `export`, `defmodule`, `def `, `class`, route definitions, schema fields).
-2. For each one, grep the WHOLE codebase for callers: `grep -rn "symbolName" --include='*.ts' --include='*.tsx' --include='*.ex' --include='*.exs' --include='*.js'`.
+2. For each one, grep the WHOLE codebase for callers: `grep -rn "symbolName" --include='*.ts' --include='*.tsx' --include='*.ex' --include='*.exs' --include='*.js'`. When the symbol is a module whose name is too common to grep (a default-exported `Button`, `Modal`, `utils`), find importers by the file path's last two segments plus the closing quote (`"/Button/Button'"`), never a longer prefix like `Components/Button/Button'` — that misses every relative import (`'../Button/Button'`). Also grep any path alias and `index` re-export of the module, and paste the importer count.
 3. For each caller: does the PR's change still work for that caller? If a function's signature changed, do callers pass the new args? If a field was renamed, do queries still find it?
 
 FAIL if any caller would break.
@@ -144,6 +146,8 @@ FAIL if any caller would break.
 4. Grep WITHOUT `--include` filters as well — `grep -rn "<oldName>" --exclude-dir=node_modules --exclude-dir=.git` — so comments, `docs/*.md`, workflow YAML, and scripts are covered. A rename is not complete when only the compiler-visible references were updated.
 
 **Why (PR #429, 2026-09-25):** a complete, lint-clean rename still left the old file name in a code comment (`contexts/communities.tsx:1001`) and in `docs/TODO.md:48`. Code-only greps returned zero. Report such hits as Check 14 warnings, not Check 2 failures.
+
+**Why (KindraApp PR #435, 2026-10-05):** a change to the shared `Button.tsx` default style touched every importer; the first grep (`Components/Button/Button'`) found 15 of 24 files, and `"/Button/Button'"` found all 24 — nine call sites would otherwise have gone unaudited.
 
 ---
 
@@ -194,9 +198,11 @@ A PR body that pastes green test output is NOT a substitute. Open the test files
 
 **Why (PR #429, 2026-09-25):** three one-character breakages each failed specific tests (1, then 3 of 14) in seconds, upgrading "the assertions look concrete" into proof. This mirrors the negative-control rule already in `~/Sites/CLAUDE.md` → Testing, which covers repaired tests but not reviewed ones.
 
-**A passing negative control proves the test guards the property the code sets — not that the property fixes the bug.** When the reported defect is positional/visual (something is off-center, overlapping, clipped, invisible), a style-property assertion is only valid if that property is the one that moves the pixels. Build the before/after node trees from the merge-base and head source and compute actual geometry with the platform's layout engine — `yoga-layout` in Node for React Native, a real browser for web — and paste both coordinate sets. Identical geometry = the PR is a visual no-op = Check 5 FAIL, however green the suite is.
+**A passing negative control proves the test guards the property the code sets — not that the property fixes the bug.** When the reported defect is positional/visual (something is off-center, overlapping, clipped, invisible), a style-property assertion is only valid if that property is the one that moves the pixels. Build the before/after node trees from the merge-base and head source and compute actual geometry with the platform's layout engine — `yoga-layout` in Node for React Native, a real browser for web — and paste both coordinate sets. Identical geometry = the PR is a visual no-op = Check 5 FAIL, however green the suite is. Geometry only settles LAYOUT properties (`alignItems`, `alignSelf`, `justifyContent`, margins, padding, width/height, position). Text-rendering properties — `textAlign`, `fontWeight`, `fontFamily`, `fontSize`, `color` — move glyphs inside an unchanged box, which Yoga does not model: identical geometry is expected for them and is NOT a FAIL. Their proof is a device screenshot per platform, attached to the PR; a platform with none becomes an author-declared untested surface and joins the Check 1 gate.
 
 **Why (KindraApp PR #435, 2026-10-01):** the PR wrapped "Forgot Password?" in a `View` with `alignItems: 'center'` and tested exactly that property; the negative control passed. Yoga showed the Text node's left edge at the same x at BOTH commits — only the touch target resized. The real fix was `textAlign: 'center'` on the label. Running the layout engine was improvised; nothing here asked for it.
+
+**Why (KindraApp PR #435 round 2, 2026-10-05):** the corrected fix restored `textAlign: 'center'`, `fontWeight: '500'`, `fontSize: 17` in `Button.tsx`; read literally, the rule above would have failed it for unchanged geometry. The reviewer had to reason past the rule; Android screenshots were the only pixel proof and iOS became the production gate.
 
 ---
 
