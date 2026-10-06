@@ -93,6 +93,10 @@ and paste the surviving hunks — that output IS the exhaustive list of real cha
 
 **"Untouched code" includes the sibling repos — local or on GitHub.** When the body or plan marks a claim the fix depends on as "can't be checked from this repo" because it lives in the backend or web app, that is not the end of the road. If the repo is on this machine (`~/Sites/kindra`, `~/Sites/kinlia-web`), read it at its production branch without a checkout: `git -C <repo> fetch origin <branch>`, then `git -C <repo> show origin/<branch>:<path>` / `git -C <repo> grep -n '<token>' origin/<branch> -- lib/`. If it is not local, read it on GitHub: `gh api repos/KindraConnect/<repo>/contents/<path>?ref=<branch> --jq .content | base64 -d`, or a shallow clone into the scratchpad. Paste the lines, name the branch and SHA, and state what you did not read (e.g. staging). Only if neither route exists is the claim labeled unverified.
 
+The same read is owed when the body makes NO claim but the diff makes the app newly depend on a server reply — a screen that used to render cached data now fetches, waits, or bails out on failure. For each way the user can reach that screen (each caller from Check 2), read the backend endpoint at its production branch and paste the lines showing it returns the record for that case (e.g. no published/date filter for past events). Also grep the app for other callers of the same fetch function that can fire at the same moment (notification handlers, deep links, focus effects) and state whether an identical in-flight request is de-duplicated or races.
+
+**Why (PR #439, 2026-10-05):** the ticket fix made the event screen refetch instead of showing stale data, and on the notification path it now overlaps the handler's own fetch. Both were confirmed (`Events.get_event!/2` unfiltered on `kindra` `origin/master`; the request de-dup cache removed per `src/API/ApiClient.ts`) only because the reviewer improvised them — the author never raised either.
+
 **Why (PR #438, 2026-10-05):** the fix's one real risk — a server reply carrying an empty photo list for an account that has photos, which would wrongly hide its picture — was left as an open question by the author. Four files read in `kindra` at `origin/master` showed the profile picture is a row of the same, unfiltered photo list, so the case cannot occur on those paths. The author had write access to that repo on GitHub the whole time; nothing in this checklist, or in their session, pointed outside the PR's repo.
 
 **A claim about a dependency the PR (or an earlier commit) REMOVED is still a verifiable claim — greppability is not the test.** When a root cause is "the old library did X with this prop," you cannot grep it: resolve the exact pinned version from the removing commit's parent lockfile (`git show <sha>^:yarn.lock`), fetch that version's source (`curl -sL https://unpkg.com/<pkg>@<version>/<file>`), and paste the lines that settle it. Never accept an inferred contract for deleted code.
@@ -317,6 +321,9 @@ WARN on bad hygiene. Recommend squash-on-merge.
 If the PR changes a public API, configuration, or developer-facing behavior, the relevant README / inline docs / CHANGELOG should be updated. Grep the diff for changes to `.md` files, `README*`, `CHANGELOG*`, `/docs/`.
 
 WARN if a contract changed but no docs touched. Not a hard FAIL.
+
+Also grep the diff's ADDED comment lines for file:line cites (`grep -nE '^\+.*(//|#|\*).*[A-Za-z0-9_]+\.(tsx?|jsx?|exs?):[0-9]+'`). Each one is a Suggestion for the author: cite by a unique searchable phrase instead, per "Citing Other Code From a Comment" in `~/Sites/CLAUDE.md` — and check it at the head, since the PR may already have moved the line.
+**Why (PR #439, 2026-10-05):** a new comment in `Event.tsx` cited `notificationsHandler.ts:379`; the same PR's own edit had moved that call to line 382 before merge.
 
 ---
 
