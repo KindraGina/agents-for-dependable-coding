@@ -14,6 +14,10 @@ can check.
   when a prompt looks like a bug report ("what happened to", "why is", "missing",
   "not showing", "broken", "disappeared", "doesn't work", "stopped working").
 - **Manually:** the user types `/evidence` at any point after a cause has been stated.
+- **Enforced:** the same trigger sets a per-session flag; while it is set (until the user's
+  next message), `hooks/evidence-edit-guard.sh` (PreToolUse Edit|Write) denies edits to
+  app code (`src/`, `lib/`, `app/`, `components/`, `pages/`, `config/`, `test/`). Docs,
+  plans and memory stay editable. Limit: Bash edits are not covered.
 
 ## Instructions
 
