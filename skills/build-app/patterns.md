@@ -127,6 +127,7 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
   - **Corollary (gitignored hand-edits invisible to git auditors):** Build B on 2026-05-02 (8e5147be) succeeded after a hand-edit to `android/app/build.gradle:98` (`1.80.06` → `1.80.11`). `git status` and `git diff` both showed clean because `android/` is gitignored, so the existing `commit-state-auditor` reported "no source/config drift" — technically true, but blind to the real drift. Once VERSION-001 is implemented, the correct response to its FAIL is `npx expo prebuild --clean`, NOT a hand-edit. A hand-edit will be wiped the next time anyone runs prebuild, re-introducing the bug. Document in the auditor's failure message: "Recommended fix: prebuild. Hand-edit only as time-sensitive emergency workaround, and note in the commit message."
   - **Cost:** 1 EAS build credit at pay-as-you-go overage rate. Could have been worse if the wrong-versioned AAB had been uploaded to Play Console.
   - See `~/Sites/CLAUDE.md` "EAS Build & Deploy" → "Native dirs are gitignored — prebuild after `app.config.ts` edits" for the broader rule.
+  - **Note (2026-10-09, Android build `5a32ca4f`):** `yarn build:testflight` and `yarn build:production` are iOS builds, but their `expo prebuild --clean` has no `--platform` flag, so it regenerates **both** `ios/` and `android/` (verified: `package.json` `build:testflight` at `a8f397d8`; every file in `android/` had mtime 01:48, the iOS 181 prebuild). So an `android/` dir can be fresher than you'd guess, and an mtime alone does not show which `EAS_BUILD_PROFILE` produced it. A later `yarn build:production` would leave production-profile values in `android/`. Still run `EAS_BUILD_PROFILE=<profile> npx expo prebuild --clean --platform android` right before an Android build. It is cheap and it pins the profile.
 
 ## Phase: Bundle JavaScript
 
@@ -436,6 +437,25 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
 - **Pre-flight catchable?** Yes, once fixed. The positive control above is what makes a scanner failure visible.
 - **Why this is a meta-lesson:** This is the same trap as META-004, where a check depended on what a tool happens to print. A scan that returns "no match" looks exactly like a scan that *cannot* match. Every negative-result scan in an auditor needs a positive control, the same rule `~/Sites/CLAUDE.md` applies to repaired tests ("needs a real negative control"). Wider note: any agent-written byte-level `grep -P` on this machine is affected, not only this auditor. Use perl, or call `/usr/bin/grep` by its absolute path.
 
+### META-012 — Reusing the env / Sentry / commit-state audits from the iOS run for the Android build of the same commit is OK, but the Sentry audit is not fully platform-independent
+
+- **First seen:** 2026-10-09 (Android testflight `5a32ca4f` vc23, reusing audits from iOS `e844055d` build 181, both at `a8f397d8`)
+- **Last seen:** 2026-10-09
+- **Occurrences:** 1
+- **Affects:** `build-app` orchestration when iOS and Android of one commit are audited in separate passes
+- **Phase:** Pre-flight
+- **Platform:** android (reusing iOS-run reports)
+- **Log signature:** N/A. The tell is a reused report whose title says `ios`: `/tmp/build-app-sentry-audit.md` was headed `# Sentry Config Audit — ios / testflight` and checked only `ios/sentry.properties` and "Auth token available to Xcode phase".
+- **What happened:** Only the platform-scoped prereq audit was re-run for Android (`/tmp/build-app-prereq-audit-android.md`, PASS). The env, Sentry and commit-state reports from the iOS run (01:36–01:38, same checkout `/Users/ginalevy/Sites/kindraapp-tf-build`, same HEAD `a8f397d8`) were reused. The build succeeded. Reusing env and commit-state was sound: they measure the commit, the branch sync and `EXPO_PUBLIC_*`, which are shared by both platforms. The Sentry audit was **iOS-scoped**. It never read `android/sentry.properties`, and it never considered the Gradle upload task (GRADLE-001). The Android prereq audit did not cover them either. Nothing failed, because `android/sentry.properties` is regenerated from the same `app.config.ts` plugin block. Re-checked during this post-mortem: `defaults.org=kinlia`, `defaults.project=kinlia-staging`, mtime 02:41, from the explicit Android prebuild.
+- **Rule (accepted shortcut, with conditions):** a cross-platform build may reuse the iOS run's env, Sentry and commit-state reports only if ALL of these hold:
+  1. Each report's recorded HEAD equals `git rev-parse HEAD` now (META-009). This means the same commit, with nothing merged in between.
+  2. Each report names the same absolute checkout path as the one being built (SKILL-006).
+  3. Same session, reports less than 1 hour old, and the commit-state re-check `git fetch` shows the remote branch has not moved.
+  4. **The Sentry gap is closed for the new platform.** After that platform's prebuild, check its `sentry.properties` org/project against the target profile: for Android, `grep -E 'defaults\.(org|project)' android/sentry.properties`. The token is a project-level EAS secret, so its presence covers both platforms.
+  The prereq audit is never reusable across platforms, because the bundle, the native version stamps and the native dir are all per platform (SKILL-005, VERSION-001).
+- **Pre-flight catchable?** Yes. When the orchestrator carries a report across platforms, it should stamp the report: "reused for <platform> from <iOS run>, HEAD <sha> unchanged". For Android it should also add the one-line `android/sentry.properties` grep. Alternatively, `sentry-config-auditor` could check both platforms' `sentry.properties` whenever `android/` exists.
+- **Notes:** This complements META-009, which covers carrying audits forward across *commits*. This entry covers carrying them across *platforms* on one commit.
+
 ## Phase: Skill Orchestrator Bugs (build-app skill)
 
 These entries are NOT EAS-build failures — they are bugs in the `build-app` skill's monitoring/automation scripts that wasted agent time or produced misleading status during otherwise-successful builds. The skill author should fix these in `~/.claude/skills/build-app/`.
@@ -740,6 +760,15 @@ These entries are NOT EAS-build failures — they are bugs in the `build-app` sk
   6. `keys/ApiKey_*.p8` exposure (DECISION-013): **not re-verified this run** (META-010).
 - **Recommended standing check for any build that ships a NEW patch-package patch:** (i) before the build, grep a token that only the patch introduces, inside `node_modules` of the build checkout (absolute path, SKILL-006); (ii) after the build, confirm the `<pkg>@<version> ✔` line in the EAS log. Do (i) to catch a stale or unpatched local tree. Do (ii) because EAS installs fresh and runs `postinstall` on its own worker, so the local result alone proves nothing about the shipped binary. PODS-001 covers a version mismatch in the patch filename, but nothing covered "the patch silently did not apply".
 - **Implication:** This is the current known-good testflight reference for iOS and supersedes DECISION-017 for iOS. DECISION-017 is still the latest Android reference (vc22). Any auditor that would have FAILED-and-BLOCKED this configuration is mis-specified (META-003, META-011). The standing correct reports are META-007 and DECISION-013.
+
+### DECISION-019 — Build record: 5a32ca4f (Android testflight vc23) succeeded, the Android twin of DECISION-018
+
+- **Recorded:** 2026-10-09
+- **Build:** `5a32ca4f-6999-4a12-8c46-04d49c590b0f`. Android, `testflight` profile, versionCode 23, version 1.80.11, EAS project `@kiniliaapp/kinliadev`. FINISHED, error null, APK artifact (`buildType: apk`: sideload QA only, not uploadable to Play; no auto-submit, see DECISION-012).
+- **Built from:** `/Users/ginalevy/Sites/kindraapp-tf-build`, branch `testflight`, commit `a8f397d8`, the same commit as iOS 181 (DECISION-018). Android prereq audit PASS (local Android bundle compiled, patches applied, `app.config.ts` package `life.kindra`, version 1.80.11). Env, Sentry and commit-state were reused from the iOS run. See META-012 for when that is OK and for the Sentry gap it left.
+- **State:** the same as DECISION-018 items 1–6. One Android-specific item: `android/` had already been regenerated by the iOS script's prebuild before an explicit `EAS_BUILD_PROFILE=testflight npx expo prebuild --clean --platform android` ran again (VERSION-001 note, 2026-10-09).
+- **Tester handoff:** send the artifact link for **this** build (vc23), taken from `eas build:view 5a32ca4f-6999-4a12-8c46-04d49c590b0f` after FINISHED, not from the dashboard's latest APK (SKILL-008).
+- **Implication:** this supersedes DECISION-017 as the latest known-good Android testflight reference. DECISION-018 is still the iOS reference.
 
 ## Future cleanup (low priority)
 
