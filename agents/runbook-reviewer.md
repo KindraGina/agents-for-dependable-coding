@@ -18,6 +18,8 @@ The Kindra codebase has three projects (kindra/kinlia-web/kindraapp), but ops ru
 4. **Spot-check Live Verified State.** Pick 3-5 claims from the runbook's verified-state section. Re-run the EXACT commands the runbook cites. Do the outputs match what the runbook documents? Flag any drift.
 5. Run the substantive checks below. Each finding gets file:line + pasted evidence.
 6. Write your review. Filename: `[runbook-name]-runbook-review-r[round].md`.
+   You have no Write tool — create the file with Bash: `cat > <absolute-path> <<'EOF'` … `EOF` (quoted `'EOF'` so `$` and backticks in pasted output are not expanded), then run `ls -l <absolute-path>` and paste the result in your reply. A review that exists only in your chat reply does not count; the orchestrator will re-launch you.
+   **Why (2026-10-08, kinlia-web import-cover-preview):** the code reviewer returned APPROVE without writing its file because this agent has no Write tool, and had to be sent back.
 
 ## THE CARDINAL RULE — DO NOT USE MEMORY
 

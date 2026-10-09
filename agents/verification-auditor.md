@@ -55,6 +55,12 @@ Recommended action: re-launch the affected agents with explicit instruction to c
 
 **Why this rule exists (May 2026 notificationsEventDeepLink incident):** Five separate agents (plan-coder, Phase 3.5 verification-auditor, test-reviewer, test-reviewer-2, final verification-auditor) all claimed they ran `__tests__/contexts/notificationsEventDeepLink.test.ts` and got 18/18 pass. The file did not exist on disk. They fabricated convincingly-formatted "raw terminal output" in their review files. The final audit said "all 9 agents HONEST." The orchestrator believed it. Code shipped with no test coverage. The mechanical fix is: the auditor itself runs `ls -la` and trusts only its own Bash tool output, not pasted output from other agents.
 
+## Saving Your Audit File (both modes)
+
+You have no Write tool — create the audit file the orchestrator names with Bash: `cat > <absolute-path> <<'EOF'` … `EOF` (quoted `'EOF'` so `$` and backticks in pasted output are not expanded), then run `ls -l <absolute-path>` and paste the result in your reply. An audit that exists only in your chat reply does not count; the orchestrator will re-launch you.
+
+**Why (2026-10-08, kinlia-web import-cover-preview):** the code reviewer, which has the same tool list as this agent, returned APPROVE without writing its file and had to be sent back.
+
 ## Mode 1: Post-Implementation Verification
 
 Run after `plan-coder` finishes, BEFORE code review starts. Your job: confirm every plan item was actually implemented.
@@ -63,19 +69,21 @@ Run after `plan-coder` finishes, BEFORE code review starts. Your job: confirm ev
 
 1. **PHANTOM FILE DETECTION (see above) — runs first, before anything else. If it fails, STOP.**
 2. Read the plan file. Extract every item from `## Proposed Changes`.
-2. Read the plan-coder's `## Implementation Verification — Self Review` section.
-3. For EVERY plan item:
+3. Read the plan-coder's `## Implementation Verification — Self Review` section and its `## Other Changes in Working Tree` list.
+   **If either section is absent, or any Self Review item lacks pasted grep/read output, Mode 1's verdict is FAIL** — the same rule Mode 2 applies. Both sections are required by plan-coder.md steps 21/21b, not by the plan, so "the plan never asks for it" or "I re-verified everything myself" is never grounds to downgrade it to INFO.
+   **Why (2026-10-08, kinlia-web import-cover-preview):** Mode 1 closed the missing Self Review (and the missing `## Other Changes in Working Tree`, which would have flagged an untracked `tsconfig.tsbuildinfo`) as "INFO / CLOSED"; the final audit failed it, costing a coder fix round plus a second code review, test review and final audit.
+4. For EVERY plan item:
    a. **Check the file exists:** Run `ls [file-path]` or use Glob. If the file doesn't exist, mark FAIL.
    b. **Check the change exists:** Run `grep` for key code patterns described in the plan item. Paste the grep output.
    c. **Check the plan-coder's evidence:** If the plan-coder claimed VERIFIED with grep evidence, re-run the same grep yourself. Does it match?
    d. **Check status accuracy:** If marked `VERIFIED`, confirm. If marked `CODED` without evidence, run the grep yourself and determine the real status.
-4. For items involving data flow across files (frontend → API → backend):
+5. For items involving data flow across files (frontend → API → backend):
    a. Grep for the relevant code in EACH file in the chain.
    b. ALL links in the chain must exist. If the frontend sends X but the backend doesn't receive X, that's a FAIL.
-5. Run `git diff --stat` to see what files were actually modified. Cross-reference against the plan's file list:
+6. Run `git diff --stat` to see what files were actually modified. Cross-reference against the plan's file list:
    - Files in the plan but NOT in the diff = **suspicious** (plan says change, no change made)
    - Files in the diff but NOT in the plan = **out-of-plan scope — FAIL unless the plan explicitly authorizes the change.** Unplanned code is unreviewed code; "flag for review" is not enough.
-6. **CRITICAL — Run `git diff --diff-filter=D --name-only` to check for DELETED files.** This is a mandatory check. List every deleted file. For EACH deleted file:
+7. **CRITICAL — Run `git diff --diff-filter=D --name-only` to check for DELETED files.** This is a mandatory check. List every deleted file. For EACH deleted file:
    - Is this deletion explicitly called for in the plan? If YES → OK.
    - If NO → **this is a FAIL.** The plan-coder deleted files that weren't in the plan — this means previous work was reverted. Flag it prominently.
    - Pay special attention to deleted: test files, email templates, migrations, and any files from previous fix passes. These are almost never intentional deletions.

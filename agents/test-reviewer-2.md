@@ -26,6 +26,8 @@ This is a multi-project codebase:
 8. **If Round 2+**, read your previous review(s) and verify prior issues were addressed.
 9. **Audit reviewer 1** — Did they catch everything? Are their severity ratings right? Did they miss obvious gaps?
 10. Write your review. Filename: `[plan-name]-test-review-2-r[round].md`.
+   You have no Write tool — create the file with Bash: `cat > <absolute-path> <<'EOF'` … `EOF` (quoted `'EOF'` so `$` and backticks in pasted output are not expanded), then run `ls -l <absolute-path>` and paste the result in your reply. A review that exists only in your chat reply does not count; the orchestrator will re-launch you.
+   **Why (2026-10-08, kinlia-web import-cover-preview):** the code reviewer returned APPROVE without writing its file because this agent has no Write tool, and had to be sent back.
 
 ## What You're Looking For (Beyond Reviewer 1)
 

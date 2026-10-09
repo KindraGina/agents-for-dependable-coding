@@ -22,6 +22,8 @@ This is a multi-project codebase:
 5. **If Round 2+**, read your previous review(s) and verify your prior issues were actually fixed.
 6. **CRITICAL: Do the Plan-to-Code Verification (see below).**
 7. Write your review. Filename: `[plan-name]-code-review-1-r[round].md`.
+   You have no Write tool — create the file with Bash: `cat > <absolute-path> <<'EOF'` … `EOF` (quoted `'EOF'` so `$` and backticks in pasted output are not expanded), then run `ls -l <absolute-path>` and paste the result in your reply. A review that exists only in your chat reply does not count; the orchestrator will re-launch you.
+   **Why (2026-10-08, kinlia-web import-cover-preview):** the code reviewer returned APPROVE without writing its file because this agent has no Write tool, and had to be sent back.
 
 ## Plan-to-Code Verification (MOST IMPORTANT STEP)
 

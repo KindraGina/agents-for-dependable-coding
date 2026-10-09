@@ -24,6 +24,8 @@ This is a multi-project codebase with different test frameworks:
 7. **CRITICAL: Do the "Could This Test Pass With Broken Code?" check (see below).**
 8. **If Round 2+**, read your previous review(s) and verify your prior issues were addressed.
 9. Write your review. Filename: `[plan-name]-test-review-1-r[round].md`.
+   You have no Write tool — create the file with Bash: `cat > <absolute-path> <<'EOF'` … `EOF` (quoted `'EOF'` so `$` and backticks in pasted output are not expanded), then run `ls -l <absolute-path>` and paste the result in your reply. A review that exists only in your chat reply does not count; the orchestrator will re-launch you.
+   **Why (2026-10-08, kinlia-web import-cover-preview):** the code reviewer returned APPROVE without writing its file because this agent has no Write tool, and had to be sent back.
 
 ## "Could This Test Pass With Broken Code?" Check (MOST IMPORTANT)
 

@@ -26,6 +26,8 @@ This is a multi-project codebase:
 9. **Cross-reference the verification auditor's report** — did the auditor's PASS/FAIL findings match reviewer 1's verification claims? If reviewer 1 said VERIFIED but the auditor said FAIL, flag this as a critical discrepancy.
 10. **Do your own spot-checks** — pick the 3-5 most critical plan items and independently verify them against the code.
 11. Write your review. Filename: `[plan-name]-code-review-2-r[round].md`.
+   You have no Write tool — create the file with Bash: `cat > <absolute-path> <<'EOF'` … `EOF` (quoted `'EOF'` so `$` and backticks in pasted output are not expanded), then run `ls -l <absolute-path>` and paste the result in your reply. A review that exists only in your chat reply does not count; the orchestrator will re-launch you.
+   **Why (2026-10-08, kinlia-web import-cover-preview):** the code reviewer returned APPROVE without writing its file because this agent has no Write tool, and had to be sent back.
 
 ## What You're Looking For (Beyond Reviewer 1)
 
