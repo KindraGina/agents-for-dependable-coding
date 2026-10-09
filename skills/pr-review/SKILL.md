@@ -71,6 +71,10 @@ When an auto-fix removes imports or variables, a linter with `no-undef` disabled
 
 **Why (PR #431, 2026-09-28):** the format and file-list notes cost two wasted lint runs. The PR #429 proposal had named `--format json`; it was trimmed as tooling trivia when that lesson was applied, and the next review paid for it.
 
+Jest also prints RELATIVE paths that reach across into the sibling worktree (`../pr-<n>/node_modules/...` in the base log, `../pr-<n>-base/...` in the head log), so replace the relative spellings as well — e.g. `sed -E 's#(/tmp/|\.\./)pr-<n>(-base)?#<WT>#g'` — and grep the normalized logs for `pr-<n>` to prove nothing survived before trusting an empty diff.
+
+**Why (PR #443, 2026-10-08):** absolute-path normalization alone left the logs differing only by `../pr-443/...` spellings; it looked like new console noise until spotted by eye.
+
 **The zsh word-splitting trap applies to every command in this review, not just the lint file list.** Never store a multi-word command in a variable (`J="npx jest --config x"; $J file` runs a program literally named `npx jest --config x`) — spell the command out or define a shell function. Write `${R}:path`, never `$R:path` (zsh reads `:l`, `:h`, `:t` after a variable as modifiers). Quote any word that begins with `=` (`echo '=====X'`). And never pipe a run through `grep` without also capturing its exit code — "command not found" disappears in the filter and an empty result looks like a clean one.
 
 **Why (PR #438, 2026-10-05):** all three cost a re-run; the first negative-control pass printed nothing because every test command failed to start, invisibly.
@@ -113,6 +117,10 @@ The same read is owed when the body makes NO claim but the diff makes the app ne
 
 **Why (PR #436, 2026-10-01):** the body's claims that `react-native-text-input-mask` no longer links on iOS but still does on Android, and that `expo-blur` links on iOS only, were confirmed in seconds by exactly these commands — the only evidence available for them. The commands were improvised; nothing in this checklist asked for them.
 
+
+**The same applies to claims computed from a bundled asset's own metadata** (fonts, images, sounds the PR adds or swaps). "iOS may pick the wrong weight" is decided by what the file declares, not by the diff: parse the asset's internal metadata in the worktree, read the platform's selection code in `node_modules`, and — when no device or simulator run exists — use the host OS's own engine as a proxy (macOS CoreText is the engine iOS uses). Paste every output and label the result "engine-confirmed, not device-tested"; the device check stays in the untested-surfaces gate. The per-asset recipe lives in the project's own CLAUDE.md (for KindraApp fonts: the "font file's weight comes from inside the file" bullet).
+
+**Why (PR #443, 2026-10-08):** the author wrote "iOS may tie" on three italic faces. All three files declared weight 400 and names ending `-Italic`, which RN's suffix match skips, and CoreText reported identical weight for all three — so every italic resolves to one arbitrary face. That turned a "may" into a "will" before any iPhone test; nothing in this checklist asked for it.
 ---
 
 #### Tier 1 — Must Pass
