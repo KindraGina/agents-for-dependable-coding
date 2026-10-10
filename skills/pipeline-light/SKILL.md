@@ -329,7 +329,13 @@ Then show:
 - Files in docs/plans/
 - "Would you like to commit these changes?"
 
-**Final step — Lessons (never blocks completion).** Launch the `lesson-learner` agent in PROPOSE mode with: the plan file path, all review/audit file paths from this run, the repo path, and a one-paragraph summary of what happened (rounds, issues caught, human corrections). When it returns, show the user the numbered proposals (or "no lessons proposed") and ask in plain text: "Apply any of these? (e.g. 'apply 1 and 3', or 'skip')". On approval, re-launch `lesson-learner` in APPLY mode with the approved numbers. On 'skip' or no reply, do nothing — the proposal file remains on disk. If the learner errors, say so and finish normally; a learner failure never changes the run's verdict.
+**Final step — Lessons (never blocks completion).**
+1. Get the repo name from `git remote get-url origin` (`kindra`, `KindraApp`, or `kinlia-web`) and the branch from `git branch --show-current`. Launch the `lesson-learner` agent in PROPOSE mode with: the plan file path, all review/audit file paths from this run, the repo path, repo name, branch, and a one-paragraph summary of what happened (rounds, issues caught, human corrections).
+2. If it proposes nothing and carried over no waiting lessons, say "No lessons this run" and finish.
+3. Otherwise launch the `lesson-evaluator` agent with: the proposal file path, the repo path, repo name, and branch. It checks every lesson against all three repos and every rule file — and against the bar that a lesson must improve the process, not just add a rule — and writes an evaluation file next to the proposal.
+4. Show the user the evaluator's numbered lines — each lesson in plain words, its recommendation (keep / move / merge / drop) and where it would go, and a one-line reason — plus any conflict it flagged. Ask in plain text: "Apply the recommendations? (e.g. 'apply recommendations', 'apply all but 2', 'make 1 all-repos', or 'skip')".
+5. On approval, re-launch `lesson-learner` in APPLY mode with the proposal path, the evaluation path, the approved numbers, and any change the user asked for. Lessons marked drop are not applied unless the user names them.
+6. On 'skip' or no reply, do nothing — both files remain on disk. If the evaluator errors, say so and show the learner's own proposals with "Apply any of these? (e.g. 'apply 1 and 3', or 'skip')". If the learner errors, say so and finish normally. Neither failure changes the run's verdict.
 
 ## Important Rules
 
