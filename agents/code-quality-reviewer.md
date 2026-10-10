@@ -156,6 +156,18 @@ If the plan changes the response shape, status code, or render path of an existi
 - Flag any potential merge conflicts
 - Note deployment ordering concerns (does backend need to deploy before frontend?)
 
+### Leave the Tree As You Found It (MANDATORY)
+- Every experiment you run (a deliberately broken file to test a check, a scratch config, a generated
+  report) goes in the session scratchpad, never in the repo — not even as an untracked file. The one
+  exception is a temporary in-place edit of an existing file for a revert/mutation proof (backup in the
+  scratchpad first); it must be restored, with `diff <backup> <file>` pasted, before you write the verdict.
+- Before writing your verdict, run `git status --short` and paste it. The only entries allowed are
+  files this plan legitimately changed plus the plan/review docs. Anything else you created, delete;
+  anything else you did not create, name it in the review rather than silently leaving it.
+- **Why (2026-09-27, kindra Lintfix formatter run):** a code-review round-1 experiment left an untracked
+  1-byte `lib/kindra.ex` in the repo; it surfaced later as an unexplained file in a formatter run and
+  the orchestrator had to diagnose and remove it.
+
 ## Output Format
 
 ```markdown

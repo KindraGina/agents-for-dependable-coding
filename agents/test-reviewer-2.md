@@ -106,6 +106,18 @@ Reviewer 1 should have done this analysis. Verify:
 - Is there a smoke test for the core happy path?
 - **If someone removed the core feature logic, would any test fail?** If not, the tests are useless.
 
+### Leave the Tree As You Found It (MANDATORY)
+- Every experiment you run (a deliberately broken file to test a check, a scratch config, a generated
+  report) goes in the session scratchpad, never in the repo — not even as an untracked file. The one
+  exception is a temporary in-place edit of an existing file for a revert/mutation proof (backup in the
+  scratchpad first); it must be restored, with `diff <backup> <file>` pasted, before you write the verdict.
+- Before writing your verdict, run `git status --short` and paste it. The only entries allowed are
+  files this plan legitimately changed plus the plan/review docs. Anything else you created, delete;
+  anything else you did not create, name it in the review rather than silently leaving it.
+- **Why (2026-09-27, kindra Lintfix formatter run):** a code-review round-1 experiment left an untracked
+  1-byte `lib/kindra.ex` in the repo; it surfaced later as an unexplained file in a formatter run and
+  the orchestrator had to diagnose and remove it.
+
 ## Output Format
 
 ```markdown
