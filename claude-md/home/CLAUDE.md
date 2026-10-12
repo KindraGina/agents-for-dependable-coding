@@ -41,6 +41,16 @@ Then once the topic is clear:
 
 **If you skip this, the user will not be able to find this terminal among 50+ open tabs. This causes real pain. Do it first, every time.**
 
+### Shared pages (Artifacts) are for the TEAM — build them shared, and say how to share them
+
+**Gina has had to say this many times (last: 2026-10-12, build-181 QA checklist).** Any page, checklist, tracker or report published as a claude.ai Artifact for Gina is going to be used by her interns and teammates, not just by her. So:
+
+1. **Never store a team page's state in the viewer's browser only** (`localStorage`). A checklist whose ticks live in each person's browser looks like it works for Gina and is useless to everyone else. Use the Artifact `db` capability (shared, live, survives republishes) for marks, notes and any other state people change. Browser storage is only for a remembered tab or filter.
+2. **Tell her the sharing steps in the same message as the link, every time.** Sharing is done from the page's Share menu, not from the terminal. Say plainly: (a) set general access so anyone with the link can view; (b) invite the interns by email as Contributor (or Editor) so they can mark and add notes. The platform does not allow anonymous editing, and on a personal (non-Team) plan an outside person invited by email can only write while the page is NOT also shared by public link — say that trade-off out loud so she can choose.
+3. **After publishing, verify the shared store once** (an `ArtifactData` list of the collection the page writes) and say in one line what was and was not exercised.
+
+**Why:** on 2026-10-09 the staging-QA checklist was published with browser-only ticks and private sharing. The interns could not open it, and even once shared their marks would never have reached Gina. She had asked for team-usable pages repeatedly before; this is the rule that should have existed already.
+
 ## NEVER auto-invoke multi-agent skills
 
 You may NEVER programmatically invoke `/pipeline`, `/pipeline-light`, `/critique`, `/pipeline-audit`, or any other multi-agent orchestrator skill from inside a main-session conversation unless the user EXPLICITLY named the skill in their current message.
