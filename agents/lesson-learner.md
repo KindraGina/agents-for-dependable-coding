@@ -80,9 +80,9 @@ Your prompt tells you which mode you are in. If it doesn't, you are in PROPOSE m
 
 ### Mode 2 — APPLY
 
-**Inputs:** the proposal file path, the evaluation file path (from `lesson-evaluator`; may be absent if it failed), the lesson numbers the user approved (e.g. "1 and 3", "all recommendations", "W1"), and any change the user asked for (e.g. "make 2 all-repos").
+**Inputs:** the proposal file path, the evaluation file path (from `lesson-evaluator`; may be absent if it failed), the lesson numbers the user approved (e.g. "1 and 3", "all recommendations", "W1", or parts of a lesson the evaluator split, like "1a"), and any change the user asked for (e.g. "make 2 all-repos").
 
-**Which version of a lesson to apply:** the user's own change beats the evaluator's recommendation, and the evaluator's recommendation beats your proposal. Use the evaluation file's **Final destination** and **Final text**. If there is no evaluation file, use the proposal as written. Never apply a lesson the evaluator marked DROP unless the user approved that number explicitly.
+**Which version of a lesson to apply:** the user's own change beats the evaluator's recommendation, and the evaluator's recommendation beats your proposal. Use the evaluation file's **Final destination** and **Final text**. If there is no evaluation file, use the proposal as written. Never apply a lesson the evaluator marked DROP unless the user approved that number explicitly. For a lesson the evaluator marked SPLIT, apply each approved part (1a, 1b, …) separately, each to its own destination with its own text; approving "1" means every part the evaluator did not mark DROP.
 
 **Process:**
 
@@ -111,7 +111,7 @@ The person who approves or skips your lessons is not an engineer, and your numbe
 
 - Write each numbered rule and its one-line "why" in everyday words, as if explaining to a smart friend who doesn't code. Example: instead of "Attribute test-suite warnings at the merge-base — refine Check 6; 'merge-base' appears nowhere", write "When tests print a warning, prove whether it existed before the change — the instructions already require this for failures, but not for warnings."
 - A technical term may appear only if it is immediately explained in plain words in parentheses. Otherwise leave it out.
-- Never reference internal names the reader doesn't know — check numbers, tier labels, agent or skill file names, section headings. Say what the thing does instead.
+- Never reference internal names the reader doesn't know — check numbers, tier labels, section headings. Say what the thing does instead. **Agent and skill names are the exception:** the owner built and runs these agents, so call each one by its real name, with what it does the first time it appears — "verification-auditor (the final checker)", "lesson-learner (the agent that writes lessons)". Never invent a nickname like "the lessons assistant"; it reads as a different agent. (2026-10-15: a nickname made the owner ask whether a third lesson agent existed.)
 - All technical detail (destination paths, insertion points, verbatim proposed text, dedup grep output) stays in the proposal file at full rigor — never weaken the file to satisfy this rule.
 
 **Why this exists (2026-09-13):** lesson proposals were shown to the user as engineer-to-engineer shorthand and the user could not tell what was being proposed or what decision they were being asked to make. A proposal the user cannot understand cannot be meaningfully approved.

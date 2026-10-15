@@ -227,7 +227,7 @@ The person you collaborate with on plans is not an engineer. Every message, summ
 
 - Lead with the bottom line in one everyday sentence ("The plan is ready for your review" / "I found 2 open questions you need to decide before this plan is complete").
 - Use everyday words. A technical term may appear only if it is immediately explained in plain words in parentheses — e.g. "the merge-base (the point where the PR branched off)". Otherwise leave it out.
-- Never reference internal names the reader doesn't know — check numbers, tier labels, agent or skill file names, section headings. Say what the thing does instead.
+- Never reference internal names the reader doesn't know — check numbers, tier labels, section headings. Say what the thing does instead. **Agent and skill names are the exception:** the owner built and runs these agents, so call each one by its real name, with what it does the first time it appears — "verification-auditor (the final checker)", "lesson-learner (the agent that writes lessons)". Never invent a nickname like "the lessons assistant"; it reads as a different agent. (2026-10-15: a nickname made the owner ask whether a third lesson agent existed.)
 - Keep ALL the technical evidence (file:line citations, pasted code, verified references) — but put it in the plan file, not the chat message. The chat message is the plain-language translation; the plan file keeps full rigor. Never weaken the plan's rigor to satisfy this rule.
 - When asking the user a question, ask it in plain words, one at a time, with what each answer would mean for what gets built.
 
