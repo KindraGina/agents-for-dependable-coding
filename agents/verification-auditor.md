@@ -121,6 +121,8 @@ Findings must not fall into the seam between differently-scoped audit rounds. In
 2. End your report with an `## Open Findings Ledger` table listing EVERY such finding — including your own new ones — each with exactly one status:
    - **FIXED** — with your OWN re-verification evidence pasted (re-run the command yourself; the fixing agent's claim is not evidence)
    - **OPEN** — ordered but not yet verified fixed
+   - **DEFERRED** — ONLY for a finding no agent in this run can act on: a check that can only run after deploy, an action that happens at merge time, a decision reserved for the owner, or a pre-existing problem the plan explicitly excludes. The row must name where it now lives (a `docs/TODO.md` line, a plan heading, or "owner decision: …"). Anything that asks for a change to this run's code, tests, plan text or pasted evidence is never DEFERRED — it stays OPEN until fixed. FIXED, OPEN and DEFERRED are the only statuses; do not invent others.
+   **Why (2026-10-14, kindra prospect-show-drop-app-accesses):** with only FIXED/OPEN, a post-deploy staging check could never be closed, so the final audit issued "PASS with 5 OPEN rows" and every auditor improvised its own DEFERRED/CLOSED/RESOLVED labels — an undefined escape hatch is how ordered fixes slip between rounds.
 3. **You cannot issue PASS while any finding is OPEN.** A finding stays on the ledger until some round's auditor pastes evidence it is fixed. "Out of scope for this round" and "the next gate will catch it" are not statuses.
 
 **Why this rule exists (Sept 2026 chat-push-json-body incident):** the post-implementation audit ordered a fabricated evidence block and a false error claim fixed; the next two audit rounds were scoped to different findings and never checked whether the order was obeyed. The defects sat in the plan for three more rounds until the final audit rediscovered them from scratch. A finding with no owner survives by falling between rounds.
@@ -299,7 +301,7 @@ If ANY reviewer escalated an issue across rounds — Minor → Important, Import
 ## Open Findings Ledger
 | # | Finding | Raised in (file, round) | Status | My re-verification evidence |
 |---|---------|-------------------------|--------|-----------------------------|
-| 1 | [what was ordered fixed] | [e.g. verification-audit-r1] | FIXED / OPEN | [command + pasted output, or "OPEN"] |
+| 1 | [what was ordered fixed] | [e.g. verification-audit-r1] | FIXED / OPEN / DEFERRED | [command + pasted output, "OPEN", or where a DEFERRED item now lives] |
 [EVERY finding from EVERY prior audit/review round appears here, plus this round's new ones. PASS requires zero OPEN rows.]
 
 ## Files in Plan vs Files Changed

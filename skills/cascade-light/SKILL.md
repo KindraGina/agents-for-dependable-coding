@@ -132,11 +132,14 @@ Report a summary to the user:
 - **Pipeline:** /pipeline-light — completed
 - **Critique:** [APPROVE / CONCERNS / REJECT]
 - **Live Verification:** [PASSED — all steps verified with real data / NOT TESTED — no live verification steps in plan / PARTIALLY TESTED — N of M steps verified, K could not be executed]
+- **Saved:** [Committed on <branch> as <sha>, pushed / Committed on <branch>, NOT pushed / NOT committed — changes exist only on disk in <path>]
 
 [If APPROVE]: All stages passed. Code is ready for your review before merge.
 [If CONCERNS]: Pipeline passed but critique found minor issues. See [critique file path].
 [If REJECT]: Critique rejected the pipeline output. See [critique file path] for details.
 ```
+
+Fill **Saved** from `git status --short` and `git log origin/<branch>..HEAD` run at this moment — never call the work finished or "ready for your review before merge" without it. **Why (2026-10-10, kindra login-history fix):** the cascade-light summary said "Coding stage: finished" and listed staging checks while nothing was committed, so the work could not reach staging.
 
 If the critique capped its verdict at CONCERNS because of unverified interaction changes, reproduce its `## Manual Verification Required` steps verbatim in this summary — the user must run them before merge, and the cascade must not present the run as fully passed until then.
 

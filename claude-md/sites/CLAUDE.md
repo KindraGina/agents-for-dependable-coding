@@ -171,6 +171,8 @@ Before marking any bug as understood or planning a fix:
 - Double-check file paths, function names, and variable references against the actual codebase.
 - When debugging, investigate thoroughly rather than trying quick fixes.
 - Prefer reading more context over making assumptions.
+- **In shell commands, write `${VAR}` with braces whenever anything follows the variable — especially a colon.** zsh silently reads `$VAR:r`, `:h`, `:t`, `:e`, `:a`, `:l`, `:u`, `:q` and others as modifiers, with no error: `"$T:ro"` becomes a different path and `"$B:hotfix"` becomes `.otfix`. Write `"${T}:ro"`, `"${B}:hotfix"`.
+  Why (2026-10-10, kindra prospect-show-drop-app-accesses run): two auditors mounted a deliberately broken file with `$T:ro`, Docker mounted it at the wrong path, and both "broken" runs silently tested the unbroken file; the same trap mangled branch names in a plain `git` command.
 
 ## Debugging Rules
 
