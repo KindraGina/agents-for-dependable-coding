@@ -148,6 +148,8 @@ For EVERY symbol the PR adds, modifies, or removes (exported functions, types, c
 1. List the symbols touched (grep the diff for `export`, `defmodule`, `def `, `class`, route definitions, schema fields).
 2. For each one, grep the WHOLE codebase for callers: `grep -rn "symbolName" --include='*.ts' --include='*.tsx' --include='*.ex' --include='*.exs' --include='*.js'`. When the symbol is a module whose name is too common to grep (a default-exported `Button`, `Modal`, `utils`), find importers by the file path's last two segments plus the closing quote (`"/Button/Button'"`), never a longer prefix like `Components/Button/Button'` — that misses every relative import (`'../Button/Button'`). Also grep any path alias and `index` re-export of the module, and paste the importer count.
 3. For each caller: does the PR's change still work for that caller? If a function's signature changed, do callers pass the new args? If a field was renamed, do queries still find it?
+When the PR moves where a component renders (screen to app root, outside a provider, into a `Modal` or portal), its callers are unchanged but its surroundings are not: walk its import tree at the head SHA for hooks and contexts that need the old surroundings (React Navigation's `useRoute`, `useIsFocused`, `useFocusEffect`, `useNavigationState` throw outside a screen; a `useContext` whose provider is now above or beside it returns the default), check every method destructured from them exists at the new location, and paste the counts.
+**Why (KindraApp PR #448, 2026-10-21):** the collage popup moved to the navigation root, where `useNavigation()` returns the container ref with no `push`; clearing that took an improvised 209-file import walk that nothing in this check asked for.
 
 FAIL if any caller would break.
 
@@ -326,7 +328,8 @@ Look at the PR's commit list (`gh pr view <number> --json commits`):
 - Each commit message describes WHY the change, not just WHAT.
 - No commits over 1000 lines (suggests bundled unrelated changes — should be split).
 
-WARN on bad hygiene. Recommend squash-on-merge.
+WARN on bad hygiene. Before recommending a merge method, grep the linked plan and the repo's CLAUDE.md (`grep -n -iE 'merge commit|squash|rebase|revert|pr merge'`); if either names one, tell the merger to use that method and do not recommend another. Otherwise recommend squash-on-merge.
+**Why (KindraApp PR #448, 2026-10-21):** the plan's rollback (GitHub's Revert button, `git revert -m 1`) works only on a merge commit and its release section forbade squash; the line above used to say "Recommend squash-on-merge" unconditionally, and the conflict was caught only by an improvised read of the plan.
 
 ---
 
