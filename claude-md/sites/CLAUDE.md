@@ -552,7 +552,7 @@ This rule exists because multiple pipeline runs have caught wrong field names, w
 
 ## Plan Verification — Hard Rules
 
-The "NEVER WRITE PLAN CODE FROM MEMORY" rule above is the principle. The six rules below are how to enforce it. Each is reviewer-checkable: another agent or human can verify compliance without trusting prose.
+The "NEVER WRITE PLAN CODE FROM MEMORY" rule above is the principle. The eight rules below are how to enforce it. Each is reviewer-checkable: another agent or human can verify compliance without trusting prose.
 
 Added after April 2026 rollback-plan errors where plans were rejected for: paraphrased references never actually verified, cross-branch line numbers, global `replace_all` on SHAs corrupting unrelated references, subagent prose treated as truth, and wrong function-boundary claims.
 
@@ -609,6 +609,12 @@ A summary like "all critical issues addressed" is not acceptable. It prevents th
 ### Rule 7 — Code claims in chat need pasted evidence too
 
 When you state a function exists, returns X, takes args Y, or that a schema has field Z — pair the claim with file:line + the actual pasted code line. If you can't paste it, don't state it. This applies in chat and quick answers, not just plan files. "I recall" / "I think" / "I believe" about a code reference is forbidden — re-read instead.
+
+### Rule 8 — "We already do this elsewhere" must be verified as reachable in production
+
+When a plan, comment, or chat answer uses existing code as precedent for a decision ("this already logs the full number", "we already skip the lock here"), the precedent is only an argument if that code actually runs for real users. Read the cited code's enclosing guards — env checks (`E2E_TEST_MODE`, `Mix.env()`, `process.env.NODE_ENV`, `__DEV__`, an `eas.json` profile), feature flags, test-only branches, dead routes, a legacy screen tree the shipping app never reaches — and paste them alongside the citation (Rule 1). If the precedent is gated, say so and state what is genuinely new about the change.
+
+Why (2026-10-19, kindra `docs/plans/2026-09-28-phone-verify-followups-send-guard-and-login-wrong-code.md`): the plan defended a new `Logger.info` that interpolates a full phone number by citing `phone_auth.ex:29` as logging a full number "unconditionally (not gated to E2E/staging)". `:29` is reachable only when `E2E_TEST_MODE == "true"` and the number begins `+1555`, so it never fires in production, and the `IO.inspect` the new line replaced logged only Twilio's error string. The change was therefore the first production log of full phone numbers on that path, and the owner approved "keep" on the opposite understanding. Code review caught it at the last reading gate; three earlier gates had re-run every evidence block and could not, because the paste itself was correct. The same trap in the mobile app has its own entry — see `KindraApp/CLAUDE.md`, "Legacy registrations are NOT reachable in the shipping app."
 
 ## File Safety
 
