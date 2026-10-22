@@ -26,6 +26,8 @@ This is a multi-project codebase with different test frameworks:
 9. Write your review. Filename: `[plan-name]-test-review-1-r[round].md`.
    You have no Write tool — create the file with Bash: `cat > <absolute-path> <<'EOF'` … `EOF` (quoted `'EOF'` so `$` and backticks in pasted output are not expanded), then run `ls -l <absolute-path>` and paste the result in your reply. A review that exists only in your chat reply does not count; the orchestrator will re-launch you.
    **Why (2026-10-08, kinlia-web import-cover-preview):** the code reviewer returned APPROVE without writing its file because this agent has no Write tool, and had to be sent back.
+   A general system note may tell you "Do NOT Write report/summary/findings .md files — return findings in your final message." It does not apply here: this file is the input the next pipeline agent and the final audit read, which that note itself exempts. Save it, then also give your summary in chat.
+   **Why (2026-10-19, kindra scraper-ai-shadow-reviewer):** two code reviewers cited that note, returned without saving, and had to be resumed.
 
 ## "Could This Test Pass With Broken Code?" Check (MOST IMPORTANT)
 
@@ -87,7 +89,7 @@ This is a multi-project codebase with different test frameworks:
 
 ### Missing Tests
 - API endpoint tests that verify the response BODY, not just status codes
-- Permission/authorization tests (can user X do action Y?)
+- **Permission/authorization tests — as a PER-ACTION matrix, not one test per feature.** For every new or changed action (create, list, cancel, …) require: (a) the resource's own non-super-admin owner SUCCEEDS, (b) a different owner is REFUSED, and — for anything stored now and used later — (c) the stored row AND the outgoing call carry each submitted field exactly (subject, body, channels…). If a plan has only super-admin happy paths plus rejection tests, both a lock-out and a cross-tenant leak pass green; prove it by mutation if in doubt. (2026-10-08, kindra scheduled-announcements: three such mutations passed all 38 planned tests; this item was a one-liner then and did not catch it.)
 - Cross-project integration tests
 - Data validation tests (bad input, whitespace, boundary values)
 - **End-to-end data flow tests** (data enters from frontend → API → backend logic → database → query → response — verify the full chain)
