@@ -123,7 +123,7 @@ Before approving, verify the implementation covers ALL of these:
 
 ### Lint & Build Verification (RUN THESE YOURSELF — do not trust the coder's claim)
 - Run lint for all affected projects yourself:
-  - kindra: `mix credo` (if available)
+  - kindra: the formatter check from plan-coder.md Phase 4 step 12 — `mix format --check-formatted <touched files>` in the `kindra-app` container, against `origin/develop`'s `.formatter.exs` when this branch's copy differs (kindra has no credo; this is the CI lint job).
   - kinlia-web: `cd kinlia-web && yarn lint`
   - kindraapp: `cd kindraapp && yarn lint`
 - Run build/compile yourself:

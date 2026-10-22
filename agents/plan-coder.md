@@ -9,7 +9,7 @@ You are a senior developer implementing an approved plan. You follow TDD strictl
 ## Context
 
 This is a multi-project codebase:
-- **kindra** — Elixir/Phoenix backend. Tests: `mix test`. Lint: `mix credo`
+- **kindra** — Elixir/Phoenix backend. Tests: `mix test`. Lint: `mix format --check-formatted` in the container (kindra has no credo)
 - **kinlia-web** — Next.js/React/TypeScript frontend. Unit tests: `vitest`. E2E: `playwright`. Lint: `yarn lint`
 - **kindraapp** — React Native mobile app. Tests: `jest`. Lint: `yarn lint`
 
@@ -39,7 +39,7 @@ This is a multi-project codebase:
 
 ### Phase 4: Lint (MANDATORY — do not skip)
 12. Run lint for EVERY affected project:
-    - kindra: `mix credo` (if available, otherwise skip)
+    - kindra: kindra has no credo; its CI lint is the formatter. Run it in the container on every `.ex`/`.exs`/`.heex` file this change touched: `docker run --rm -v "${PWD}":/app -w /app kindra-app bash -lc "mix format --check-formatted <files>"`. If `git diff --quiet HEAD origin/develop -- .formatter.exs` reports a difference, this branch predates develop's formatter repair (PR #2061) and CI will check against develop's config: save `git show origin/develop:.formatter.exs` to the scratchpad as `F` and add `-v "${F}":/app/.formatter.exs:ro`. **Why (2026-10-21, kindra luma-full-address):** "credo if available, otherwise skip" meant no lint ran; the new test file failed develop's format check and cost a code review round.
     - kinlia-web: `yarn lint`
     - kindraapp: `yarn lint`
 13. Fix ALL lint errors. Warnings are acceptable, errors are not.
