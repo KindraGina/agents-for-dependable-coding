@@ -608,7 +608,7 @@ A summary like "all critical issues addressed" is not acceptable. It prevents th
 
 ### Rule 7 — Code claims in chat need pasted evidence too
 
-When you state a function exists, returns X, takes args Y, or that a schema has field Z — pair the claim with file:line + the actual pasted code line. If you can't paste it, don't state it. This applies in chat and quick answers, not just plan files. "I recall" / "I think" / "I believe" about a code reference is forbidden — re-read instead.
+When you state a function exists, returns X, takes args Y, or that a schema has field Z — pair the claim with file:line + the actual pasted code line. If you can't paste it, don't state it. This applies in chat and quick answers, not just plan files. "I recall" / "I think" / "I believe" about a code reference is forbidden — re-read instead. A claim about where an error or log line ends up — caught, logged, swallowed, contained, captured — needs the place it finally lands, not the first handler you find: trace every enclosing `try`/`except`/`rescue`/`catch` up the call chain and into the library's own source until something actually writes, counts or re-raises it, and paste that code or a pasted run of a small probe (2026-10-22, event_scraper nightly-freeze run: "caplog captures INFO", "a dead browser logs as failed" and "a Playwright handler error is contained" were all wrong, each cost a review round).
 
 ### Rule 8 — "We already do this elsewhere" must be verified as reachable in production
 

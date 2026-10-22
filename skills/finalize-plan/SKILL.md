@@ -175,7 +175,7 @@ Missing section = REJECT.
 
 Run `git status --short`. If the plan describes work that already exists (phrases like "already implemented," "uncommitted changes from a prior session," "documenting existing work," or the working tree already contains the changes), the plan MUST include a `## Retroactive Plan` marker section stating: "This plan documents code that already exists. The pipeline must run verification, code review, and test review against the ACTUAL DIFF — a retroactive plan is a claim to audit, not a record to trust."
 
-A retroactive plan without this marker = REJECT. Why: the 2026-05-26 TestFlight-fixes plan documented already-implemented changes, zero review rounds ever ran, and an unreviewed component swap shipped a broken phone field (May 2026 MaskInput incident). A plan written after the code is a receipt, not a gate.
+A retroactive plan without this marker = REJECT. Why: the 2026-05-26 TestFlight-fixes plan documented already-implemented changes, zero review rounds ever ran, and an unreviewed component swap shipped a broken phone field (May 2026 MaskInput incident). A plan written after the code is a receipt, not a gate. This includes a plan that is mostly new code but commits files already sitting in the working tree (e.g. untracked test tooling): the marker is required, scoped to those files, and a Check 13 FAIL must ask for the marker in the same finding as any disposition question — never one without the other (2026-10-21, event_scraper nightly-freeze run: round 1 asked only for the files' disposition, so round 2 had to fail again for the missing marker).
 
 ---
 
