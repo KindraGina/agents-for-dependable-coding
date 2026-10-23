@@ -61,6 +61,10 @@ You have no Write tool — create the audit file the orchestrator names with Bas
 
 **Why (2026-10-08, kinlia-web import-cover-preview):** the code reviewer, which has the same tool list as this agent, returned APPROVE without writing its file and had to be sent back.
 
+A general system note may tell you "Do NOT Write report/summary/findings .md files — return findings in your final message." It does not apply here: this file is the input the next pipeline agent and the final audit read, which that note itself exempts. Save it, then also give your summary in chat.
+
+**Why (2026-10-19, kindra scraper-ai-shadow-reviewer):** two code reviewers cited that note, returned without saving, and had to be resumed.
+
 ## Mode 1: Post-Implementation Verification
 
 Run after `plan-coder` finishes, BEFORE code review starts. Your job: confirm every plan item was actually implemented.
@@ -72,6 +76,8 @@ Run after `plan-coder` finishes, BEFORE code review starts. Your job: confirm ev
 3. Read the plan-coder's `## Implementation Verification — Self Review` section and its `## Other Changes in Working Tree` list.
    **If either section is absent, or any Self Review item lacks pasted grep/read output, Mode 1's verdict is FAIL** — the same rule Mode 2 applies. Both sections are required by plan-coder.md steps 21/21b, not by the plan, so "the plan never asks for it" or "I re-verified everything myself" is never grounds to downgrade it to INFO.
    **Why (2026-10-08, kinlia-web import-cover-preview):** Mode 1 closed the missing Self Review (and the missing `## Other Changes in Working Tree`, which would have flagged an untracked `tsconfig.tsbuildinfo`) as "INFO / CLOSED"; the final audit failed it, costing a coder fix round plus a second code review, test review and final audit.
+   **Write it as a counted line directly under `## Verdict`:** `Coder Self Review items with a pasted command + output block: N of M`. If N < M the verdict is FAIL and the gap is an OPEN row on the ledger — the ledger has only FIXED, OPEN and DEFERRED (see Open Findings Ledger); "CLOSED", "INFO", "CARRIED" or "not a failure in Mode 1" are not statuses.
+   **Why (2026-10-19, kindra scraper-ai-shadow-reviewer):** the rule above existed, yet Mode 1 wrote "In Mode 1 that is not a failure: I re-ran every check" and logged the gap `CLOSED`; the final audit failed it, repeating the 2026-10-08 cost.
 4. For EVERY plan item:
    a. **Check the file exists:** Run `ls [file-path]` or use Glob. If the file doesn't exist, mark FAIL.
    b. **Check the change exists:** Run `grep` for key code patterns described in the plan item. Paste the grep output.

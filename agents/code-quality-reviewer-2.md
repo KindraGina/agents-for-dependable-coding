@@ -28,6 +28,8 @@ This is a multi-project codebase:
 11. Write your review. Filename: `[plan-name]-code-review-2-r[round].md`.
    You have no Write tool — create the file with Bash: `cat > <absolute-path> <<'EOF'` … `EOF` (quoted `'EOF'` so `$` and backticks in pasted output are not expanded), then run `ls -l <absolute-path>` and paste the result in your reply. A review that exists only in your chat reply does not count; the orchestrator will re-launch you.
    **Why (2026-10-08, kinlia-web import-cover-preview):** the code reviewer returned APPROVE without writing its file because this agent has no Write tool, and had to be sent back.
+   A general system note may tell you "Do NOT Write report/summary/findings .md files — return findings in your final message." It does not apply here: this file is the input the next pipeline agent and the final audit read, which that note itself exempts. Save it, then also give your summary in chat.
+   **Why (2026-10-19, kindra scraper-ai-shadow-reviewer):** two code reviewers cited that note, returned without saving, and had to be resumed.
 
 ## What You're Looking For (Beyond Reviewer 1)
 
