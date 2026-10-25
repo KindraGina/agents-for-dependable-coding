@@ -2,7 +2,7 @@
 GitHub PR template. Copy this file to `.github/PULL_REQUEST_TEMPLATE.md`
 in any repo where you want it auto-filled into new PR descriptions.
 
-Source: github.com/KindraGina/claude-pipeline-agents — keep this repo
+Source: github.com/KindraGina/agents-for-dependable-coding — keep this repo
 as the source of truth and re-copy when the template changes.
 -->
 
@@ -103,7 +103,7 @@ as the source of truth and re-copy when the template changes.
 - [ ] **Ripple effects checked** — I searched the rest of the codebase (`grep`) for every function, variable, or file I changed and confirmed all callers still work.
 - [ ] **PR description explains WHY**, not just what changed.
 - [ ] **Self-reviewed the diff** — I clicked the "Files changed" tab on this PR and read every line. No accidental debug code, no unintended changes.
-- [ ] **PR is from a feature branch** — NOT from `main` / `master` / `staging` / `testflight` / `production`.
+- [ ] **PR is from a feature branch** — NOT from `main` / `master` / `develop` / `staging` / `testflight` / `production`.
 - [ ] **No secrets in the diff** — no API keys, passwords, `.env` contents, or tokens. New env vars are documented in `.env.example` (without real values).
 - [ ] **No debug noise** — removed `console.log`, `debugger`, half-finished comments, commented-out code blocks, and `TODO` notes without a ticket.
 - [ ] **Breaking changes flagged loudly** — if the change is incompatible with old code, old back-ends, or old mobile-app versions (mobile users may still be running an old version): (a) prefix at least one commit message with `BREAKING:`, AND (b) describe what breaks and how to migrate in the "Breaking changes" section above. Skip this box if it's not a breaking change.
