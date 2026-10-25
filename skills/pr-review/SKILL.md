@@ -52,6 +52,8 @@ Get the diff: `gh pr diff <number>`.
 **Why (PR #423, 2026-09-17):** a 415-file prettier reformat could not be fetched with `gh pr diff` at all; the skill named no fallback, so the reviewer had to improvise the one command that makes the rest of the checklist possible.
 
 **Review from an isolated worktree, never from the user's checkout.** After fetching the PR, run `git fetch origin <headRef>` then `git worktree add /tmp/pr-<number> --detach <head-sha>`, and do ALL file reads and ALL test-suite runs in that worktree. Delete it when done.
+Before `worktree add`, run `git worktree list`: an earlier review of the same PR can leave `/tmp/pr-<number>` (or `/tmp/pr-<number>-base`) behind even when no review file or comment survives (so the unchanged-PR short-circuit does not fire). If it exists, `git worktree remove --force` it and `git worktree prune` first. Never send `worktree add` output to `/dev/null`. Then paste `git -C /tmp/pr-<number> rev-parse HEAD` next to the PR's `headRefOid` — they must match before any read, test run, or practice merge.
+**Why (PR #2001, 2026-10-23):** a silenced `worktree add` failed because an April worktree of the same PR sat at the path on the old head `5a01d556`; the first practice merge ran on that stale commit and reported a false CONFLICT, caught only because a later `rev-parse` printed the wrong SHA.
 
 WHY (2026-09-13, PR #416): the day-to-day KindraApp checkout was on an unrelated branch with uncommitted changes. Reading files or running Jest there measures a tree that is not the PR — and the reviewer cannot tell, because the files still exist and the tests still pass. Record the worktree absolute path and the head SHA in the review header so every claim is attributable to the PR head.
 
@@ -173,6 +175,9 @@ Scan the diff for:
 
 FAIL on any finding.
 
+When the diff touches secret handling (env files, deploy secrets, credential guards, key names), also scan the WHOLE repo at the head SHA for the key formats involved — e.g. `git grep -lE '(sk|rk|pk)_live_'` then `git grep -cE ...` per file, so values are never printed into the log. Report hits outside the diff as a separate pre-existing finding (file:line, value redacted, introducing commit from `git log -S`), not as a FAIL for this PR, and recommend rotating the key before redacting the file — git history keeps it.
+**Why (PR #2001, 2026-10-23):** a full live Stripe secret key had sat in `docs/DEPLOY_STRIPE_FIX.md` and `docs/STRIPE_FIX_DEPLOYMENT_COMPLETE.md` since `e9a547d5` (2025-11-03); it was found only by an improvised repo-wide grep — the diff-scoped scan could not see it.
+
 ---
 
 **Check 4 — No leftover noise.**
@@ -201,6 +206,9 @@ Could the implementation be wrong and this test still pass? If yes → FAIL.
 Also: any test that accepts multiple status codes (`status in [200, 422]`) = FAIL (proves nothing).
 
 If the diff contains ZERO tests, Check 5 is FAIL by default — a bug fix with no test leaves the exact regression it fixed unguarded.
+
+Exception — a diff touching only CI workflow YAML or shell scripts, which have no test harness: copy each changed step's `run:` script into the scratchpad, feed its `env:` inputs by hand, and run it once per case the change claims to handle plus at least one near-miss input it should catch but might not. Paste every case's exit code and output; that table is Check 5's evidence, and a near-miss that passes is a finding (Suggestion or FAIL by severity). If the step will read live data on its next run (a secret, a server file), confirm with read-only counts — never printing values — that today's real input passes the new logic.
+**Why (PR #2001, 2026-10-23):** the rule above would have failed an untestable deploy-workflow fix. A four-input run (unset / `sk_live_` / `rk_live_` / clean) proved the fail-fast and showed a restricted live key slips past `grep -q "sk_live_"`; `grep -c` on both servers' `.env` showed the next staging deploy would not be blocked. All improvised.
 
 A PR body that pastes green test output is NOT a substitute. Open the test files it names, grep them for the changed symbol/behavior, and paste that grep in your review. Output can be genuine and still prove nothing about this PR. (2026-09-13, PR #415: the body's "TDD proof" was 10 real passing tests from two suites that contained no `bell` assertion at all — the bell could have been deleted outright and every test in the repo would still pass.)
 
