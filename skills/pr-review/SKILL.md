@@ -201,7 +201,8 @@ For every new test in the diff:
 - BAD: `expect(response.status).toBe(200)` (proves it didn't crash)
 - GOOD: `expect(response.body.donation_amount).toBe(50)` (proves the value was actually used)
 
-Could the implementation be wrong and this test still pass? If yes → FAIL.
+Could the implementation be wrong and this test still pass? If yes → FAIL. That question cannot catch fixtures that share the code's assumption. When the diff changes how a server-supplied field is interpreted (a time and its zone, money units, a status value), fetch 2–3 real records read-only from staging, run the head code on them in a scratchpad probe, and compare the output with a human-readable truth in the same record (its description text, the backend's own consumer of that field). Paste the records and the probe output; a mismatch is a FAIL even with every test green.
+**Why (PR #452, 2026-10-26):** a formatter that read fake-UTC event times as real UTC passed 2,308 tests because the fixtures encoded real UTC; only running it on three live staging events showed 7:00 PM New York as 2:00 PM. The probe was improvised.
 
 Also: any test that accepts multiple status codes (`status in [200, 422]`) = FAIL (proves nothing).
 
