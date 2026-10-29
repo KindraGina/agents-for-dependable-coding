@@ -260,9 +260,12 @@ FAIL if any test fails because of this PR. FAIL if you ran a subset or skipped o
 If the PR changes an API endpoint, response shape, status code, DB column, or any contract used by the mobile app:
 - Will users on old mobile-app versions still work? Mobile app updates are not instant.
 - Are old response fields still present, or did the PR remove fields?
+- Did the PR change the TEXT of any message a response returns (`result`, `message`, `error`) — including indirectly, by swapping the library that produces it? The apps string-match some of these. Grep KindraApp and kinlia-web (`--exclude-dir=node_modules`) for a distinctive phrase of the old wording and paste the output; any match in app code is a broken client, not a cosmetic change.
 - Are there migrations that drop columns the app still reads?
 
 FAIL if the change breaks old clients without a deprecation path.
+
+**Why (KindraApp PR #458, 2026-10-29):** kindra `2f9da99d` (2025-12-21) moved phone verification from Authy to Twilio Verify, and the success message changed from "Verification code is correct." to "Verification successful". The app checked `includes('code is correct')`, so for ten months every correct code was shown to users as a failure. The response shape and status code never changed, so this check as written would have passed it.
 
 ---
 
