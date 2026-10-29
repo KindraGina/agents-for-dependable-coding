@@ -156,9 +156,9 @@ When the PR moves where a component renders (screen to app root, outside a provi
 
 FAIL if any caller would break.
 
-4. Grep WITHOUT `--include` filters as well — `grep -rn "<oldName>" --exclude-dir=node_modules --exclude-dir=.git` — so comments, `docs/*.md`, workflow YAML, and scripts are covered. A rename is not complete when only the compiler-visible references were updated.
+4. Grep WITHOUT `--include` filters as well — `grep -rn "<oldName>" --exclude-dir=node_modules --exclude-dir=.git` — so comments, `docs/*.md`, workflow YAML, and scripts are covered. A rename is not complete when only the compiler-visible references were updated. Hits in historical records — everything under `docs/plans/`, and agent logs such as `.ralph/` — correctly used the old name when written. List their count, do not report them as warnings, and never tell the author a grep "should return nothing" unless the command you hand them excludes those folders (add `--exclude-dir=plans --exclude-dir=.ralph`).
 
-**Why (PR #429, 2026-09-25):** a complete, lint-clean rename still left the old file name in a code comment (`contexts/communities.tsx:1001`) and in `docs/TODO.md:48`. Code-only greps returned zero. Report such hits as Check 14 warnings, not Check 2 failures.
+**Why (PR #429, 2026-09-25):** a complete, lint-clean rename still left the old file name in a code comment (`contexts/communities.tsx:1001`) and in `docs/TODO.md:48`. Code-only greps returned zero. Report such hits as Check 14 warnings, not Check 2 failures. On the 2026-09-28 re-review the "should return nothing" grep the first review handed the author returned 98 hits, all in historical plan files (104 in 43 files on `testflight` by 2026-10-29, plus 4 in `.ralph/tool-log.txt`).
 
 **Why (KindraApp PR #435, 2026-10-05):** a change to the shared `Button.tsx` default style touched every importer; the first grep (`Components/Button/Button'`) found 15 of 24 files, and `"/Button/Button'"` found all 24 — nine call sites would otherwise have gone unaudited.
 
