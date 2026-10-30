@@ -101,6 +101,19 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
 - **Pre-flight catchable?** Yes, but NOT covered today — needs a new `build-prereq-auditor` check. Spec: after any Expo package version change, for each changed package run `ls -d node_modules/*/node_modules/<pkg>` and, if any path exists, compare its `package.json` version against the top-level one. Any mismatch on a package with a native module (`expo-*` with an `ios/`, `android/`, or `*.podspec` entry) is a FAIL with the yarn-deduplicate remedy above. A matching-version nested copy is benign — report and PASS.
 - **Notes:** The tell is that this hides behind a green `expo install --check`. Anything that only reads the top level of `node_modules` cannot see it. Shipped as PR #405 (branch `ExpoConstantsDedupe_08_25_26`). Related: DOCTOR-006 (the bump that triggered it), DOCTOR-001 (the other way a wrong native-module version reaches the device).
 
+### DOCTOR-008 — Bumping a single `expo-*` package to the online "expected" version nests a second copy under `expo/` when `expo` itself is one patch behind
+
+- **First seen:** 2026-10-29 (pre-flight for builds c97395d8 iOS 182 / 2eaf0373 Android vc24, testflight; caught by `build-prereq-auditor` before any credit was spent)
+- **Last seen:** 2026-10-29 (commit 8e5726d7)
+- **Occurrences:** 1
+- **Phase:** Expo Doctor / dependency install (pre-flight)
+- **Platform:** both
+- **Log signature:** `node_modules/expo/node_modules/expo-asset` (expo-doctor's duplicate-dependency check fails on the same condition; generic shape: `node_modules/expo/node_modules/<expo-pkg>` at a version different from the top-level copy)
+- **Root cause:** PR #457 raised `expo-asset` to `~12.0.14` because the ONLINE `npx expo install --check` compares against the newest SDK 54 patch (`expo@54.0.38`, which depends on `expo-asset ~12.0.14`). The tree still had `expo 54.0.37`, which pins its own `expo-asset ~12.0.13`, so yarn nested a second copy of a native module under `node_modules/expo/`. The "expected version" is relative to the newest `expo` patch, not the installed one.
+- **Fix:** bump `expo` itself to the patch the check is comparing against: `npx expo install expo@~54.0.38` (PR #461, `8e5726d7`). Do **not** revert the single-package bump: going back to `expo-asset ~12.0.13` fails BOTH expo checks (online `install --check` asks for 12.0.14 again). Verify in the build checkout: `ls -d node_modules/*/node_modules/expo-asset` → "no matches found", top-level `expo-asset` is 12.0.14 (verified 2026-10-29 in `/Users/ginalevy/Sites/kindraapp-tf-build`).
+- **Pre-flight catchable?** Yes, and it was caught (expo-doctor duplicate check + the prereq auditor). Hardening: when `install --check` names an `expo-*` package, first check whether it also names `expo` itself or whether `expo` is behind the newest SDK patch. If so, bump `expo` first and re-run the check before bumping anything individually.
+- **Notes:** Sibling of DOCTOR-006 (upstream patch drift) and DOCTOR-007 (stale nested copies after a bump). DOCTOR-007 nests under a *dependent* (`expo-asset/node_modules/expo-constants`). This one nests under `expo/` itself, because the top-level package went ahead of what `expo` pins.
+
 ## Phase: Prebuild
 
 (none recorded yet)
@@ -128,6 +141,7 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
   - **Cost:** 1 EAS build credit at pay-as-you-go overage rate. Could have been worse if the wrong-versioned AAB had been uploaded to Play Console.
   - See `~/Sites/CLAUDE.md` "EAS Build & Deploy" → "Native dirs are gitignored — prebuild after `app.config.ts` edits" for the broader rule.
   - **Note (2026-10-09, Android build `5a32ca4f`):** `yarn build:testflight` and `yarn build:production` are iOS builds, but their `expo prebuild --clean` has no `--platform` flag, so it regenerates **both** `ios/` and `android/` (verified: `package.json` `build:testflight` at `a8f397d8`; every file in `android/` had mtime 01:48, the iOS 181 prebuild). So an `android/` dir can be fresher than you'd guess, and an mtime alone does not show which `EAS_BUILD_PROFILE` produced it. A later `yarn build:production` would leave production-profile values in `android/`. Still run `EAS_BUILD_PROFILE=<profile> npx expo prebuild --clean --platform android` right before an Android build. It is cheap and it pins the profile.
+  - **Note (2026-10-29, builds c97395d8 iOS 182 / 2eaf0373 Android vc24):** same root fact as the 2026-10-09 note: `yarn build:testflight`'s prebuild has no `--platform` flag and regenerates `android/` too. Operational rule: run the iOS and Android builds of one commit **one after the other**, never in parallel from the same checkout. A parallel Android prebuild/upload can be packaging `android/` while the iOS script's `prebuild --clean` is deleting and rewriting it.
 
 ## Phase: Bundle JavaScript
 
@@ -223,6 +237,19 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
   3. Confirms each requested entitlement is present in the profile's capability list (and that named identifiers like Merchant IDs match exactly — `merchant.com.Kinlia` vs `merchant.kinlia` is not the same).
   4. Fails closed with a specific message: "Profile X is missing capability Y" or "Profile X does not include Merchant ID Z".
 
+### FASTLANE-005 — `ios.image: "latest"` floated to Xcode 27.1; pod resource-bundle targets below iOS 15.0 became hard errors
+
+- **First seen:** 2026-10-29 (build c97395d8-d454-4775-8915-bf4cd238c373, iOS testflight 182, v1.80.11, commit 8e5726d7)
+- **Last seen:** 2026-10-29 (commit 8e5726d7)
+- **Occurrences:** 1
+- **Phase:** Run fastlane (Xcode archive planning, before any compile; failed at ~138 s, exit status 65)
+- **Platform:** ios
+- **Log signature:** `but the range of supported deployment target versions is 15.0 to` (the tell in SPIN_UP_BUILDER is `Using VM template "macos-tahoe-26.6-xcode-27.1-sdk-58"`)
+- **Root cause:** `eas.json` sets `"image": "latest"` for `build.testflight.ios` and for `build.production.ios` (and the `development` profiles), set in `092e5664` (2026-04-28, "pin iOS to latest EAS image (Xcode 26+)"). Between build 181 (2026-10-09, VM `macos-tahoe-26.5-xcode-26.6`, Xcode 26.6) and build 182, EAS moved "latest" to `macos-tahoe-26.6-xcode-27.1` (Xcode 27.1 RC, alias `sdk-58`). Xcode 27.1 sets the minimum deployment target to 15.0 and treats a lower value as an error, not a warning. 18 CocoaPods resource/privacy-bundle targets take their minimum from their own podspec (8.0 to 13.0), and the Podfile's `platform :ios, ... || '15.1'` does not reach them: Sentry-Sentry, the Firebase*/GoogleUtilities/GoogleDataTransport/nanopb/PromisesObjC `_Privacy` bundles, SDWebImage, BranchSDK, RNSVG-RNSVGFilters, RNImageCropPicker (QBImagePicker + PrivacyInfo), RNDeviceInfo, RNCAsyncStorage, TOCropViewController. Build 181 logged the same targets as `warning:` (range 12.0 to 26.5.99). **No repo change caused this.** The toolchain moved under a floating tag.
+- **Fix:** (pending owner approval: `eas.json` is ASK-FIRST) pin `build.testflight.ios.image` and `build.production.ios.image` to `"macos-tahoe-26.5-xcode-26.6"`. Expo's build-infrastructure page (docs.expo.dev/build-reference/infrastructure, read 2026-10-29) lists that name as a valid image (alias `sdk-57`). Feature branch → PR → merge to `testflight` → `yarn build:testflight`. Proof is only in the next EAS log: SPIN_UP_BUILDER should show `xcode-26.6` and the deployment-target lines should be `warning:` again. **Long-term (planned work, not a mid-build fix):** before moving to Xcode 27, add a config plugin with a Podfile `post_install` hook that raises `IPHONEOS_DEPLOYMENT_TARGET` to 15.1 on every Pods target below 15.1, resource bundles included. `ios/` is gitignored, so never hand-edit the Podfile. Also add UIKit scene-lifecycle support: Expo's docs warn that an app built with Xcode 27 launches on iOS 27 only if it uses the UIKit scene lifecycle.
+- **Pre-flight catchable?** No, not today. None of the 4 auditors look at the EAS image, and a local Xcode 26 build passes either way. **Proposed check (prereq or commit-state auditor):** read `build.<profile>.ios.image` from `eas.json`. If it is `"latest"` (or any alias such as `sdk-NN` that can move), compare the image "latest" currently resolves to on Expo's infrastructure page against the `Using VM template "..."` line in the last SUCCESSFUL iOS build's log (`eas build:view <last-good-id>` / its logs). If they differ, FAIL with: "EAS 'latest' image changed since the last good build (X → Y). Pin the image or confirm the new Xcode on purpose." If the image is pinned to an exact name, PASS and print it.
+- **Notes:** A cousin of DOCTOR-006: upstream moved between builds while the repo stood still. DOCTOR-006 is caught by `expo install --check`; this one has no check yet. The Android build of the same commit (2eaf0373, vc24) SUCCEEDED because Gradle does not use Xcode, so a green Android twin says nothing about iOS image health. The memory note "Xcode 26 mandatory for App Store" sets a FLOOR (Xcode 26 or later). It does not justify `latest`, and pinning to 26.6 still meets it. When "nothing changed since the last good build" is the claim, the builder header (VM template + Xcode version) is part of what has to be diffed.
+
 ## Phase: Run Gradle (Android)
 
 ### GRADLE-001 — Sentry source map upload fails (token unavailable to Gradle task)
@@ -305,8 +332,8 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
 ### META-004 — Auditor near-FALSE-FAIL: local bundle check greps for a string RN 0.81's CLI never prints
 
 - **First seen:** 2026-08-05 (build a0a56da9-da5b-4f4d-adcc-4a924c168baf, iOS testflight, build 172, v1.80.11, commit 8376d9c3 — build SUCCEEDED)
-- **Last seen:** 2026-08-05
-- **Occurrences:** 1 (hit independently by TWO auditor runs on the same build)
+- **Last seen:** 2026-10-29 (builds c97395d8 / 2eaf0373, commit 8e5726d7)
+- **Occurrences:** 2 (2026-08-05 hit independently by TWO auditor runs on the same build; 2026-10-29)
 - **Affects:** `build-prereq-auditor` — Check 4 (JS Bundle Compiles), spec line `~/.claude/agents/build-prereq-auditor.md:77`
 - **What happened:** The auditor spec says: **"PASS: Output contains `Done writing bundle output`."** React Native 0.81's bundler CLI does **not** print that string — it renders a TTY spinner/progress UI instead and exits 0 on success. Two independent auditor runs on this build hit the missing literal. Both recovered by reasoning about other evidence, but an auditor that follows the spec literally would FAIL a perfectly healthy bundle and block a good build.
 - **Ground truth:** The literal `Done writing bundle output` is an OLDER RN CLI message. Its absence carries no information on RN 0.81. Presence of the string is sufficient evidence of success; **absence is not evidence of failure.**
@@ -317,6 +344,7 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
   Optionally still accept `Done writing bundle output` as a fast-path PASS for older CLIs, but never FAIL solely on its absence.
 - **Why this is a meta-lesson:** Same class as META-002/META-003 — an auditor rule hard-coded to a tool's incidental output format silently rots when the tool's UX changes, and then fails closed on healthy input. Any auditor criterion that greps a third-party tool's human-readable log line should be paired with a structural signal (exit code, artifact on disk) that does not depend on wording. Preferring exit codes + artifacts over log-string matching is the general rule.
 - **Notes:** Cost this time: zero credits (caught pre-flight, build proceeded and succeeded), but the next agent that follows the spec verbatim would waste a cycle arguing with a green bundle. Fix the spec line, don't rely on agent judgment. Related: BUNDLE-001 (the real failure mode Check 4 exists to catch — a genuinely broken bundle still trips criteria 1 and 3 above).
+- **Recurrence 2026-10-29 (commit 8e5726d7):** the RN CLI in this repo again never printed `Done writing bundle output`. The spec line is still unfixed: `~/.claude/agents/build-prereq-auditor.md` Check 4 still reads "PASS: Output contains `Done writing bundle output`." (grep, 2026-10-29). The auditor recovered by judgment again. The hardening above is still the required fix.
 
 ### META-005 — Sentry symbolication must be verified empirically, not inferred from the `eas.json` flag
 
@@ -351,8 +379,8 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
 ### META-007 — `eas.json` `build.testflight` declares no `environment`, so EAS resolves dashboard secrets from the default environment
 
 - **First seen:** 2026-09-16 (builds 06dbe7c7 iOS 178 + c95ed54c Android 20, testflight, commit f30c7d5e — both SUCCEEDED; flagged pre-flight by two independent auditors)
-- **Last seen:** 2026-09-28 (builds d5a6917a iOS 180 + a6c496f9 Android vc22, commit a0626277 — both SUCCEEDED)
-- **Occurrences:** 2
+- **Last seen:** 2026-10-29 (builds c97395d8 iOS 182 + 2eaf0373 Android vc24, commit 8e5726d7)
+- **Occurrences:** 3
 - **Phase:** Pre-flight (env-var / sentry config audit) — would surface at Run Fastlane / Run Gradle
 - **Platform:** both
 - **Log signature:** N/A at audit time. If it ever bites, the runtime signature is the FASTLANE-001 / GRADLE-001 one: `Auth token is required for this request` during the Sentry source-map upload step.
@@ -361,6 +389,7 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
 - **Pre-flight catchable?** Yes — and it WAS caught here, by two auditors independently. Keep the check: for every build profile in `eas.json`, assert an explicit `environment` key; report its absence as a FRAGILITY finding (not a build blocker), worded as "resolution falls back to the default environment" rather than "vars are missing".
 - **Recurrence 2026-09-28:** re-observed at commit `a0626277` and re-reported as a FRAGILITY (not a blocker) by `env-var-auditor` — `build.testflight` still has no `environment` key while `build.production` sets `"environment": "production"`. This time the `sentry-config-auditor` went further and closed the "does it actually inject?" question empirically: `SENTRY_AUTH_TOKEN` is present as a Secret in **all three** dashboard environments (development / preview / production) on `kinliadev`, and the **2026-09-19 build logs show source-map uploads succeeding**. So the redundancy described above is confirmed still in place and still load-bearing. Recommended remedy is unchanged and remains **ASK-FIRST**: add `"environment": "preview"` to `build.testflight` in `eas.json` as a separate owner-approved change, never mid-build. Verdict wording going forward: FRAGILITY, reported, non-blocking — it must not gate a build on its own (same class of over-gating as META-003 / SKILL-009).
 - **Notes:** Distinct from META-006 (the testflight `env` **block** of `EXPO_PUBLIC_*` vars lost in a revert at `a55116fb`) and from META-001 (the April 2026 incident where the token existed on the wrong EAS *project*). This one is about the wrong *environment within the right project*. All three are the same family: "it resolved to something, therefore it resolved to the right thing" is never sound for EAS secrets. Failure mode if it regresses is silent until the source-map upload step, i.e. a full build credit burned before anyone learns.
+- **Recurrence 2026-10-29 — a named `testflight` environment exists and is EMPTY, so the obvious fix would break uploads:** verified this run in `/Users/ginalevy/Sites/kindraapp-tf-build` with `EAS_BUILD_PROFILE=testflight npx eas-cli env:list --environment <env>` (project resolved to `@kiniliaapp/kinliadev`, `d6399725-...`, per `eas-cli project:info`). `testflight` → "No variables found for this environment." `SENTRY_AUTH_TOKEN` is present in `preview`, `production` and `development`. So adding `"environment": "testflight"` to `build.testflight` (the name that matches the profile) would remove the token from the build and break the source-map upload (FASTLANE-001 / GRADLE-001 signature). The only safe named values are the ones that hold the token, e.g. the `"preview"` already proposed above. Alternatively, populate the `testflight` environment FIRST and then point at it. Still ASK-FIRST, still a FRAGILITY, non-blocking.
 
 ### META-008 — `env-var-auditor`'s hard-coded scan paths miss `contexts/`, where a required var is actually read
 
@@ -414,8 +443,8 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
 ### META-011 — Smart-quote scan (prereq Check 5) silently matched NOTHING: agent-shell `grep` is ugrep, which reads `-P "\xe2"` as a code point, not a byte
 
 - **First seen:** 2026-10-09 (build e844055d-eb42-4f52-98a9-827d80152148, iOS testflight 181, v1.80.11, commit a8f397d8 — SUCCEEDED)
-- **Last seen:** 2026-10-09
-- **Occurrences:** 1
+- **Last seen:** 2026-10-29 (builds c97395d8 / 2eaf0373, commit 8e5726d7)
+- **Occurrences:** 2
 - **Affects:** `build-prereq-auditor` Check 5, and the "find them" command in BUNDLE-001's Fix
 - **Phase:** Pre-flight (the guard for Bundle JavaScript / BUNDLE-001)
 - **Platform:** both
@@ -436,6 +465,7 @@ This file is maintained by the `build-postmortem-updater` agent. Each entry belo
   - (b) A hit is FAIL only if Check 4 also failed and its error names that file. Otherwise report it as "curly quotes in on-screen copy (harmless; bundle compiled)". Check 5's job becomes finding the culprit line fast when Check 4 fails, not acting as a separate gate.
 - **Pre-flight catchable?** Yes, once fixed. The positive control above is what makes a scanner failure visible.
 - **Why this is a meta-lesson:** This is the same trap as META-004, where a check depended on what a tool happens to print. A scan that returns "no match" looks exactly like a scan that *cannot* match. Every negative-result scan in an auditor needs a positive control, the same rule `~/Sites/CLAUDE.md` applies to repaired tests ("needs a real negative control"). Wider note: any agent-written byte-level `grep -P` on this machine is affected, not only this auditor. Use perl, or call `/usr/bin/grep` by its absolute path.
+- **Recurrence 2026-10-29 (commit 8e5726d7):** confirmed again with a positive control. The spec's `LC_ALL=C grep -lP` scan missed a planted smart quote under ugrep 7.8.4, and the perl byte scan found it. The proposed agent-file fix is **still not applied**: `~/.claude/agents/build-prereq-auditor.md` still contains `LC_ALL=C grep -lP "[\xe2][\x80][\x98\x99\x9c\x9d]"` (grep, 2026-10-29). Until Gina approves that edit, every prereq run depends on the auditor noticing the problem by itself.
 
 ### META-012 — Reusing the env / Sentry / commit-state audits from the iOS run for the Android build of the same commit is OK, but the Sentry audit is not fully platform-independent
 
@@ -769,6 +799,19 @@ These entries are NOT EAS-build failures — they are bugs in the `build-app` sk
 - **State:** the same as DECISION-018 items 1–6. One Android-specific item: `android/` had already been regenerated by the iOS script's prebuild before an explicit `EAS_BUILD_PROFILE=testflight npx expo prebuild --clean --platform android` ran again (VERSION-001 note, 2026-10-09).
 - **Tester handoff:** send the artifact link for **this** build (vc23), taken from `eas build:view 5a32ca4f-6999-4a12-8c46-04d49c590b0f` after FINISHED, not from the dashboard's latest APK (SKILL-008).
 - **Implication:** this supersedes DECISION-017 as the latest known-good Android testflight reference. DECISION-018 is still the iOS reference.
+
+### DECISION-020 — Build record: 2eaf0373 (Android testflight vc24) succeeded; its iOS twin c97395d8 (build 182) FAILED (FASTLANE-005)
+
+- **Recorded:** 2026-10-29
+- **Builds:** Android `2eaf0373-2cf7-4d79-90ac-2f04c1b272ea`, `testflight`, versionCode 24, v1.80.11, `@kiniliaapp/kinliadev`: SUCCEEDED. iOS `c97395d8-d454-4775-8915-bf4cd238c373`, build 182: FAILED at Run fastlane (FASTLANE-005, EAS image drift), not caused by any code change.
+- **Built from:** `/Users/ginalevy/Sites/kindraapp-tf-build`, branch `testflight`, commit `8e5726d7` (PR #461, `expo ~54.0.38`, after PR #457 expo-calendar migration and PR #460 drawer-layout 4.2.12).
+- **State:**
+  1. Duplicate `expo-asset` caught pre-flight and fixed by bumping `expo` (DOCTOR-008). Zero nested `expo-asset` copies at build time.
+  2. `SENTRY_AUTH_TOKEN` reaches testflight builds ONLY through the default-environment fallback (META-007 recurrence 2026-10-29, verified by `eas env:list`).
+  3. The prereq smart-quote scan and the bundle-string check are still mis-specified in `~/.claude/agents/build-prereq-auditor.md` (META-011 and META-004 recurrences). Both were worked around by the auditor this run.
+  4. iOS and Android were run one after the other, not in parallel, because the iOS script's prebuild also regenerates `android/` (VERSION-001 note 2026-10-29).
+  5. `keys/ApiKey_*.p8` exposure (DECISION-013): not re-verified this run (META-010).
+- **Implication:** DECISION-019's successor as the latest known-good **Android** testflight reference. DECISION-018 (build 181, `a8f397d8`, Xcode 26.6) is still the latest known-good **iOS** reference, and its VM template (`macos-tahoe-26.5-xcode-26.6`) is the pin target for the FASTLANE-005 fix.
 
 ## Future cleanup (low priority)
 
