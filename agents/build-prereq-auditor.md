@@ -85,32 +85,46 @@ If the version in the patch filename doesn't match the installed version, FAIL w
 
 This is the canary for syntax errors (smart quotes, missing imports, etc.).
 
+Write the output to a log file instead of piping it, so the command's own exit code is kept (piping into `tail` would report `tail`'s exit code instead):
+
 ```bash
-timeout 180 npx react-native bundle --platform ios --dev false --entry-file index.ts --bundle-output /tmp/build-app-test-bundle.js 2>&1 | tail -10
+rm -f /tmp/build-app-test-bundle.js
+timeout 300 npx react-native bundle --platform ios --dev false --entry-file index.ts --bundle-output /tmp/build-app-test-bundle.js > /tmp/build-app-bundle-ios.log 2>&1; echo "exit=$?"
+ls -l /tmp/build-app-test-bundle.js
+/usr/bin/grep -niE "error|SyntaxError|Unable to resolve|Failed to" /tmp/build-app-bundle-ios.log
+tail -10 /tmp/build-app-bundle-ios.log
 ```
 
-- **PASS:** Output contains `Done writing bundle output`.
-- **FAIL:** Output contains `error SyntaxError`, `Unable to resolve module`, or any `error` line. Capture the exact error message and file path.
+- **PASS:** all three hold: (1) `exit=0`; (2) `/tmp/build-app-test-bundle.js` exists and is over 1 MB (it was removed first, so it is from this run); (3) the error grep prints nothing.
+- **FAIL:** a non-zero exit, a missing or tiny bundle, or any error line. Capture the exact error message and file path.
+- **Do NOT look for `Done writing bundle output`.** React Native 0.81 does not print it on success (verified 2026-10-30 in `kindraapp-tf-build`: exit 0, 9.5 MB bundle, string absent). Its absence means nothing. See patterns.md META-004.
 
-Also do the same for Android only if `platform` is `android` or `both`:
-```bash
-timeout 180 npx react-native bundle --platform android --dev false --entry-file index.ts --bundle-output /tmp/build-app-test-bundle-android.js 2>&1 | tail -10
-```
+Also do the same for Android only if `platform` is `android` or `both`, using `--platform android`, `/tmp/build-app-test-bundle-android.js` and `/tmp/build-app-bundle-android.log`.
 
 ### Check 5: Smart-Quote Scan on Recently-Changed Files
 
 Smart quotes (`'` `'` `"` `"`) sneak into `.ts`/`.tsx`/`.js`/`.jsx` files when text is pasted from chat or docs and crash the bundler. Build 27 burned a credit on this exact issue.
 
 ```bash
-git diff --name-only HEAD~10 HEAD 2>/dev/null | grep -E '\.(ts|tsx|js|jsx)$' > /tmp/build-app-changed-files.txt
+git diff --name-only --diff-filter=d HEAD~10 HEAD 2>/dev/null | /usr/bin/grep -E '\.(ts|tsx|js|jsx)$' > /tmp/build-app-changed-files.txt
 ```
 
-For each file in that list:
+Scan them with perl, which reads the file byte by byte:
 ```bash
-LC_ALL=C grep -lP "[\xe2][\x80][\x98\x99\x9c\x9d]" "$f" 2>/dev/null
+xargs perl -ne 'print "$ARGV:$.: $_" if /\xe2\x80[\x98\x99\x9c\x9d]/; close ARGV if eof' < /tmp/build-app-changed-files.txt
 ```
 
-If any file matches, FAIL with reason: "Smart quotes found in <file>. The Metro bundler will reject these. Replace with straight quotes."
+**Never use `grep` for this scan.** In agent shells `grep` runs ugrep, which reads `\xe2` as a character, not a byte, so the old `grep -lP "[\xe2][\x80]..."` command matched nothing, even on files full of curly quotes (patterns.md META-011; reproduced again 2026-10-30 on `Values.js`: grep exit 1, perl found 5 lines). `--diff-filter=d` leaves out files deleted in those commits; otherwise perl stops on a missing file. Before trusting an empty result, check that the scanner works with a test file:
+```bash
+printf 'x = \xe2\x80\x99a\xe2\x80\x99;\n' > /tmp/sq-canary.js
+perl -ne 'print "$ARGV:$.\n" if /\xe2\x80[\x98\x99\x9c\x9d]/; close ARGV if eof' /tmp/sq-canary.js
+```
+It must print `/tmp/sq-canary.js:1`. If it does not, the scanner is broken, so Check 5 FAILs. It must never report PASS in that case.
+
+What the result means:
+- A curly quote used as **code** (to open or close a string) breaks the bundle, so Check 4 fails as well, with `SyntaxError ... Unexpected character '“'`. In that case FAIL, and name the file and line from this scan.
+- A curly quote **inside on-screen text** (a string or JSX text) is harmless, and the app has about 25 of them on purpose. If Check 4 passed, list them as **WARN**, not FAIL.
+- No output: PASS.
 
 ### Check 6: yarn.lock vs package-lock.json
 
