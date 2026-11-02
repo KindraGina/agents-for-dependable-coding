@@ -363,6 +363,7 @@ Then loop as if the final audit returned FAIL.
   2. Launch the `plan-coder` agent to fix ALL failed items.
   3. **Go back to Phase 4 (Code Quality Review Loop)** — because fixes may introduce new issues that need code and test review.
   4. After code and test reviews pass again, run the final audit again — and re-run the orchestrator cross-check.
+  5. **Exception — wording-only fixes:** if the fix round changes only comments, doc comments or the plan file, and the coder pastes a diff against the pre-fix copy showing no code or test line changed, skip step 3 and re-run the final audit directly; tell the auditor to check that diff, read the new wording, and run the repo's format/lint check on the changed files. Any change to a code or test line, however small, still goes back to Phase 4. (Why: see the same exception in `skills/pipeline-light/SKILL.md` Phase 5.5, 2026-11-01.)
 
 **Safety valve**: If the final audit (or orchestrator cross-check) fails 3 times, pause and ask the user how to proceed.
 
