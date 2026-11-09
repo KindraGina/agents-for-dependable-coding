@@ -12,8 +12,20 @@ input=$(cat)
 prompt=$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null)
 session_id=$(printf '%s' "$input" | jq -r '.session_id // "nosession"' 2>/dev/null)
 flag="${TMPDIR:-/tmp}/claude-evidence-${session_id}.flag"
+# Agent "finished" notices also arrive here as prompts, but they are not the user talking.
+# They must not set the flag (their text says "missing", "broken"...) and must not clear it
+# (that would lift the gate with no reply from the user).
+# Why (2026-11-09, null-timezone cascade): 20 of 40 notices set the flag and edits were
+# refused 3 times; the notices with no keyword silently cleared it.
+case "$prompt" in
+  '<task-notification>'*) exit 0 ;;
+esac
+# Scan what the user typed, not text they pasted: a pasted report saying "missing" is not a
+# bug report. A message that is ONLY a paste (e.g. a bare error log) is scanned whole.
+typed=$(printf '%s' "$prompt" | perl -0pe 's/<pasted_content\b[^>]*>.*?<\/pasted_content\b[^>]*>//gs')
+[ -n "$(printf '%s' "$typed" | tr -d '[:space:]')" ] || typed="$prompt"
 pattern='what happened to|why (is|isn.t|did|does|doesn.t|are|aren.t|was|were)|missing|not showing|not appear|disappear|broken|doesn.t work|does not work|stopped working|went wrong|not working|no longer|used to'
-if echo "$prompt" | grep -qiE "$pattern"; then
+if echo "$typed" | grep -qiE "$pattern"; then
   date +%s > "$flag"
   cat <<'JSON'
 {"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"EVIDENCE RULE (auto-triggered, bug-report prompt): Before you state ANY cause for this problem, follow ~/.claude/skills/evidence/SKILL.md. Ask what the user did just before the bug. Build the Claim / Status / Proof table. Every cause must be Verified (pasted code, log, request, or the user's words), or rewritten as 'I haven't confirmed this' with the next check named, or 'I don't know yet'. A fresh load that works for you is NOT proof of why it failed for the user. Do not write, commit, or open a PR for a fix until the user approves — app-code edits are blocked by evidence-edit-guard.sh until the user's next message."}}
