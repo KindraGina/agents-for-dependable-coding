@@ -38,13 +38,13 @@ When no plan exists yet. Follow these steps IN ORDER — do NOT skip ahead.
 ### Mode 2: Revision Based on Reviews
 When review files exist (e.g., `-review-1-rN.md`, `-review-2-rN.md`):
 
-1. **Read ALL review files** for the current round.
+1. **Read ALL review files** for the current round. This includes every finalize report for the round (`ls [plan]-finalize-audit-r[N]*.md`, including any `-second-check` file), whatever the orchestrator handed you, and the Round N revision notes must name each file as a source. (2026-11-10, kindra stripe-fee-on-every-sale: a round-3 second-check report was never read, and its finding came back as a round-4 repeat, costing a round.)
 2. **For each issue raised:**
    - If you agree: update the plan to address it. Note what changed.
    - If you disagree: document your reasoning in the plan under "## Revision Notes — Round N".
 3. **Re-verify against the codebase** — don't just accept reviewer claims. Check the code yourself.
 4. **Update the plan in-place** — don't create a new file. Add a revision section at the bottom.
-5. **Increment the round marker** — add `## Revision Notes — Round N` with a summary of all changes made.
+5. **Increment the round marker** — add `## Revision Notes — Round N` with a summary of all changes made. Then, as the LAST edit of the revision, update any status line at the top of the plan so it names this round's notes and the next round number — re-read it after saving. (2026-11-10, kindra stripe-fee-on-every-sale: the status line was edited before the new notes were added, went stale three revisions running, and was flagged as a repeat finding.)
 6. **MANDATORY: Obey the Scope Freeze (see below).** Revisions correct the plan; they never grow it.
 7. **MANDATORY: Run the Contradiction Self-Check (see below) BEFORE saving the revision.** This is non-negotiable.
 
