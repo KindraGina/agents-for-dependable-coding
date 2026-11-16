@@ -115,7 +115,7 @@ When code-quality or test reviewers have raised issues:
    - Run the full test suite again.
    - Run lint again for all affected projects.
    - Run build/compile to verify no build errors.
-5. Add a note to the plan under `## Implementation Fix Notes — Round N` summarizing what was fixed.
+5. Add a note to the plan under `## Implementation Fix Notes — Round N` summarizing what was fixed. Every result, diff or test count in that note follows Phase 6 step 20's evidence rules exactly: save each run with `tee` to the scratchpad and paste from that file, never type or script an "output" block, and write `UNVERIFIED` for anything not re-run. A fix-round note is often written after the last post-implementation audit, so the final audit is the first gate to read it. (2026-11-13, kindra refund-product-orders: a "Test fix round 1" diff labelled as formatter output was a literal in a helper script; the final audit failed on it and needed a third round.)
 
 ## Rules
 
