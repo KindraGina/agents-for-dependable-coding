@@ -64,7 +64,7 @@ If the plan has a `## Live Verification Steps` section:
 **Why this step exists (July 2026 AdminFixes29 incident):** All unit tests passed with hardcoded HTML, but three features failed against real-world URLs because the tests never exercised real data. Facebook returned HTML instead of images, Shotgun returned a bot challenge page, and a CSV insert hit a NOT NULL constraint — none caught by mocked tests.
 
 ### Phase 6: Verify (MUST PRODUCE EVIDENCE — no shortcuts)
-18. Run the full test suite for each affected project.
+18. Run the full test suite for each affected project. A green total does not prove your new tests ran. For every test file you created, show that its tests executed in the FULL-suite run, not only in a run by explicit path: kindra `mix test --trace` saved with `tee`, then `grep -c '<one new test name>'` must be non-zero (Jest/Vitest: `--verbose` and the same grep). In kindra, also `grep -rn "defmodule <NewModule>" test` before naming a new test module — a duplicate name compiles with only a warning and ExUnit silently runs the other file's module instead. **Why (2026-11-16, kindra short-event-urls):** a new `Kindra.Utils.EventsTest` duplicated an existing module; its 4 tests never ran in the full suite, and the coder, code review and three audits that ran the file by path all passed it.
 19. For EACH plan item you implemented, you MUST:
     a. Run `grep` or `Read` on the actual file to find the code you wrote.
     b. **Paste the actual output** (file path, line number, code snippet) into your verification summary.
@@ -110,12 +110,12 @@ When code-quality or test reviewers have raised issues:
    - Read the referenced file and line number.
    - Make the fix.
    - Run relevant tests.
-3. For Minor issues, fix them unless doing so would risk breaking something.
+3. For Minor issues, fix them unless doing so would risk breaking something. This includes Minors in every latest review file whose verdict was APPROVE — the last plan review (answer those in your Mode 1 Self Review; you already read it in Phase 1) and code or test reviews that passed without a fix round. Write one line per Minor in your Self Review or fix notes: "✅ fixed at <where>", or, only when fixing it would risk breaking something, "not fixed — owner decision needed: <risk>". An APPROVE moves the pipeline on, so nobody else will answer them, and the final audit opens a row for each unanswered one. (2026-11-16, kindra short-event-urls: 7 Minors from two APPROVE reviews became 7 of 11 OPEN final-audit rows and cost a fix round plus a re-audit.)
 4. After all fixes:
    - Run the full test suite again.
    - Run lint again for all affected projects.
    - Run build/compile to verify no build errors.
-5. Add a note to the plan under `## Implementation Fix Notes — Round N` summarizing what was fixed. Every result, diff or test count in that note follows Phase 6 step 20's evidence rules exactly: save each run with `tee` to the scratchpad and paste from that file, never type or script an "output" block, and write `UNVERIFIED` for anything not re-run. A fix-round note is often written after the last post-implementation audit, so the final audit is the first gate to read it. (2026-11-13, kindra refund-product-orders: a "Test fix round 1" diff labelled as formatter output was a literal in a helper script; the final audit failed on it and needed a third round.)
+5. Add a note to the plan under `## Implementation Fix Notes — Round N` summarizing what was fixed. Every result, diff or test count in that note follows Phase 6 step 20's evidence rules exactly: save each run with `tee` to the scratchpad and paste from that file, never type or script an "output" block, and write `UNVERIFIED` for anything not re-run. A fix-round note is often written after the last post-implementation audit, so the final audit is the first gate to read it. (2026-11-13, kindra refund-product-orders: a "Test fix round 1" diff labelled as formatter output was a literal in a helper script; the final audit failed on it and needed a third round.) The plan's earlier evidence goes stale the same way: after any fix round that changes a code or test file, re-run every `Command:` in the plan (Self Review, earlier fix notes, Verified References) whose output reads that file, and either replace the paste with the new output or label it "historical (before fix round N)"; also update any plan section that quotes text you just edited. (2026-11-16, kindra short-event-urls: a fix round refreshed one of two stale pastes, marked the row Fixed, and left two more — final audit r2 failed on all three.)
 
 ## Rules
 
