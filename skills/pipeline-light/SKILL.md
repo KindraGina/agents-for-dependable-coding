@@ -271,7 +271,7 @@ This loop repeats until the reviewer issues an APPROVE verdict.
 **Step 2:** Extract verdict.
 
 **Step 3: LOOP DECISION:**
-- If APPROVE → **immediately proceed to Phase 5.5**.
+- If APPROVE → **immediately proceed to Phase 5.5**. First run the unanswered-Minors check in `skills/pipeline/SKILL.md` Phase 5 Step 4 against the latest `-code-review-1-rN.md` and `-test-review-1-rN.md` (2026-11-17, kindra partial-refunds).
 - If NEEDS CHANGES → launch `plan-coder` to fix, then **GO BACK TO STEP 1 with N incremented**.
 
 **Safety valve**: Pause at round 6.
