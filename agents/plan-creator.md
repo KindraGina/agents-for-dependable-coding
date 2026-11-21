@@ -137,6 +137,8 @@ If the plan does NOT change any existing function's contract, write: "No existin
 
 ## Edge Cases
 What could go wrong.
+**Rows that an outside service moves after the sale (Stripe subscriptions and PaymentIntents, Twilio callbacks) need a status-by-event table here.** One row per stored status (including "created but never paid"), one column per event that can reach it; each cell gives the new status and any email sent, or "no change". The table must cover: two events for the same change arriving in either order, a duplicate delivery, a never-paid expiry, and the SECOND charge (which card a renewal uses, and where that is saved). Fill every cell, so an empty or hand-waved one is visible to every reviewer instead of being found one round at a time.
+**Why (2026-11-20, kindra `docs/plans/2026-11-09-membership-checkout-platform-subscriptions.md`):** eight finalize and five plan-review rounds found lifecycle cases piecemeal; code review still found three more — never-paid buyers listed as expired members, a payment-failed email lost when Stripe's two events arrive in the other order, and renewals with no saved default card.
 
 ## Testing Plan
 - Unit tests (what to test, which framework)
