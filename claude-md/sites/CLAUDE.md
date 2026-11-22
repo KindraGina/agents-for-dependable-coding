@@ -568,7 +568,7 @@ A `## Verified References` section is incomplete unless every factual claim is b
     <pasted unchanged from tool result>
     ```
 
-A bullet that says "verified that the production block has env vars" without the raw output is NOT verified. If raw output is not pasted, the claim remains unverified and the plan reviewer should reject it.
+A bullet that says "verified that the production block has env vars" without the raw output is NOT verified. If raw output is not pasted, the claim remains unverified and the plan reviewer should reject it. In agent shells `grep` is a shell function running multithreaded ugrep, which can list files in a different order on each run: end any `Command:` that searches more than one file with `| sort` (or use `command grep`), and when re-checking an unsorted multi-file grep, compare the set of lines, not their order (2026-11-21, kindra refund-line-data: a finalize round failed two correct pastes as "reordered").
 
 ### Rule 2 — Line numbers do not cross branches
 
