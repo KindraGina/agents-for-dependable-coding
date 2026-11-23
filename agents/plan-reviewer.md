@@ -94,7 +94,7 @@ Scope was set before review began. Revisions may CORRECT existing items; they ma
 
 ### Testing
 - Does the plan include tests BEFORE implementation (TDD)?
-- Are edge cases covered by tests?
+- Are edge cases covered by tests? Check this mechanically: the Testing Plan must end with a table giving every `## Edge Cases` and `## Behaviors to Preserve` line a test number whose assertion would fail if that behavior broke, or "no test: <reason>"; a missing table or an unmapped line is NEEDS CHANGES (2026-11-21, kinlia-web refund-reason-picker).
 - Are the right testing frameworks specified (Vitest/Playwright/Jest)?
 - Is there an integration test plan, not just unit tests?
 - If the plan touches time-dependent logic (date/time comparisons, upcoming vs past, expiry, scheduling): does the Testing Plan specify PINNED absolute dates with an injected "now", straddling a month/year boundary? Relative dates ("today + 1 day") in a time-logic test plan are NEEDS CHANGES — such tests can pass green over broken date comparisons depending on the day they run (July 2026 recent-event-names incident).
