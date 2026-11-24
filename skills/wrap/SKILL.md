@@ -77,11 +77,33 @@ cd ~/claude-pipeline-agents && git status --short && git log --branches --not --
 
 **"Outside the repo" is a DEFECT, never an explanation.** Do not write "outside this repo, so nothing to commit here" and clear the session — that exact sentence is what let `/cascade-light` sit unbacked from Aug 25 to Sept 15, 2026, alongside `build-app/patterns.md` (every build-failure lesson paid for with burned EAS credits). A new skill that only exists locally is one disk failure from gone, and it is precisely the thing `/wrap` is meant to catch.
 
+### 8. Put every loose end on the board
+
+For each outstanding thing found in checks 1 to 7, look for its card on the Kinlia Work
+Board by Key (`<repo>:pr:<n>`, `<repo>:branch:<branch>` or `<repo>:note:<slug>`; the full
+rules are in `~/.claude/skills/board-sync/SKILL.md`). If it has a card, update Next action
+and Last touched. If it has none, create one in the right Stage. Write the cards with:
+
+```bash
+bash ~/.claude/skills/board-sync/apply.sh "<scratchpad>/wrap-cards.json"
+```
+
+Tell the owner in one line which cards were created or updated. This step is not a
+`/board-sync`: touch only the cards for this terminal's loose ends.
+
+Uncommitted, stashed or unpushed work is still a blocker: a card does not make unsaved
+files safe. Only things that are already saved somewhere (a pushed branch, a decision still
+to make, a staging check owed) become "on the board, safe to close".
+
+**Why:** before 2026-11-23 a terminal's scrollback was the only record of its loose
+ends, so terminals were kept open "just in case" and ~87 sessions piled up.
+
 ## Output
 
 Give a one-line verdict at the top:
 
 - **All clear — safe to close.** (nothing outstanding)
-- **X thing(s) to deal with first:** (list what's outstanding, one bullet each, short)
+- **Safe to close — N loose end(s) are on the board:** (one bullet each with the card title)
+- **X thing(s) to deal with first:** (unsaved, stashed or unpushed work, or a skill that is not backed up; one bullet each, short)
 
 Keep it brief. No headers, no sections — just the verdict and bullets if needed.

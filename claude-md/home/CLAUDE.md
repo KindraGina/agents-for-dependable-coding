@@ -51,6 +51,14 @@ Then once the topic is clear:
 
 **Why:** on 2026-10-09 the staging-QA checklist was published with browser-only ticks and private sharing. The interns could not open it, and even once shared their marks would never have reached Gina. She had asked for team-usable pages repeatedly before; this is the rule that should have existed already.
 
+### Loose ends go on the Kinlia Work Board
+
+Unfinished work is tracked on one GitHub Project (KindraConnect, "Kinlia Work Board"),
+not in terminal scrollback. Run `/next` to see what to do, `/wrap` before closing a
+terminal, `/board-sync` to refresh it. Do not keep a terminal open as a reminder.
+(Added 2026-11-23, when ~87 sessions were open because each one was the only record of
+its own loose ends.)
+
 ## NEVER auto-invoke multi-agent skills
 
 You may NEVER programmatically invoke `/pipeline`, `/pipeline-light`, `/critique`, `/pipeline-audit`, or any other multi-agent orchestrator skill from inside a main-session conversation unless the user EXPLICITLY named the skill in their current message.
