@@ -76,6 +76,16 @@ Look a card up by Key before creating anything. One Key per card.
 `<repo>` is the folder name of the main checkout. When a branch gets a PR, re-key the existing
 card (`new_key`); do not make a second one.
 
+### Titles and card type
+
+Write every card as a draft card with a plain-English title the owner would recognise
+("Partial refunds", not "PR #2106 feat/partial-refund"), and put the PR link in the body.
+A real PR item (`pr_url`) shows GitHub's own title, which the owner cannot read at a glance,
+so use it only when she asks for it. The Key still uses the `pr` form.
+
+A branch that was squash-merged looks unmerged to git (`on_staging: false`). Before calling
+such a branch unfinished, look for its PR number in `staged_not_released`.
+
 ### Stage
 
 | Evidence | Stage |

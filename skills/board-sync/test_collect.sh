@@ -55,6 +55,9 @@ g -C "${X}" merge --no-ff develop -m "Release develop to master"
 g -C "${X}" push origin master
 g -C "${X}" checkout develop
 g -C "${X}" merge --no-ff origin/feat-c -m "Merge pull request #7 from feat-c"
+# A squash merge leaves ONE ordinary commit, not a merge commit. GitHub names it "... (#N)".
+g -C "${X}" merge --squash origin/feat-a
+g -C "${X}" commit -m "Feature A, squashed (#12)"
 g -C "${X}" push origin develop
 
 # one stash in the main checkout
@@ -93,8 +96,9 @@ check "F: path with a space kept whole"         "$(wt fix/with-slash) | .path | 
 check "main checkout: branch master"            '.repos[0].worktrees[0].branch == "master"'
 check "repo: one stash"                         '.repos[0].stashes == 1'
 check "repo: staging and production names"      '.repos[0].staging_branch == "develop" and .repos[0].production_branch == "master"'
-check "repo: one merge on staging not released" '(.repos[0].staged_not_released | length) == 1'
-check "repo: that merge is feat-c"              '.repos[0].staged_not_released[0].subject | test("feat-c")'
+check "repo: unreleased PRs are #7 and #12"       '([.repos[0].staged_not_released[].pr] | sort) == [7,12]'
+check "repo: squash-merged PR is included"      '[.repos[0].staged_not_released[] | select(.pr == 12) | .subject | test("squashed")] == [true]'
+check "repo: released PR #8 is NOT listed"      '[.repos[0].staged_not_released[] | select(.pr == 8)] == []'
 check "every worktree has a last_commit date"   '[.repos[0].worktrees[].last_commit | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$")] | all'
 
 echo

@@ -108,9 +108,16 @@ one_repo() { # spec -> one JSON object
      && git -C "${repo}" rev-parse --verify --quiet "origin/${staging}" >/dev/null \
      && git -C "${repo}" rev-parse --verify --quiet "origin/${production}" >/dev/null; then
     # %x1f (unit separator) cannot appear in a commit subject, so it is a safe delimiter.
-    git -C "${repo}" log "origin/${production}..origin/${staging}" --merges --first-parent \
-        --format='%h%x1f%cs%x1f%s' 2>/dev/null \
-      | jq -R 'split("\u001f") | {sha:.[0], date:.[1], subject:.[2]}' >> "${sfile}"
+    # WHY not `--merges --first-parent`: that missed four known-unreleased backend PRs on
+    # 2026-11-23. A squash merge is one ordinary commit named "... (#N)", and a PR merged
+    # into a branch that was itself merged later is not on the first-parent line. So every
+    # commit is read, and one is kept if it is a merge or its subject names a PR.
+    git -C "${repo}" log "origin/${production}..origin/${staging}" \
+        --format='%h%x1f%cs%x1f%P%x1f%s' 2>/dev/null \
+      | jq -R 'split("\u001f")
+               | {sha:.[0], date:.[1], merge:((.[2] | split(" ") | length) > 1), subject:.[3]}
+               | .pr = ((.subject | capture("(?:^Merge (?:pull request|PR) #|\\(#)(?<n>[0-9]+)") | .n | tonumber) // null)
+               | select(.merge or .pr != null)' >> "${sfile}"
   fi
 
   # --- open pull requests (GitHub) ---
