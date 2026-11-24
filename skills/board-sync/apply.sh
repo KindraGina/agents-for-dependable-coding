@@ -38,6 +38,15 @@ PROJECT_ID="$(gh project view "${NUMBER}" --owner "${OWNER}" --format json --jq 
 gh project field-list "${NUMBER}" --owner "${OWNER}" --format json > "${TMP}/fields.json"
 gh project item-list  "${NUMBER}" --owner "${OWNER}" --limit 1000 --format json > "${TMP}/items.json"
 
+# GitHub's item list lags a few seconds behind a write. On 2026-11-24 a second run made
+# straight after the first did not see the last card and created a twin. So every card
+# this script creates is also noted locally, and a Key created in the last 10 minutes
+# counts as existing even if the list has not caught up yet.
+LEDGER="${HOME}/.cache/board-sync/recently-created.tsv"
+mkdir -p "$(dirname "${LEDGER}")"; touch "${LEDGER}"
+NOW="$(date +%s)"
+recently_created() { awk -F'\t' -v k="$1" -v t="$((NOW-600))" '$2 == k && $1 > t {print $3}' "${LEDGER}" | tail -1; }
+
 field_id()  { jq -r --arg n "$1" '.fields[] | select(.name == $n) | .id' "${TMP}/fields.json"; }
 option_id() { jq -r --arg n "$1" --arg o "$2" '.fields[] | select(.name == $n) | .options[] | select(.name == $o) | .id' "${TMP}/fields.json"; }
 run() { if [ "${DRY}" = "1" ]; then echo "    would run: $*"; else "$@" >/dev/null || echo "    !! FAILED: $*" >&2; fi; }
@@ -50,6 +59,11 @@ while [ "${i}" -lt "${COUNT}" ]; do
   KEY="$(card .key)"; TITLE="$(card .title)"
   ITEM_ID="$(jq -r --arg k "${KEY}" '.items[] | select(.key == $k) | .id' "${TMP}/items.json" | head -1)"
   current() { jq -r --arg k "${KEY}" --arg f "$1" '.items[] | select(.key == $k) | .[$f] // empty' "${TMP}/items.json" | head -1; }
+
+  if [ -z "${ITEM_ID}" ] && [ -n "$(recently_created "${KEY}")" ]; then
+    echo "skip     ${KEY}  (created minutes ago; the board list has not caught up)"
+    UNCHANGED=$((UNCHANGED+1)); i=$((i+1)); continue
+  fi
 
   if [ "$(card .archive)" = "true" ]; then
     if [ -n "${ITEM_ID}" ]; then
@@ -71,6 +85,7 @@ while [ "${i}" -lt "${COUNT}" ]; do
       ITEM_ID="$(gh project item-create "${NUMBER}" --owner "${OWNER}" --title "${TITLE}" --body "$(card .body)" --format json --jq '.id')"
     fi
     [ -n "${ITEM_ID}" ] || { echo "!! ${KEY}: could not create" >&2; ERRORS=$((ERRORS+1)); i=$((i+1)); continue; }
+    [ "${DRY}" = "1" ] || printf '%s\t%s\t%s\n' "${NOW}" "${KEY}" "${ITEM_ID}" >> "${LEDGER}"
     CREATED=$((CREATED+1)); CHANGED=1; NEW=1
   else
     NEW=0
