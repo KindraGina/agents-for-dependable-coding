@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Daily sweep of the Kinlia Work Board (owner request 2026-11-25).
+     Install: cp this file to ~/Library/LaunchAgents/ then
+              launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/life.kinlia.board-sweep.plist
+     Remove:  launchctl bootout gui/$(id -u)/life.kinlia.board-sweep ; delete the copied file.
+     If the Mac is asleep at 8:30, macOS runs it when the Mac next wakes. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>life.kinlia.board-sweep</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-c</string>
+    <string>/bin/bash "$HOME/.claude/skills/board-sync/daily-sweep.sh" >> "$HOME/.cache/board-sync/daily.log" 2>&amp;1</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict><key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string></dict>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>8</integer><key>Minute</key><integer>30</integer></dict>
+</dict>
+</plist>

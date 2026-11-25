@@ -14,6 +14,13 @@ notes and ~95 worktrees, so terminals were kept open as reminders and ~87 sessio
 **Cardinal rule: every card states the evidence that put it in its column.** A commit, a PR
 number, or the note file and its date. A card sorted from memory is a guess; say so or leave it out.
 
+**What keeps the board current (owner, 2026-11-25).** Three things, so nobody has to remember:
+`daily-sweep.sh` runs at 8:30 every morning on the owner's Mac (launchd job
+`life.kinlia.board-sweep`, report in `~/.cache/board-sync/daily-report.txt`): it moves cards
+whose PR merged (`merge-sync.sh`) and adds a card for any PR or unsaved folder that has none.
+`/next` applies the checklist's Pass/Fail marks. A session that merges a PR runs
+`merge-sync.sh` straight after. This skill is the full, judged sweep on top of those.
+
 This skill runs in the main session. It does not spawn agents and never invokes `/pipeline`,
 `/cascade` or any other multi-agent skill.
 

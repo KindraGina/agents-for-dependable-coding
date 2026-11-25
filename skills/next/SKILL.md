@@ -5,10 +5,25 @@ description: What should I work on now? Reads the Kinlia Work Board and names th
 # Next — what do I do now?
 
 Read the Kinlia Work Board and answer one question: what are the next three things to do?
-Read-only. It changes nothing on the board or in any repo.
+It changes nothing in any repo. On the board it makes one kind of change, in Step 0.
 
 **Why it exists (2026-11-23):** with work spread over four repos and dozens of terminals, the
 owner could not tell what to finish next. The answer has to be the same from every terminal.
+
+## Step 0 — Bring the board up to the checklist
+
+The daily sweep (8:30 on the owner's Mac, `board-sync/daily-sweep.sh`) moves cards when a
+PR merges, but it cannot read the team checklist. Only an open session can, so do it here:
+
+1. Read the Pass / Fail / Skip marks as `~/.claude/skills/board-sync/SKILL.md` Step 2 describes.
+2. For each card in **On Staging**: if every check for it is marked Pass, move it to
+   **Passed Staging Test**. If a check is marked Fail, leave it and make its Next action
+   name the failed check. Same for **On Production** and **Passed Production Test**.
+3. Write those changes with `apply.sh` and tell the owner in one line what moved. Never move
+   a card on a note or a guess: no marks, no move.
+
+If `~/.cache/board-sync/daily-report.txt` lists new cards, say how many in one line; their
+titles are GitHub's and want renaming.
 
 ## Step 1 — Read the board
 

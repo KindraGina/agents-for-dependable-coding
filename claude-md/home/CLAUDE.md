@@ -56,6 +56,9 @@ Then once the topic is clear:
 Unfinished work is tracked on one GitHub Project (KindraConnect, "Kinlia Work Board"),
 not in terminal scrollback. Run `/next` to see what to do, `/wrap` before closing a
 terminal, `/board-sync` to refresh it. Do not keep a terminal open as a reminder.
+**After merging any PR into a staging or production branch, run
+`bash ~/.claude/skills/board-sync/merge-sync.sh` in the same step** so the card moves
+at once (a daily 8:30 sweep on Gina's Mac catches what is missed, including intern merges).
 (Added 2026-11-23, when ~87 sessions were open because each one was the only record of
 its own loose ends.)
 
