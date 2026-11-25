@@ -49,7 +49,7 @@ recently_created() { awk -F'\t' -v k="$1" -v t="$((NOW-600))" '$2 == k && $1 > t
 
 field_id()  { jq -r --arg n "$1" '.fields[] | select(.name == $n) | .id' "${TMP}/fields.json"; }
 option_id() { jq -r --arg n "$1" --arg o "$2" '.fields[] | select(.name == $n) | .options[] | select(.name == $o) | .id' "${TMP}/fields.json"; }
-run() { if [ "${DRY}" = "1" ]; then echo "    would run: $*"; else "$@" >/dev/null || echo "    !! FAILED: $*" >&2; fi; }
+run() { if [ "${DRY}" = "1" ]; then echo "    would run: $*"; else "$@" >/dev/null || { echo "    !! FAILED: $*" >&2; ERRORS=$((ERRORS+1)); }; fi; }
 
 CREATED=0; UPDATED=0; UNCHANGED=0; ARCHIVED=0; ERRORS=0
 COUNT="$(jq 'length' "${CARDS}")"
@@ -142,4 +142,7 @@ done
 echo
 [ "${DRY}" = "1" ] && echo "DRY RUN - nothing was written."
 echo "created: ${CREATED}   updated: ${UPDATED}   unchanged: ${UNCHANGED}   archived: ${ARCHIVED}   errors: ${ERRORS}"
-[ "${ERRORS}" -eq 0 ]
+# A failed GitHub call counts as an error (2026-11-25: GitHub returned 502s for several
+# minutes and the summary still said "errors: 0"). The run is safe to repeat: fields that
+# already hold the right value are skipped.
+[ "${ERRORS}" -eq 0 ] || { echo "Some writes failed. Run the same command again to finish them." >&2; exit 1; }

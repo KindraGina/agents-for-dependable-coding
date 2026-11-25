@@ -41,6 +41,17 @@ Git cannot see a staging check that is owed or a decision that is pending. Read:
 
 - each project's memory index and the files it links: `~/.claude/projects/*/memory/MEMORY.md`
 - each repo's `docs/TODO.md`
+- the team's test checklists, which are claude.ai Artifacts ("Kinlia Backend Release
+  Checklist", the "Build NNN QA" pages). Find them with the Artifact tool's `list`, read
+  the page for the check numbers and which PR each belongs to, and read the `marks`
+  collection with `ArtifactData` for Pass / Fail / Skip.
+
+**The checklist marks decide "Passed Staging Test", not the memory notes.** A card goes to
+Passed Staging Test only when every check for it is marked Pass on the checklist. Unmarked,
+Skipped or Failed keeps it in On Staging, with the open check numbers in the Next action;
+a Fail is named as a fail. (2026-11-25: the first sort used notes only. The owner doubted
+it, and the checklist showed Partial refunds with none of its ten checks marked and the
+member-profile fix with two checks failed.)
 
 A note is a claim with a date, not a fact. Where a note says "not on master", confirm it against
 `staged_not_released` in the sweep before repeating it.
