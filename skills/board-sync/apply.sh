@@ -35,8 +35,15 @@ NUMBER="$(gh project list --owner "${OWNER}" --format json \
           --jq ".projects[] | select(.title == \"${PROJECT_TITLE}\") | .number")"
 [ -n "${NUMBER}" ] || { echo "board \"${PROJECT_TITLE}\" not found (is it closed?)" >&2; exit 2; }
 PROJECT_ID="$(gh project view "${NUMBER}" --owner "${OWNER}" --format json --jq '.id')"
-gh project field-list "${NUMBER}" --owner "${OWNER}" --format json > "${TMP}/fields.json"
-gh project item-list  "${NUMBER}" --owner "${OWNER}" --limit 1000 --format json > "${TMP}/items.json"
+gh project field-list "${NUMBER}" --owner "${OWNER}" --format json > "${TMP}/fields.json" 2>"${TMP}/err.txt" \
+  || { grep -qi 'rate limit' "${TMP}/err.txt" && echo "STOPPED before writing: GitHub's hourly request allowance is used up. Nothing was written. Try again after it resets (within the hour)." >&2; echo "could not read the board's fields; nothing written" >&2; exit 3; }
+gh project item-list  "${NUMBER}" --owner "${OWNER}" --limit 1000 --format json > "${TMP}/items.json" 2>"${TMP}/err.txt" \
+  || { grep -qi 'rate limit' "${TMP}/err.txt" && echo "STOPPED before writing: GitHub's hourly request allowance is used up. Nothing was written. Try again after it resets (within the hour)." >&2; echo "could not read the board's cards; nothing written" >&2; exit 3; }
+# WHY this is fatal: with an empty card list every card looks new, and the run would create a
+# twin of every card on the board. On 2026-11-25 a refused read slipped through exactly so;
+# only the absence of titles in that file stopped 149 duplicates.
+jq -e '.items | type == "array"' "${TMP}/items.json" >/dev/null 2>&1 || { echo "the board's card list did not come back; nothing written" >&2; exit 3; }
+jq -e '.fields | length > 0' "${TMP}/fields.json" >/dev/null 2>&1 || { echo "the board's field list did not come back; nothing written" >&2; exit 3; }
 
 # GitHub's item list lags a few seconds behind a write. On 2026-11-24 a second run made
 # straight after the first did not see the last card and created a twin. So every card
@@ -73,10 +80,8 @@ flush() {
 if [ "${DRY}" != "1" ]; then
   PROBE="$(gh api graphql -f query='{ rateLimit { remaining } }' --jq '.data.rateLimit.remaining' 2>&1)"
   case "${PROBE}" in *"rate limit"*|*"RATE_LIMIT"*) rate_stop ;; esac
-  NEED=$(( $(jq 'length' "${CARDS}") * 3 + 20 ))
-  if [ "${PROBE}" -eq "${PROBE}" ] 2>/dev/null && [ "${PROBE}" -lt "${NEED}" ]; then
-    echo "STOPPED before writing: only ${PROBE} GitHub requests are left this hour and this file needs about ${NEED}. Run it again after the allowance resets." >&2; exit 3
-  fi
+  # No "is enough left?" sum here: GitHub's remaining count read 200 and then 2958 a few
+  # seconds apart on 2026-11-25, so it cannot be trusted. A real refusal stops the run instead.
 fi
 CREATED=0; UPDATED=0; UNCHANGED=0; ARCHIVED=0; ERRORS=0
 COUNT="$(jq 'length' "${CARDS}")"
