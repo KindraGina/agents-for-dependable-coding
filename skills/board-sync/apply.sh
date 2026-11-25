@@ -9,7 +9,7 @@
 #   { "key": "kindra:pr:2112",            REQUIRED - the card's identity, see SKILL.md
 #     "title": "...",                     required when the card is new
 #     "status": "On Staging",             one of the Status options (the board's columns)
-#     "area": "Backend",                  one of the Area options
+#     "area": "Backend",                  Backend, Frontend, Website, Skills pipeline, Scraper, Ops
 #     "next_action": "...", "waiting_on": "...", "where": "...",
 #     "last_touched": "2026-11-21",
 #     "body": "...",                      evidence for the sort; draft cards only
@@ -112,6 +112,20 @@ while [ "${i}" -lt "${COUNT}" ]; do
     run gh project item-edit --project-id "${PROJECT_ID}" --id "${ITEM_ID}" --field-id "$(field_id "$1")" --date "$3"; CHANGED=1
   }
 
+  # An existing draft card's title and body are rewritten when the file gives different ones
+  # (owner 2026-11-25: she opened a card and could not tell what it was; the body must be
+  # able to be improved after the card exists). Real PR/issue cards are left alone.
+  if [ "${NEW}" = "0" ]; then
+    DRAFT_ID="$(jq -r --arg k "${KEY}" '.items[] | select(.key == $k) | select(.content.type == "DraftIssue") | .content.id // empty' "${TMP}/items.json" | head -1)"
+    CUR_TITLE="$(jq -r --arg k "${KEY}" '.items[] | select(.key == $k) | .title // empty' "${TMP}/items.json" | head -1)"
+    CUR_BODY="$(jq -r --arg k "${KEY}" '.items[] | select(.key == $k) | .content.body // empty' "${TMP}/items.json" | head -1)"
+    WANT_BODY="$(card .body)"; WANT_TITLE="${TITLE:-${CUR_TITLE}}"; [ -n "${WANT_BODY}" ] || WANT_BODY="${CUR_BODY}"
+    if [ -n "${DRAFT_ID}" ] && { [ "${WANT_TITLE}" != "${CUR_TITLE}" ] || [ "${WANT_BODY}" != "${CUR_BODY}" ]; }; then
+      echo "update   ${KEY}  title/description"
+      run gh project item-edit --id "${DRAFT_ID}" --title "${WANT_TITLE}" --body "${WANT_BODY}"; CHANGED=1
+    fi
+  fi
+
   # Key is written first: if a later call fails, the next run still finds this card
   # by Key and finishes it instead of creating a twin.
   NEW_KEY="$(card .new_key)"
@@ -127,7 +141,10 @@ while [ "${i}" -lt "${COUNT}" ]; do
     "Done")                  STATUS="On Production" ;;
   esac
   set_select "Status" "status" "${STATUS}"
-  set_select "Area" "area" "$(card .area)"
+  # Areas were renamed by the owner on 2026-11-25 (Mobile -> Frontend, Web -> Website).
+  AREA="$(card .area)"
+  case "${AREA}" in "Mobile") AREA="Frontend" ;; "Web") AREA="Website" ;; esac
+  set_select "Area" "area" "${AREA}"
   set_text "Next action" "next action" "$(card .next_action)"
   set_text "Waiting on" "waiting on" "$(card .waiting_on)"
   set_text "Where" "where" "$(card .where)"

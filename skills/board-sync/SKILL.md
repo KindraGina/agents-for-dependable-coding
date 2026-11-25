@@ -41,6 +41,7 @@ Staging and production branch names differ per repo and are set at the top of th
 | KindraApp | testflight | master |
 | kinlia-web | staging | production |
 | event_scraper | none | main |
+| claude-pipeline-agents | none | main |
 
 ## Step 2 — Read the notes (read-only)
 
@@ -94,6 +95,26 @@ Look a card up by Key before creating anything. One Key per card.
 `<repo>` is the folder name of the main checkout. When a branch gets a PR, re-key the existing
 card (`new_key`); do not make a second one.
 
+### The description — what the owner reads when she opens a card
+
+Every card's body is written for someone who has never seen the work, in plain English with
+no code, file names or branch names in the first three parts:
+
+```
+**What this is:** what the work does, as a user or the owner would describe it.
+**Why it matters:** who is affected or what goes wrong without it.
+**Where it stands:** built? on staging? which checks passed, failed or are unmarked, and by whom.
+**What to do next:** the very next step and who does it.
+**Where the work is:** folder and branch, if it lives on this Mac.
+**Links:** the pull request(s).
+```
+
+Evidence ("sweep 2026-11-23: unpushed=1") is not a description. Before writing "What this
+is", read the PR description, the plan, or the commits; if it is still a guess, say "inferred
+from ...". (2026-11-25: the owner opened "Event tags (mobile)", saw only an evidence line, and
+could not tell what it was. It turned out to be one unpushed TODO note on a branch that
+merely had that name.) `apply.sh` rewrites the title and body of an existing draft card.
+
 ### Titles and card type
 
 Write every card as a draft card with a plain-English title the owner would recognise
@@ -129,7 +150,9 @@ checked-on-production, so finished work stays visible instead of vanishing.
 
 ### Fields
 
-- **Area:** Backend, Web, Mobile, Scraper, Ops.
+- **Area:** Backend (kindra), Frontend (the mobile app, KindraApp), Website (kinlia-web),
+  Skills pipeline (`~/claude-pipeline-agents`: skills, agents, rules), Scraper, Ops.
+  The owner's names, 2026-11-25; "Mobile" and "Web" are the old names for Frontend and Website.
 - **Next action:** one plain sentence a non-engineer can act on. The very next step, not a summary.
 - **Waiting on:** the title of the card that must ship first (cross-repo order lives here).
 - **Where:** worktree path and branch, or the plan file.

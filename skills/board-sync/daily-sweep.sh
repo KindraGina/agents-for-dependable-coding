@@ -25,7 +25,9 @@ DRY=""; [ "${1:-}" = "--dry-run" ] && DRY="--dry-run"
 TMP="$(mktemp -d)"; trap 'rm -rf "${TMP}"' EXIT
 TODAY="$(date +%Y-%m-%d)"
 
-area() { case "$1" in kindra) echo Backend;; KindraApp) echo Mobile;; kinlia-web) echo Web;; event_scraper) echo Scraper;; *) echo Ops;; esac; }
+area() { case "$1" in kindra) echo Backend;; KindraApp) echo Frontend;; kinlia-web) echo Website;; event_scraper) echo Scraper;; claude-pipeline-agents) echo "Skills pipeline";; *) echo Ops;; esac; }
+# GitHub address of each repo. The skills repo lives under the owner's own account.
+gh_repo() { case "$1" in claude-pipeline-agents) echo "KindraGina/agents-for-dependable-coding";; *) echo "${OWNER}/$1";; esac; }
 
 {
 echo "Daily board sweep ${TODAY} $(date +%H:%M)${DRY:+ (preview, nothing written)}"
@@ -56,31 +58,31 @@ cat > "${TMP}/open.jq" <<'JQ'
       key: "\($repo):pr:\($n)", title: .title, status: "In Progress", area: $area,
       next_action: "Open pull request by \(.author.login): review and merge it, or say what is missing.",
       last_touched: (.updatedAt[0:10]),
-      body: "Added by the daily sweep. PR \(.url) by \(.author.login) is open and had no card. The title is GitHub's; rename it in plain English."}
+      body: "**What this is:** A pull request by \(.author.login), titled \"\(.title)\". The daily sweep found it on GitHub with no card. Nobody has written a plain description yet: open the link, or ask a Claude session to describe it and update this card.\n\n**Where it stands:** Open, not merged.\n\n**What to do next:** Review and merge it, or tell the author what is missing.\n\n**Links:** \(.url)"}
 JQ
 cat > "${TMP}/merged.jq" <<'JQ'
 .[] | select(.number == $n) | {
       key: "\($repo):pr:\($n)", title: .title, status: "In Progress", area: $area,
       next_action: "Merged by \(.author.login) into \(.baseRefName). Decide what staging test it needs, or mark it passed.",
       last_touched: (.mergedAt[0:10]),
-      body: "Added by the daily sweep. PR \(.url) by \(.author.login) merged into \(.baseRefName) on \(.mergedAt[0:10]) and had no card. The next sweep moves it to the column its branch proves."}
+      body: "**What this is:** A pull request by \(.author.login), titled \"\(.title)\". It merged into \(.baseRefName) on \(.mergedAt[0:10]) and had no card, so the daily sweep added one. Nobody has written a plain description yet.\n\n**Where it stands:** Merged. The next sweep moves the card to the column its branch proves.\n\n**What to do next:** Decide what staging test it needs, if any.\n\n**Links:** \(.url)"}
 JQ
 cat > "${TMP}/folder.jq" <<'JQ'
 {
       key: "\($repo):branch:\(.branch)", title: "Unsaved work: \(.branch)", status: "In Progress", area: $area,
       next_action: "Open that folder: \(.dirty_tracked) edited file(s) not committed, \(.unpushed) commit(s) not pushed. Finish, save or discard.",
       where: "\($short) (\(.branch))", last_touched: .last_commit,
-      body: "Added by the daily sweep from this Mac. The title is the branch name; rename it in plain English."}
+      body: "**What this is:** A work folder on the owner\u0027s Mac with changes that are not saved to GitHub. The daily sweep only knows the branch name (\(.branch)); nobody has written a plain description yet. Ask a Claude session in that folder what the work is and to update this card.\n\n**Where it stands:** \(.dirty_tracked) edited file(s) not committed, \(.unpushed) commit(s) not pushed. Last commit \(.last_commit).\n\n**What to do next:** Finish it, save it, or discard it.\n\n**Where the work is:** \($short) (\(.branch))"}
 JQ
 
-for REPO in kindra KindraApp kinlia-web event_scraper; do
+for REPO in kindra KindraApp kinlia-web event_scraper claude-pipeline-agents; do
   known "${REPO}" > "${TMP}/known.txt"
   has_pr() { grep -q -E "(^|[^0-9A-Za-z])(${REPO}:pr:|#|pull/)$1([^0-9]|\$)" "${TMP}/known.txt"; }
 
   # 2. Pull requests with no card.
-  gh pr list -R "${OWNER}/${REPO}" --state open --limit 100 \
+  gh pr list -R "$(gh_repo "${REPO}")" --state open --limit 100 \
      --json number,title,url,author,isDraft,updatedAt > "${TMP}/open.json" 2>/dev/null || echo '[]' > "${TMP}/open.json"
-  gh pr list -R "${OWNER}/${REPO}" --state merged --limit 100 --search "merged:>=${MERGED_SINCE}" \
+  gh pr list -R "$(gh_repo "${REPO}")" --state merged --limit 100 --search "merged:>=${MERGED_SINCE}" \
      --json number,title,url,author,mergedAt,baseRefName > "${TMP}/merged.json" 2>/dev/null || echo '[]' > "${TMP}/merged.json"
 
   for N in $(jq -r '.[].number' "${TMP}/open.json"); do

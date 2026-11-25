@@ -20,6 +20,7 @@ DEFAULTS=(
   "${HOME}/Sites/KindraApp:testflight:master"
   "${HOME}/Sites/kinlia-web:staging:production"
   "${HOME}/Sites/event_scraper:-:main"
+  "${HOME}/claude-pipeline-agents:-:main"
 )
 
 if [ "$#" -gt 0 ]; then SPECS=("$@"); else SPECS=("${DEFAULTS[@]}"); fi
