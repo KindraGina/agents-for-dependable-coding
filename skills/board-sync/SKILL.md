@@ -151,9 +151,9 @@ checked-on-production, so finished work stays visible instead of vanishing.
 
 ### Fields
 
-- **Area:** Backend (kindra), Frontend (the mobile app, KindraApp), Website (kinlia-web),
+- **Area:** Backend (kindra), Mobile (the mobile app, KindraApp), Website (kinlia-web),
   Skills pipeline (`~/claude-pipeline-agents`: skills, agents, rules), Scraper, Ops.
-  The owner's names, 2026-11-25; "Mobile" and "Web" are the old names for Frontend and Website.
+  The owner's names, 2026-11-25; "Frontend" and "Web" are old names for Mobile and Website.
 - **Next action:** one plain sentence a non-engineer can act on. The very next step, not a summary.
 - **Waiting on:** the title of the card that must ship first (cross-repo order lives here).
 - **Where:** worktree path and branch, or the plan file.

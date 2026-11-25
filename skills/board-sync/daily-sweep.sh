@@ -10,6 +10,7 @@
 #   2. A pull request nobody has a card for gets one: open -> In Progress,
 #      merged to staging since this sweep began -> On Staging. The author is named.
 #   3. A folder on this Mac with edited or unpushed work and no card gets one (In Progress).
+#   4. An open entry in a repo's docs/TODO.md with no card gets one (Backlog/Todo): todo-sync.py.
 # It never moves a card backward, never archives, never touches git, and never sets
 # "Passed Staging Test": that needs the team checklist, which only an open Claude session
 # can read (/next and /board-sync do it).
@@ -25,7 +26,7 @@ DRY=""; [ "${1:-}" = "--dry-run" ] && DRY="--dry-run"
 TMP="$(mktemp -d)"; trap 'rm -rf "${TMP}"' EXIT
 TODAY="$(date +%Y-%m-%d)"
 
-area() { case "$1" in kindra) echo Backend;; KindraApp) echo Frontend;; kinlia-web) echo Website;; event_scraper) echo Scraper;; claude-pipeline-agents) echo "Skills pipeline";; *) echo Ops;; esac; }
+area() { case "$1" in kindra) echo Backend;; KindraApp) echo Mobile;; kinlia-web) echo Website;; event_scraper) echo Scraper;; claude-pipeline-agents) echo "Skills pipeline";; *) echo Ops;; esac; }
 # GitHub address of each repo. The skills repo lives under the owner's own account.
 gh_repo() { case "$1" in claude-pipeline-agents) echo "KindraGina/agents-for-dependable-coding";; *) echo "${OWNER}/$1";; esac; }
 
@@ -115,6 +116,15 @@ if [ "$(jq 'length' "${TMP}/cards.json")" -eq 0 ]; then echo "   none"; else
   jq -r '.[] | "   + \(.key)  \(.title)"' "${TMP}/cards.json"
   bash "${HERE}/apply.sh" ${DRY} "${TMP}/cards.json" 2>&1 | grep -v -E 'would run|^create ' | tail -3 | sed 's/^/   /'
 fi
+echo
+echo "3. TODO files (entries in a repo's docs/TODO.md with no card)"
+# Runs after step 2 has written, on a fresh read, so its own new cards are never doubled.
+if bash "${HERE}/list-items.sh" > "${TMP}/items2.json" 2>/dev/null; then
+  python3 "${HERE}/todo-sync.py" "${TMP}/items2.json" "${TMP}/todo-cards.json" 2>&1 | sed 's/^/   /'
+  if [ "$(jq 'length' "${TMP}/todo-cards.json" 2>/dev/null || echo 0)" -gt 0 ]; then
+    bash "${HERE}/apply.sh" ${DRY} "${TMP}/todo-cards.json" 2>&1 | grep -v -E 'would run|^create ' | tail -3 | sed 's/^/   /'
+  fi
+else echo "   could not read the board; skipped"; fi
 echo
 echo "Not done by this sweep: reading the team checklist (Pass/Fail marks). Run /next or /board-sync for that."
 } > "${TMP}/report.txt" 2>&1

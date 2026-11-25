@@ -9,7 +9,7 @@
 #   { "key": "kindra:pr:2112",            REQUIRED - the card's identity, see SKILL.md
 #     "title": "...",                     required when the card is new
 #     "status": "On Staging",             one of the Status options (the board's columns)
-#     "area": "Backend",                  Backend, Frontend, Website, Skills pipeline, Scraper, Ops
+#     "area": "Backend",                  Backend, Mobile, Website, Skills pipeline, Scraper, Ops
 #     "next_action": "...", "waiting_on": "...", "where": "...",
 #     "last_touched": "2026-11-21",
 #     "body": "...",                      evidence for the sort; draft cards only
@@ -175,9 +175,10 @@ while [ "${i}" -lt "${COUNT}" ]; do
     "Done")                  STATUS="On Production" ;;
   esac
   set_select "Status" "status" "${STATUS}"
-  # Areas were renamed by the owner on 2026-11-25 (Mobile -> Frontend, Web -> Website).
+  # Areas were renamed by the owner on 2026-11-25: Web -> Website, and Mobile -> Frontend
+  # then back to Mobile the same day. Both old names are still translated.
   AREA="$(card .area)"
-  case "${AREA}" in "Mobile") AREA="Frontend" ;; "Web") AREA="Website" ;; esac
+  case "${AREA}" in "Frontend") AREA="Mobile" ;; "Web") AREA="Website" ;; esac
   set_select "Area" "area" "${AREA}"
   set_text "Next action" "next action" "$(card .next_action)"
   set_text "Waiting on" "waiting on" "$(card .waiting_on)"
