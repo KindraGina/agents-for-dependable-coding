@@ -86,22 +86,28 @@ so use it only when she asks for it. The Key still uses the `pr` form.
 A branch that was squash-merged looks unmerged to git (`on_staging: false`). Before calling
 such a branch unfinished, look for its PR number in `staged_not_released`.
 
-### Stage
+### Status — the board's columns
 
-| Evidence | Stage |
+The owner set these seven columns on 2026-11-25. They follow a piece of work from idea to
+checked-on-production, so finished work stays visible instead of vanishing.
+
+| Evidence | Status |
 |---|---|
-| Tracked files edited, commits unpushed, or an open PR | In progress |
-| On staging, not on production, and a note says a check is owed | Staging check owed |
-| On staging, not on production, the owed checks are recorded as passed | Ready for production |
-| Plan or TODO entry only, and the owner has said it is next | Next up |
-| Anything else unfinished, including work the owner deferred | Inbox |
-| On production | Done, then archive on the following sync |
+| Idea, note or TODO entry; no plan file | Backlog/Todo |
+| A plan file exists in `docs/plans/`; no code yet | Has Plan |
+| Tracked files edited, commits unpushed, or an open PR | In Progress |
+| Merged to the staging branch; staging test not recorded as passed | On Staging |
+| On staging and the staging test is recorded as passed | Passed Staging Test |
+| On the production branch; production test not recorded as passed | On Production |
+| On production and the production test is recorded as passed | Passed Production Test |
 
 - For KindraApp, `testflight` is the staging branch (owner decision 2026-11-23).
 - A worktree whose only changes are untracked files is weak evidence. Look at what the files
-  are before calling it In progress; loose plan documents alone do not make a card.
-- Deferred by the owner: Inbox, with "Deferred by owner <date>" opening the Next action.
-  `/next` skips these, which is the point.
+  are before calling it In Progress; loose plan documents alone do not make a card.
+- Deferred by the owner: Backlog/Todo or Has Plan, with "Deferred by owner <date>" opening
+  the Next action. `/next` skips these, which is the point.
+- Archive a Passed Production Test card on the sync after the one that put it there.
+- The roll-up `release-backlog` cards sit in On Staging.
 
 ### Fields
 
@@ -125,7 +131,7 @@ Write the cards to `<scratchpad>/cards.json` (format documented at the top of `a
 bash ~/.claude/skills/board-sync/apply.sh --dry-run "<scratchpad>/cards.json"
 ```
 
-Show the owner a short table: new cards by Stage, cards that move, cards to archive. For each,
+Show the owner a short table: new cards by Status, cards that move, cards to archive. For each,
 one line of evidence. Then wait. **Write to the board only after the owner says yes.**
 
 ## Step 6 — Apply and report

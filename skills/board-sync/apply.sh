@@ -8,7 +8,7 @@
 # cards.json is an array. Each card:
 #   { "key": "kindra:pr:2112",            REQUIRED - the card's identity, see SKILL.md
 #     "title": "...",                     required when the card is new
-#     "stage": "Staging check owed",      one of the Stage options
+#     "status": "On Staging",             one of the Status options (the board's columns)
 #     "area": "Backend",                  one of the Area options
 #     "next_action": "...", "waiting_on": "...", "where": "...",
 #     "last_touched": "2026-11-21",
@@ -116,7 +116,17 @@ while [ "${i}" -lt "${COUNT}" ]; do
   # by Key and finishes it instead of creating a twin.
   NEW_KEY="$(card .new_key)"
   if [ "${NEW}" = "1" ]; then set_text "Key" "key" "${KEY}"; elif [ -n "${NEW_KEY}" ]; then set_text "Key" "key" "${NEW_KEY}"; fi
-  set_select "Stage" "stage" "$(card .stage)"
+  # Columns are the built-in Status field (owner renamed them 2026-11-25). The six old
+  # "Stage" names are still translated so a cards file written before that date sorts right.
+  STATUS="$(card '.status // .stage')"
+  case "${STATUS}" in
+    "Inbox"|"Next up")       STATUS="Backlog/Todo" ;;
+    "In progress")           STATUS="In Progress" ;;
+    "Staging check owed")    STATUS="On Staging" ;;
+    "Ready for production")  STATUS="Passed Staging Test" ;;
+    "Done")                  STATUS="On Production" ;;
+  esac
+  set_select "Status" "status" "${STATUS}"
   set_select "Area" "area" "$(card .area)"
   set_text "Next action" "next action" "$(card .next_action)"
   set_text "Waiting on" "waiting on" "$(card .waiting_on)"

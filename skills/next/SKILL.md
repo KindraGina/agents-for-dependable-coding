@@ -17,7 +17,7 @@ N=$(gh project list --owner KindraConnect --format json --jq '.projects[] | sele
 gh project item-list "${N}" --owner KindraConnect --limit 1000 --format json
 ```
 
-Each item carries: `title`, `stage`, `area`, `key`, `next action`, `waiting on`, `where`, `last touched`.
+Each item carries: `title`, `status`, `area`, `key`, `next action`, `waiting on`, `where`, `last touched`.
 
 If the command fails or the board is empty, say exactly that and stop. Do not answer from
 memory or from the current repo; a guess here sends a whole day in the wrong direction.
@@ -26,17 +26,19 @@ memory or from the current repo; a guess here sends a whole day in the wrong dir
 
 Finishing comes before starting. Take cards in this order until there are three:
 
-1. **Staging check owed** cards that another card names in its `waiting on` (they unblock the most).
-2. Other **Staging check owed** cards, oldest `last touched` first.
-3. **In progress**, oldest `last touched` first.
-4. **Next up**.
+1. **On Staging** cards that another card names in its `waiting on` (they unblock the most).
+2. Other **On Staging** cards, oldest `last touched` first. The job is to run the staging test.
+3. **On Production** cards: run the production test.
+4. **In Progress**, oldest `last touched` first.
+5. **Has Plan**, then **Backlog/Todo**.
 
 Skip:
 
-- **Inbox** and **Done**. Inbox is unsorted; it is not a to-do list.
+- **Passed Staging Test** and **Passed Production Test**: nothing to do on the card itself.
+- The roll-up cards whose Key ends `:note:release-backlog`: they are a count, not a task.
 - Any card whose Next action begins "Deferred by owner". The owner already decided; do not re-raise it.
-- Any card whose `waiting on` names a card that is not Done. Say what it is waiting for
-  only if the owner asks.
+- Any card whose `waiting on` names a card that has not reached On Production. Say what it
+  is waiting for only if the owner asks.
 
 If the owner adds a word after the command (`/next mobile`, `/next backend`), rank only that Area.
 
@@ -47,9 +49,9 @@ then where to do it (which repo or folder). No jargon, no code, no branch names 
 Next action cannot be done without one.
 
 Then one line of counts, for example:
-`Board: 4 in progress · 9 staging checks owed · 3 ready for production · 6 next up · 12 inbox`
+`Board: 13 backlog · 3 has plan · 10 in progress · 21 on staging · 7 passed staging · 0 on production`
 
-If **Ready for production** holds cards and nothing is in **Staging check owed**, say so in one
+If **Passed Staging Test** holds cards and nothing is left in **On Staging**, say so in one
 sentence: a release is the next step. Do not start one. Any push to `master` on the backend is
 a production deploy and needs the owner's explicit yes.
 

@@ -82,7 +82,7 @@ cd ~/claude-pipeline-agents && git status --short && git log --branches --not --
 For each outstanding thing found in checks 1 to 7, look for its card on the Kinlia Work
 Board by Key (`<repo>:pr:<n>`, `<repo>:branch:<branch>` or `<repo>:note:<slug>`; the full
 rules are in `~/.claude/skills/board-sync/SKILL.md`). If it has a card, update Next action
-and Last touched. If it has none, create one in the right Stage. Write the cards with:
+and Last touched. If it has none, create one in the right Status column. Write the cards with:
 
 ```bash
 bash ~/.claude/skills/board-sync/apply.sh "<scratchpad>/wrap-cards.json"
