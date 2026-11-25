@@ -31,13 +31,14 @@ jq -e 'type == "array" and all(.[]; has("key"))' "${CARDS}" >/dev/null \
 TMP="$(mktemp -d)"; trap 'rm -rf "${TMP}"' EXIT
 
 # Looked up by title every run so a renumbered or recreated board cannot be hit by mistake.
+HERE="$(cd "$(dirname "$0")" && pwd)"
 NUMBER="$(gh project list --owner "${OWNER}" --format json \
           --jq ".projects[] | select(.title == \"${PROJECT_TITLE}\") | .number")"
 [ -n "${NUMBER}" ] || { echo "board \"${PROJECT_TITLE}\" not found (is it closed?)" >&2; exit 2; }
 PROJECT_ID="$(gh project view "${NUMBER}" --owner "${OWNER}" --format json --jq '.id')"
 gh project field-list "${NUMBER}" --owner "${OWNER}" --format json > "${TMP}/fields.json" 2>"${TMP}/err.txt" \
   || { grep -qi 'rate limit' "${TMP}/err.txt" && echo "STOPPED before writing: GitHub's hourly request allowance is used up. Nothing was written. Try again after it resets (within the hour)." >&2; echo "could not read the board's fields; nothing written" >&2; exit 3; }
-gh project item-list  "${NUMBER}" --owner "${OWNER}" --limit 1000 --format json > "${TMP}/items.json" 2>"${TMP}/err.txt" \
+bash "${HERE}/list-items.sh" > "${TMP}/items.json" 2>"${TMP}/err.txt" \
   || { grep -qi 'rate limit' "${TMP}/err.txt" && echo "STOPPED before writing: GitHub's hourly request allowance is used up. Nothing was written. Try again after it resets (within the hour)." >&2; echo "could not read the board's cards; nothing written" >&2; exit 3; }
 # WHY this is fatal: with an empty card list every card looks new, and the run would create a
 # twin of every card on the board. On 2026-11-25 a refused read slipped through exactly so;

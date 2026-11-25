@@ -38,7 +38,7 @@ bash "${HERE}/merge-sync.sh" ${DRY} 2>&1 | grep -v 'would run' | sed 's/^/   /'
 NUMBER="$(gh project list --owner "${OWNER}" --format json \
           --jq ".projects[] | select(.title == \"${PROJECT_TITLE}\") | .number")"
 [ -n "${NUMBER}" ] || { echo "board not found; stopping"; exit 2; }
-gh project item-list "${NUMBER}" --owner "${OWNER}" --limit 1000 --format json > "${TMP}/items.json" \
+bash "${HERE}/list-items.sh" > "${TMP}/items.json" \
   || { echo "could not read the board; stopping"; exit 2; }
 # Everything any card says about a repo, as one block of text. A PR number or a branch name
 # that appears anywhere in it already has a home (often on a roll-up card), so no new card.

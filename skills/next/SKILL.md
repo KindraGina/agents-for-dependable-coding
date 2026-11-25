@@ -28,9 +28,10 @@ titles are GitHub's and want renaming.
 ## Step 1 — Read the board
 
 ```bash
-N=$(gh project list --owner KindraConnect --format json --jq '.projects[] | select(.title=="Kinlia Work Board") | .number')
-gh project item-list "${N}" --owner KindraConnect --limit 1000 --format json
+bash ~/.claude/skills/board-sync/list-items.sh
 ```
+
+Always read the board with `list-items.sh`, never `gh project item-list`: the gh command costs about 300 of GitHub's 5,000 hourly points per read on this board (measured 2026-11-25) and emptied the allowance for every terminal; `list-items.sh` returns the same JSON for about 2.
 
 Each item carries: `title`, `status`, `area`, `key`, `next action`, `waiting on`, `where`, `last touched`.
 

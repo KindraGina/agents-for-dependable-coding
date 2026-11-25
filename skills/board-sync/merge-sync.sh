@@ -31,7 +31,7 @@ NUMBER="$(gh project list --owner "${OWNER}" --format json \
 [ -n "${NUMBER}" ] || { echo "board \"${PROJECT_TITLE}\" not found" >&2; exit 2; }
 # MERGE_SYNC_ITEMS: a saved item list to judge instead of the live board (used to test this).
 if [ -n "${MERGE_SYNC_ITEMS:-}" ]; then cp "${MERGE_SYNC_ITEMS}" "${TMP}/items.json"; else
-gh project item-list "${NUMBER}" --owner "${OWNER}" --limit 1000 --format json > "${TMP}/items.json" \
+bash "${HERE}/list-items.sh" > "${TMP}/items.json" \
   || { echo "could not read the board" >&2; exit 2; }
 fi
 
