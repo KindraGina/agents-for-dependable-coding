@@ -49,8 +49,35 @@ recently_created() { awk -F'\t' -v k="$1" -v t="$((NOW-600))" '$2 == k && $1 > t
 
 field_id()  { jq -r --arg n "$1" '.fields[] | select(.name == $n) | .id' "${TMP}/fields.json"; }
 option_id() { jq -r --arg n "$1" --arg o "$2" '.fields[] | select(.name == $n) | .options[] | select(.name == $o) | .id' "${TMP}/fields.json"; }
-run() { if [ "${DRY}" = "1" ]; then echo "    would run: $*"; else "$@" >/dev/null || { echo "    !! FAILED: $*" >&2; ERRORS=$((ERRORS+1)); }; fi; }
+# GitHub allows about 5,000 requests an hour for the whole account, shared by every terminal.
+# On 2026-11-25 one big write used it up and another terminal's /wrap was cut off halfway.
+# So: (1) all of a card's fields go in ONE request, (2) the run checks the allowance before
+# it starts, and (3) the first "rate limit" answer stops the run instead of failing card
+# after card.
+rate_stop() { echo "STOPPED: GitHub's hourly request allowance is used up. Nothing more was written. Run the same command again after it resets (within the hour); finished cards are skipped." >&2; exit 3; }
+run() {
+  if [ "${DRY}" = "1" ]; then echo "    would run: $*" | cut -c1-200; return 0; fi
+  local err; err="$("$@" 2>&1 >/dev/null)" && return 0
+  case "${err}" in *"rate limit"*|*"RATE_LIMIT"*) rate_stop ;; esac
+  echo "    !! FAILED: $(echo "$*" | cut -c1-160) :: ${err}" | cut -c1-400 >&2; ERRORS=$((ERRORS+1))
+}
+# One request that sets every changed field of the current card.
+MUT=""; MUT_N=0
+add_mut() { MUT_N=$((MUT_N+1)); MUT="${MUT} f${MUT_N}: updateProjectV2ItemFieldValue(input:{projectId:\"${PROJECT_ID}\", itemId:\"${ITEM_ID}\", fieldId:\"$(field_id "$1")\", value:{$2}}){ clientMutationId }"; }
+flush() {
+  [ -n "${MUT}" ] || return 0
+  if [ "${DRY}" = "1" ]; then echo "    would set ${MUT_N} field(s) in one request"; else run gh api graphql -f query="mutation { ${MUT} }"; fi
+  MUT=""; MUT_N=0
+}
 
+if [ "${DRY}" != "1" ]; then
+  PROBE="$(gh api graphql -f query='{ rateLimit { remaining } }' --jq '.data.rateLimit.remaining' 2>&1)"
+  case "${PROBE}" in *"rate limit"*|*"RATE_LIMIT"*) rate_stop ;; esac
+  NEED=$(( $(jq 'length' "${CARDS}") * 3 + 20 ))
+  if [ "${PROBE}" -eq "${PROBE}" ] 2>/dev/null && [ "${PROBE}" -lt "${NEED}" ]; then
+    echo "STOPPED before writing: only ${PROBE} GitHub requests are left this hour and this file needs about ${NEED}. Run it again after the allowance resets." >&2; exit 3
+  fi
+fi
 CREATED=0; UPDATED=0; UNCHANGED=0; ARCHIVED=0; ERRORS=0
 COUNT="$(jq 'length' "${CARDS}")"
 i=0
@@ -95,7 +122,7 @@ while [ "${i}" -lt "${COUNT}" ]; do
     [ -n "$3" ] || return 0
     [ "${NEW}" = "0" ] && [ "$(current "$2")" = "$3" ] && return 0
     [ "${NEW}" = "0" ] && echo "update   ${KEY}  $1 -> $3"
-    run gh project item-edit --project-id "${PROJECT_ID}" --id "${ITEM_ID}" --field-id "$(field_id "$1")" --text "$3"; CHANGED=1
+    add_mut "$1" "text: $(jq -n --arg v "$3" '$v')"; CHANGED=1
   }
   set_select() {
     [ -n "$3" ] || return 0
@@ -103,13 +130,13 @@ while [ "${i}" -lt "${COUNT}" ]; do
     local opt; opt="$(option_id "$1" "$3")"
     [ -n "${opt}" ] || { echo "!! ${KEY}: \"$3\" is not a $1 option" >&2; ERRORS=$((ERRORS+1)); return 0; }
     [ "${NEW}" = "0" ] && echo "update   ${KEY}  $1 -> $3"
-    run gh project item-edit --project-id "${PROJECT_ID}" --id "${ITEM_ID}" --field-id "$(field_id "$1")" --single-select-option-id "${opt}"; CHANGED=1
+    add_mut "$1" "singleSelectOptionId: \"${opt}\""; CHANGED=1
   }
   set_date() {
     [ -n "$3" ] || return 0
     [ "${NEW}" = "0" ] && [ "$(current "$2")" = "$3" ] && return 0
     [ "${NEW}" = "0" ] && echo "update   ${KEY}  $1 -> $3"
-    run gh project item-edit --project-id "${PROJECT_ID}" --id "${ITEM_ID}" --field-id "$(field_id "$1")" --date "$3"; CHANGED=1
+    add_mut "$1" "date: \"$3\""; CHANGED=1
   }
 
   # An existing draft card's title and body are rewritten when the file gives different ones
@@ -118,7 +145,8 @@ while [ "${i}" -lt "${COUNT}" ]; do
   if [ "${NEW}" = "0" ]; then
     DRAFT_ID="$(jq -r --arg k "${KEY}" '.items[] | select(.key == $k) | select(.content.type == "DraftIssue") | .content.id // empty' "${TMP}/items.json" | head -1)"
     CUR_TITLE="$(jq -r --arg k "${KEY}" '.items[] | select(.key == $k) | .title // empty' "${TMP}/items.json" | head -1)"
-    CUR_BODY="$(jq -r --arg k "${KEY}" '.items[] | select(.key == $k) | .content.body // empty' "${TMP}/items.json" | head -1)"
+    # The whole body, not its first line: a `head -1` here made every run rewrite every card.
+    CUR_BODY="$(jq -r --arg k "${KEY}" '[.items[] | select(.key == $k)][0].content.body // empty' "${TMP}/items.json")"
     WANT_BODY="$(card .body)"; WANT_TITLE="${TITLE:-${CUR_TITLE}}"; [ -n "${WANT_BODY}" ] || WANT_BODY="${CUR_BODY}"
     if [ -n "${DRAFT_ID}" ] && { [ "${WANT_TITLE}" != "${CUR_TITLE}" ] || [ "${WANT_BODY}" != "${CUR_BODY}" ]; }; then
       echo "update   ${KEY}  title/description"
@@ -129,7 +157,7 @@ while [ "${i}" -lt "${COUNT}" ]; do
   # Key is written first: if a later call fails, the next run still finds this card
   # by Key and finishes it instead of creating a twin.
   NEW_KEY="$(card .new_key)"
-  if [ "${NEW}" = "1" ]; then set_text "Key" "key" "${KEY}"; elif [ -n "${NEW_KEY}" ]; then set_text "Key" "key" "${NEW_KEY}"; fi
+  if [ "${NEW}" = "1" ]; then set_text "Key" "key" "${KEY}"; flush; elif [ -n "${NEW_KEY}" ]; then set_text "Key" "key" "${NEW_KEY}"; fi
   # Columns are the built-in Status field (owner renamed them 2026-11-25). The six old
   # "Stage" names are still translated so a cards file written before that date sorts right.
   STATUS="$(card '.status // .stage')"
@@ -149,6 +177,7 @@ while [ "${i}" -lt "${COUNT}" ]; do
   set_text "Waiting on" "waiting on" "$(card .waiting_on)"
   set_text "Where" "where" "$(card .where)"
   set_date "Last touched" "last touched" "$(card .last_touched)"
+  flush
 
   if [ "${NEW}" = "0" ]; then
     if [ "${CHANGED}" = "1" ]; then UPDATED=$((UPDATED+1)); else UNCHANGED=$((UNCHANGED+1)); fi
