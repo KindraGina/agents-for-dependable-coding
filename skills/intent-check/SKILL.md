@@ -29,6 +29,13 @@ You helped write this plan, so you are biased toward it. Correct for that:
 
 **If this conversation was summarized** (a compaction summary appears earlier), early details may be lost. Say so at the top of the report, and ask the owner in one plain sentence whether anything important from early in the discussion is missing from your list.
 
+## Assume the work is uncommitted and not yet checked on staging
+
+The owner runs this check BEFORE committing and BEFORE any staging or live testing, on purpose. So "nothing is committed", "not on staging yet", "not pushed", "no pull request yet", and "the staging / manual checks haven't been done" are the expected state, not findings. **Don't report them**: not in the verdict, the promise list, the shortfalls, or the recommendation. Write "Yes", not "Yes in code, but not proven yet". Write "Done", not "done in code; still needs checking on staging".
+
+Still report a SPECIFIC risk that a later check would have to catch. For example: "a setting on the staging server is unconfirmed, and if it's missing, leaders land on the old page." That is a real gap. "It hasn't been tested on staging" is not. Automated test results DO count. Report it if tests are missing, fail, or don't prove what was claimed.
+**Why (Nov 26, 2026, first /intent-check run, kindra Stripe return-to-portal):** the report said "not committed" and "not checked on staging" in the verdict, in three promise lines, in its own section and in the recommendation. The owner: "that is obvious because I'm asking before things are committed and tested. That should be assumed."
+
 ## Process
 
 ### Step 1: List what was asked for (before reading any results)
@@ -47,13 +54,13 @@ For each numbered item, record:
 - **In the plan?** Quote the line, or write "missing".
 - **In the code?** Give file:line plus the pasted code, or write "missing".
 - **Tested?** Name the test, or write "no test".
-- **Status:** Done / Partly / Missing / Changed. Changed means it was built differently from what was discussed. Say how.
+- **Status:** Done (built, plus automated tests where they apply) / Partly / Missing / Changed. Changed means it was built differently from what was discussed. Say how.
 
 ### Step 4: Look for where it falls short
 Beyond the promise list, look for:
 - **Built but not asked for:** extra scope, or behavior changes the owner never discussed.
 - **Meaning drift:** the plan solves a slightly different problem than the one described.
-- **Unrun checks:** manual or staging checks the plan lists that nobody did yet.
+- **Specific risks for later checks:** a concrete thing that could go wrong on staging or live that nobody has confirmed, such as a missing setting or a sign-in edge case. Name the risk. Don't just say a check hasn't run.
 - **Open owner decisions:** anything the cascade left for the owner.
 - **The critique's concerns:** for each one, say whether it matters to the original problem.
 
@@ -70,11 +77,11 @@ The owner is not technical. No jargon, no code in the summary, and no multiple-c
 ## Where it falls short
 <each gap in plain words: what a user would see, and how serious it is>
 
-## Not checked yet
-<manual or staging checks still to do, and open decisions>
+## Open decisions
+<only decisions the owner still has to make; leave this section out if there are none>
 
 ## My recommendation
-<one sentence: what to do next>
+<one sentence: what to do next. Don't recommend committing or staging testing, since the owner does those anyway; recommend them only if something specific has to be done first>
 ```
 
 Put the evidence (file:line and pasted code) in the saved file, not in the chat summary. Save the full report next to the plan as `[plan-name]-intent-check.md`.
