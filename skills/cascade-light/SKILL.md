@@ -108,7 +108,8 @@ A long `## Verified References` section is **evidence, not scope**: the repo's r
 
 **Process:**
 1. Spawn the Plan Creator agent and instruct it to run `/critique [plan path]`.
-2. The Plan Creator runs the critique with fresh eyes — it wrote the plan originally, so it knows the intent, but it was NOT part of the pipeline execution.
+2. The spawned Plan Creator runs the critique with fresh eyes: it was NOT part of the pipeline execution. It is a NEW agent, not the session that drafted the plan with the user, so it knows the user's intent ONLY through what the plan file says. It cannot catch something the user said in the planning conversation that never made it into the plan. That intent check happens when the user takes the cascade's results back to the original planning session. Do not describe this critique as checking against intent beyond the plan file.
+   **Why (Nov 25, 2026):** this line used to say the critic "wrote the plan originally, so it knows the intent." A spawned subagent sees none of the planning conversation, so that claim was false and overstated what this stage checks.
 3. Read the critique output.
 
 **If verdict is APPROVE:** Proceed to Stage 4 (Done).
