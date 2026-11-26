@@ -316,6 +316,7 @@ The May 2026 notificationsEventDeepLink incident: final audit said PASS with all
 - Final test count and pass status
 - Final audit verdict
 - List of all review/audit files created
+- In the same edit, rewrite the plan's top `**Status:**` line (if it has one) to the finished state — implemented, committed or not, final audit verdict, what is still owed (e.g. live checks) — and re-read it after saving. (2026-11-25, kindra stripe-connect-return-to-portal: the Status said "no code written yet" at the final audit, costing a second audit round, then "final audit in progress" after Pipeline Results was added, and the critique flagged it again.)
 
 **Step 3: Show the summary.** Your FIRST line of output MUST be:
 

@@ -143,6 +143,8 @@ The `## Testing Plan` section MUST:
 
 Vague testing = REJECT.
 
+Also FAIL Check 9 if the plan lacks any of the three things every plan reviewer rejects without: a `## Feature Completeness Check` section, a `## Live Verification Steps` section (by that exact heading), or a table at the end of the Testing Plan giving every `## Edge Cases` and `## Behaviors to Preserve` line a test number or "no test: <reason>" (plan-creator.md requires all three). If the table is missing, build it in your audit report and list any line with no test. (2026-11-25, kindra stripe-connect-return-to-portal: five finalize rounds passed the plan, then all three plan reviewers sent it back for exactly these, and the table exposed an untested behavior.)
+
 ---
 
 **Check 10 — Open Questions resolved or flagged.**
