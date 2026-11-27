@@ -56,7 +56,7 @@ Skip:
 - Any card whose `waiting on` names a card that has not reached On Production. Say what it
   is waiting for only if the owner asks.
 
-If the owner adds a word after the command (`/next frontend`, `/next backend`, `/next website`), rank only that Area.
+If the owner adds a word after the command (`/next mobile`, `/next backend`, `/next website`), rank only that Area.
 
 ## Step 3 — Answer
 
