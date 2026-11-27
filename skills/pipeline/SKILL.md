@@ -118,7 +118,9 @@ Acceptable answers name a real-world signal: a user report, a bug the owner hit,
 
 **Step B — If the honest answer is "nothing — an agent found this by reading code," STOP and ask the user verbatim:**
 
-> "Nothing in this plan traces back to something anyone observed — it was found by reading code. The defect may well be real, but its impact is unproven. Options: (a) run the pipeline anyway, (b) log it in `docs/TODO.md` as a code-health item instead. Which do you want? STOPPING."
+> "[One everyday sentence: what goes wrong, for whom, and what the fix changes — e.g. "A buyer who types a long answer to a ticket question gets an error and cannot buy the ticket; the fix lets long answers be saved."] Nothing in this plan traces back to something anyone observed — it was found by reading code. The defect may well be real, but its impact is unproven. Options: (a) run the pipeline anyway, (b) log it in `docs/TODO.md` as a code-health item instead. Which do you want? STOPPING."
+
+The bracketed sentence is required: the owner decides from this message alone, so it must say what the problem is before asking whether to fix it. (2026-11-27, kindra ticket-checkout-answer-length: the gate showed only the script and the owner had to ask "remind me what the problem is?" before she could answer.)
 
 Wait for the answer. Do NOT proceed on "yes"/"go ahead" alone — the user must pick (a) or (b). If they pick (b), write the TODO entry and stop; do not launch a single agent.
 
