@@ -118,6 +118,8 @@ A long `## Verified References` section is **evidence, not scope**: the repo's r
 2. The spawned Plan Creator runs the critique with fresh eyes: it was NOT part of the pipeline execution. It is a NEW agent, not the session that drafted the plan with the user, so it knows the user's intent ONLY through what the plan file says. It cannot catch something the user said in the planning conversation that never made it into the plan. That intent check happens when the user takes the cascade's results back to the original planning session. Do not describe this critique as checking against intent beyond the plan file.
    **Why (Nov 25, 2026):** this line used to say the critic "wrote the plan originally, so it knows the intent." A spawned subagent sees none of the planning conversation, so that claim was false and overstated what this stage checks.
 3. Read the critique output.
+4. **Run the lesson step yourself, once, for the whole run** — the critique's Step 7 (`skills/critique/SKILL.md`) launches `lesson-learner` and `lesson-evaluator`, and the spawned Plan Creator cannot launch agents, so it never happens there. Pass every finalize, review, audit and critique file from this run plus the human corrections; skip the pipeline's own end-of-run lesson step so it runs once. It never blocks the Stage 4 summary.
+   **Why (2026-11-27, kindra product-orders-quantity-answer):** no lesson step ran at all, and the owner had to ask why.
 
 **If verdict is APPROVE:** Proceed to Stage 4 (Done).
 
