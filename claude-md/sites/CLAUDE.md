@@ -175,6 +175,10 @@ Before marking any bug as understood or planning a fix:
 - Prefer reading more context over making assumptions.
 - **In shell commands, write `${VAR}` with braces whenever anything follows the variable — especially a colon.** zsh silently reads `$VAR:r`, `:h`, `:t`, `:e`, `:a`, `:l`, `:u`, `:q` and others as modifiers, with no error: `"$T:ro"` becomes a different path and `"$B:hotfix"` becomes `.otfix`. Write `"${T}:ro"`, `"${B}:hotfix"`.
   Why (2026-10-10, kindra prospect-show-drop-app-accesses run): two auditors mounted a deliberately broken file with `$T:ro`, Docker mounted it at the wrong path, and both "broken" runs silently tested the unbroken file; the same trap mangled branch names in a plain `git` command.
+- **Keep shell commands simple enough for Claude Code to check, or it stops the run to ask Gina, even in bypass mode.** This applies to the main session and every agent:
+  - A script that deletes anything (`rm`), defines a shell function, loops, or runs more than a few steps: write it to a `.sh` file in the scratchpad with the Write tool, then run `bash <that file>`. Don't pack it into one long line.
+  - To write or append to a plan, audit or any other file, use the Write or Edit tool, not a heredoc or Python fed through the shell.
+  Why (2026-11-28, kindra event-reminders and clear-purchase-errors cascades): a verification auditor's one-line mutant runner (a shell function with `rm -rf` of scratch copies) and an implementer's Python-heredoc append to a plan both stopped the cascade with "could not be checked" / "can't rule out a dangerous removal." Both were harmless, and each cost Gina a manual approval mid-run.
 
 ## Debugging Rules
 
