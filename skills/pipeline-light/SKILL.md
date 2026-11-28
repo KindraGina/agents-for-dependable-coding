@@ -217,7 +217,7 @@ This loop repeats until the reviewer issues an APPROVE verdict.
 Launch the `plan-coder` agent:
 - Prompt: "You are the plan-coder agent. Implement the approved plan at [plan-path]. Read the review file too. Follow TDD — write tests first, then implement. Implement ALL items in the plan — you do not get to skip items or invent scope boundaries. If the plan lists a file in the launch repo, that file is in your scope regardless of language or directory. Files outside the launch repo are NEVER in scope — a plan step targeting another repo is a plan defect: do not implement it, report it as BLOCKED per your REPO BOUNDARY rule. Follow your instructions in .claude/agents/plan-coder.md."
 
-After the agent returns, show a brief status update and **immediately proceed to Phase 3.5**.
+After the agent returns, show a brief status update and **immediately proceed to Phase 3.5**. First run the Self Review count in `skills/pipeline/SKILL.md` Phase 3, and run it again before every later verification audit, including Phase 5.5.
 
 ## Phase 3.5: Post-Implementation Verification Gate
 
