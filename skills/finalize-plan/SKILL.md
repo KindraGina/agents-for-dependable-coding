@@ -6,6 +6,15 @@ description: Pre-pipeline gate. Run this AFTER drafting a plan but BEFORE runnin
 
 You are the last gate before the pipeline runs. Your job: tell the user whether the plan is ready for `/pipeline` or `/pipeline-light`, and reject anything that doesn't meet the bar. Wasted pipeline runs are expensive and propagate plan-quality problems into shipped code.
 
+## RARE-FAILURE RULE — READ FIRST (owner rule, 2026-11-28)
+
+**We build the basic use case and ship it. Do not raise, plan, code or test for rare timing failures.** A case is RARE if it happens only when something crashes, times out or restarts partway through a step; when two people or two tabs act in the same moment (for example a host edits an add-on in the second a buyer orders it); when an outside service dies mid-request; or when it needs data that exists only after one of those failures.
+- Never count a RARE case as an issue, a gap, a blocker, NEEDS CHANGES, FAIL, or a question for the owner.
+- List each one in a single line under a `Rare (for docs/TODO.md Security)` heading at the end of your output. The orchestrator files it in the Security section of the repo's `docs/TODO.md`. Nothing gets built for it.
+- Still raise things a person hits in normal use: bad or empty input, null fields real records have, refresh, double tap, back button, ordinary API errors, records that really exist in production.
+- The test: write "A [buyer/host/member] hits this when they [ordinary action]." If that sentence needs a crash or a coincidence, it is RARE.
+Owner: "We are building for NOTHING RARE." Full rule: "BUILD FOR THE BASIC USE CASE" in `skills/pipeline/SKILL.md`.
+
 ## When to use
 
 User runs `/finalize-plan [plan path]` AFTER drafting the plan, BEFORE running the pipeline. Sequence:
