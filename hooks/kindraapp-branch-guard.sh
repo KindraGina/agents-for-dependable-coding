@@ -96,7 +96,15 @@ elif g "${PRE}restore\b" \
 elif g "${PRE}clean\b"; then
   echo "$ASK"
 # git stash sweeps uncommitted edits away (and pop/apply mutates the tree).
-# Read-only stash list/show stay silent.
-elif g "${PRE}stash\b" && ! g '\bstash\b[^|;&]*\b(list|show)\b'; then
+# Read-only forms stay silent: list, show, and create. `git stash create` only
+# writes a snapshot commit object and prints its id; it does not touch the
+# working tree, the index, or the stash list. Reviewers use it to dry-run a
+# merge of uncommitted work (`git merge-tree ... $(git stash create)`).
+# 2026-11-28: a code reviewer's merge dry-run stopped a cascade on this.
+# The safe forms are REMOVED from the text before matching (not tested for as
+# an exemption), so `git stash create; git stash` still asks for the second one.
+elif printf '%s' "$cmd_exec" \
+       | perl -pe 's/\bgit(\s+-C\s+\S+|\s+-c\s+\S+|\s+--?\S+)*\s+stash\s+(list|show|create)\b//g' \
+       | grep -qE -- "${PRE}stash\b"; then
   echo "$ASK"
 fi
