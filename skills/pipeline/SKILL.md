@@ -143,6 +143,30 @@ Wait for the answer. Do NOT proceed on "yes" / "go ahead" / "ok" alone; the owne
 
 **Why this gate exists (August 2026 Discover-race incident):** A `/cascade` ran ~10 hours and produced 16 documents for `2026-08-06-fix-empty-discover-race.md`. The code defect was real — a screen read a shared `loading` flag flipped by 8 unrelated operations and could never re-check. But no user, log, or report ever showed the symptom; an earlier session found it while tracing an unrelated question, and the plan's own `## Why it is not seen in production` section said so. The owner's staging test then failed to reproduce it, and that was treated as a puzzle to work around rather than as the strongest evidence in the room. Every one of the nine agents asked "is this fix correct?"; not one asked "should this work exist?". The owner's verdict: "you wasted my day with your made up bug." Nothing was ever committed.
 
+## BUILD FOR THE BASIC USE CASE — RARE FAILURES GO TO docs/TODO.md, NOT INTO THE PLAN
+
+The Real-User Gate decides whether the work starts. This rule runs on **every finding from every reviewer, auditor and critique round** until the run ends. We build the ordinary path a real person takes today, ship it, and record rare failures for later.
+
+**A finding is RARE when it happens only if something fails or collides at a specific moment.** For example:
+- a crash, timeout, deploy or restart partway through a step ("the refund went through at Stripe but Kinlia never recorded it")
+- two people, or two tabs, acting in the same moment
+- an outside service (Stripe, Twilio, the database, the network) dying mid-request
+- data that exists only because one of the failures above already happened
+- retries or duplicates that need one of the failures above first
+
+**Never treat a RARE finding as a plan gap:**
+1. Do not send it to plan-creator to fix. Do not add code, tests, plan text, preview wording or "decisions" for it.
+2. Do not ask the owner about it. Never write "two decisions I made for you" about a rare case.
+3. **Add one entry for it to the target repo's `docs/TODO.md`, in the Security section:** `## Security` in kindra, `## Security / Ops follow-ups` in KindraApp. If the repo has no such section (kinlia-web today), add `## Security` and put it there. Each entry is 2–3 lines: what fails, the moment it has to fail at, and the file or function involved. Grep the section first, and do not add an entry that is already there.
+4. A reviewer's NEEDS CHANGES that rests only on RARE findings counts as APPROVED. Record that, with the TODO line it went to, in the plan's revision notes and continue.
+5. Tell the owner in one plain line in the next status update: "N rare crash-timing cases went to docs/TODO.md (Security). Nothing was built for them."
+
+**What is NOT rare (keep fixing these):** things a person hits by doing something normal. Bad or empty input, a null field that real records have, a page refresh, a double tap, the back button, a 404 or error from an API in ordinary use, records that already exist in production (check with a count; see "Does it exist?" in CLAUDE.md). If you can't tell, write the one-line "A [buyer/host/member] hits this when they [ordinary action]" sentence from the Real-User Gate. If that sentence needs a crash or a coincidence, it is RARE.
+
+**Pass this rule on:** every reviewer, auditor and plan-creator prompt in this run gets the line "RARE-FAILURE RULE: crash-partway, timing-race, simultaneous-action and outside-service-dies-mid-step cases are not gaps. List them under a `Rare (for docs/TODO.md Security)` heading, and never mark NEEDS CHANGES for them."
+
+**Why (2026-11-28, kindra partial-refund preview):** a review round sent 23 "gaps" back to plan-creator. Among them was a refund Stripe made but Kinlia never recorded, which happens only if a refund crashes partway through. The session designed preview behavior for it and asked the owner to approve. Owner: "we are not building for 1 out of a million scenarios where there are crashes at a specific time. If you are concerned about crashes, those go into security section of todo.md. We are building for NOTHING RARE." The owner wants to reach production fast, and rare cases slow every round.
+
 ## Usage
 
 ```

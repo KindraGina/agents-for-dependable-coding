@@ -133,6 +133,10 @@ The finalize gate proves the plan is *accurate*. This gate asks whether the work
 
 **Why this gate exists (August 2026 Discover-race incident):** see the full write-up in `skills/pipeline/SKILL.md`. Summary: ~10 hours and 16 documents were spent on a real-but-unobserved code defect that no user, log, or report had ever surfaced. The owner's staging test failed to reproduce it and that was reasoned around rather than heeded. Every agent asked "is this fix correct?"; none asked "should this work exist?".
 
+## BUILD FOR THE BASIC USE CASE — RARE FAILURES GO TO docs/TODO.md, NOT INTO THE PLAN
+
+**Run the rule of this name in `skills/pipeline/SKILL.md` exactly as written there**, on every finding from every round. In short: crash-partway, timing-race, simultaneous-action and outside-service-dies-mid-step cases are never plan gaps. Do not fix them and do not ask the owner about them. Add each one to the Security section of the target repo's `docs/TODO.md`, and tell the owner the count in one line. Pass the RARE-FAILURE RULE line to every agent prompt. It is kept in one place so the copies can't drift apart.
+
 ## Usage
 
 ```

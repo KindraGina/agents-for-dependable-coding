@@ -187,6 +187,10 @@ If the critique capped its verdict at CONCERNS because of unverified interaction
 
 10. **Clean-tree and target-code check.** Before Stage 2, run `git status --short`. If the working tree has uncommitted modifications to any file the plan will edit, STOP and ask the user how to handle them — running the pipeline would entangle the plan's commit with unrelated in-flight work and break any cherry-pick step the plan depends on. Never stash, commit, or discard the user's changes yourself. Also verify the code the plan edits actually exists on the current branch (grep for the plan's main target functions from `## Verified References`); if it doesn't, the plan was verified against a different branch — stop and tell the user which branch contains it.
 
+## Build for the basic use case — rare failures go to docs/TODO.md (ALL stages)
+
+Through Stage 1 (finalize), Stage 2 (pipeline) and Stage 3 (critique), apply the "BUILD FOR THE BASIC USE CASE" rule in `skills/pipeline/SKILL.md`. Crash-partway, timing-race, simultaneous-action and outside-service-dies-mid-step findings are never gaps, never revision items, never critique blockers, and never questions for the owner. Each one gets an entry in the Security section of the target repo's `docs/TODO.md`, and the final report gives one line with the count. (2026-11-28: the owner wants to reach production fast. "We are building for NOTHING RARE.")
+
 ## Plain-Language Reporting (MANDATORY)
 
 The person reading your chat reports is not an engineer. Every message shown to the user in chat MUST follow these rules:
