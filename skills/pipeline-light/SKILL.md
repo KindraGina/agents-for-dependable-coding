@@ -121,25 +121,13 @@ Pipeline-light ONLY runs on plans that have passed `/finalize-plan`. This is a s
 
 **Phase 1 (Plan Creation) is no longer reachable from `/pipeline-light`.** Plans must be drafted outside the pipeline and finalized before invocation.
 
-## OBSERVATION GATE — MANDATORY, RUNS AFTER THE FINALIZE GATE
+## REAL-USER GATE (was "Observation Gate") — MANDATORY, AND IT RUNS FIRST
 
-The finalize gate proves the plan is *accurate*. This gate asks whether the work is *worth doing*. Light mode is the most likely route for an unobserved code-health finding to enter the pipeline, so this gate applies here in full — it is NOT one of the checks light mode trims.
+The finalize gate proves the plan is *accurate*. This gate asks whether the work is *worth doing*. Light mode is the most likely route for an unobserved code-health finding to enter the pipeline, so this gate applies here in full. It is NOT one of the checks light mode trims.
 
-**Step A — Answer this in one line, out loud, before Phase 2:**
+**Steps A and B: run the REAL-USER GATE in `skills/pipeline/SKILL.md` exactly as written there.** That means the two Step A lines ("what did a person see" and "how does a real person hit this today"), the default of not building, the list of reasons that never justify building, and the "build it / drop it" ask. It is kept in one place so the two copies can't drift apart. Under `/cascade-light` it already ran at Stage 0.4, before finalize. If the plan has a `## Provenance` section from that stage in this run, do not ask again.
 
-> **What did a human observe, and when?**
-
-Acceptable answers name a real-world signal: a user report, a bug the owner hit, a screenshot, a Sentry entry, a failing production request, a support ticket. Cite it.
-
-**Step B — If the honest answer is "nothing — an agent found this by reading code," STOP and ask verbatim:**
-
-> "[One everyday sentence: what goes wrong, for whom, and what the fix changes — e.g. "A buyer who types a long answer to a ticket question gets an error and cannot buy the ticket; the fix lets long answers be saved."] Nothing in this plan traces back to something anyone observed — it was found by reading code. The defect may well be real, but its impact is unproven. Options: (a) run the pipeline anyway, (b) log it in `docs/TODO.md` as a code-health item instead. Which do you want? STOPPING."
-
-The bracketed sentence is required: the owner decides from this message alone, so it must say what the problem is before asking whether to fix it. (2026-11-27, kindra ticket-checkout-answer-length: the gate showed only the script and the owner had to ask "remind me what the problem is?" before she could answer.)
-
-Wait for the answer. Do NOT proceed on "yes"/"go ahead" alone — the user must pick (a) or (b). If they pick (b), write the TODO entry and stop; do not launch a single agent.
-
-**Step C — Record the answer verbatim in a `## Provenance` section at the top of the plan** before Phase 2 launches. If the user chose (a) on an unobserved finding, it MUST read: "Unobserved — found by code reading. Owner elected to proceed. Severity is UNKNOWN and no agent may assert otherwise."
+**Step C — Record the answer verbatim in a `## Provenance` section at the top of the plan** before Phase 2 launches. Paste both Step A lines into it. If the owner said "build it" on an unobserved finding, it MUST also read: "Unobserved — found by code reading. Owner elected to proceed. Severity is UNKNOWN and no agent may assert otherwise."
 
 **Step D — A real-world test that contradicts the code analysis outranks the code analysis.** If a device repro, staging test, or manual check fails to reproduce the described failure at any point in the run, that is evidence AGAINST the finding — not an obstacle to reason around. STOP and surface it. The pipeline's own unit tests never stand in as proof of real-world impact: a test that hand-drives the failure condition proves the mechanism exists, never that any user reaches it.
 

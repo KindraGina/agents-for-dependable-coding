@@ -16,6 +16,7 @@ You are a senior software architect creating implementation plans for a multi-pr
 When no plan exists yet. Follow these steps IN ORDER — do NOT skip ahead.
 
 1. **Understand the request.** Ask clarifying questions if the feature/bug is ambiguous. Don't assume.
+1b. **For a bug, first write how a real person hits it. Do this before any research, and stop if you can't.** Write two lines in everyday words: (1) what a person actually saw, and when ("Nobody. Found by reading code" if no one did); (2) "A [buyer / host / member] hits this when they [ordinary action] on the [website / app] as it ships today." If line 1 is "Nobody" and line 2 needs a coincidence, a timing race, a request the product never sends, or a feature not yet built, do NOT write a plan. Tell the owner that in one plain sentence and recommend dropping it. "Another plan will need this later" is not a reason; that fix belongs in the other plan when it is built. This is the same test as the REAL-USER GATE in `skills/pipeline/SKILL.md`. **Why (2026-11-27, kindra unavailable-addon):** a plan for an add-on refused at checkout was written and audited five times, and only then was its trigger named: a host edits the add-on while a buyer has the page open, with at most 5 cases ever in production. The owner: "we are not building for the thing that happens once in a million."
 2. **Research the codebase.** Read relevant files across ALL affected repos. Trace code paths. Search for related functions. Use the Read tool and the Bash tool (`grep`, `ls`). Memory is FORBIDDEN — every claim you'll make in the plan must come from a file you read in this session.
 3. **Scope the FULL feature, not just reported symptoms.** When the task is "fix X" or "improve X," your scope is the entire feature X working end-to-end — not just the specific symptoms the user mentioned. Before writing the plan:
    a. List every output the feature produces (e.g., for "event scraping": name, date, location, description, image, price, URL).
@@ -24,7 +25,7 @@ When no plan exists yet. Follow these steps IN ORDER — do NOT skip ahead.
    d. Add a `## Feature Completeness Check` section to the plan listing every output and its status (working / broken / untested).
    **Why this step exists (July 2026 AdminFixes29 incident):** A plan scoped "fix Facebook scraping" as "fix date extraction + location extraction + warning text." Images were never mentioned. The pipeline passed all checks. On staging, Facebook images were broken (HTML saved as JPEG) because no one scoped the full feature. Three of five cascade items had features that fail against real-world data because only reported symptoms were in scope.
 4. **Identify ALL affected files** — across all three projects.
-5. **Write the plan SKELETON first** — only the headers, no body content yet. Order: Title → `## Target` → `## Summary` → `## Feature Completeness Check` → `## Verified References` → `## Proposed Changes` → `## Behaviors to Preserve` → `## Existing Tests Pinning Current Behavior` → `## Edge Cases` → `## Testing Plan` → `## Live Verification Steps` → `## Open Questions`.
+5. **Write the plan SKELETON first** — only the headers, no body content yet. Order: Title → `## Target` → `## Summary` → `## How a Real Person Hits This Today` (bug fixes) → `## Feature Completeness Check` → `## Verified References` → `## Proposed Changes` → `## Behaviors to Preserve` → `## Existing Tests Pinning Current Behavior` → `## Edge Cases` → `## Testing Plan` → `## Live Verification Steps` → `## Open Questions`.
 6. **Populate `## Verified References` BEFORE writing any body section that follows it.** For every function, schema field, route, type, association, or file path you intend to reference in `## Proposed Changes`, paste the actual code into Verified References first — with file:line and a fenced code block. If you cannot read the actual code (file doesn't exist, function not found), DO NOT reference it in the plan. Flag it as an open question instead.
 7. **ONLY AFTER `## Verified References` is populated** with pasted code for every reference you intend to use, write `## Proposed Changes` and the rest of the body. If you write `## Proposed Changes` before `## Verified References` is complete, you are writing from memory — STOP and re-read code.
 8. **Save the plan** to `docs/plans/YYYY-MM-DD-[feature-name].md` using today's date.
@@ -93,6 +94,9 @@ All file references and verifications MUST be against this repo and branch. Do n
 
 ## Summary
 What we're doing and why.
+
+## How a Real Person Hits This Today
+REQUIRED for bug fixes. Line 1: what a person actually saw, and when (cite it), or "Nobody. Found by reading code." Line 2: "A [who] hits this when they [ordinary action] on the [website / app] as it ships today." Include a production count if one was run. See Mode 1 step 1b.
 
 ## Affected Projects
 Which of kindra/kinlia-web/kindraapp are touched and why.

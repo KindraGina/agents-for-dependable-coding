@@ -39,6 +39,18 @@ Thirty seconds of read-only shell checks that prevent hours of wasted agent roun
 
 ---
 
+## Stage 0.4 — Real-User Gate: SHOULD THIS BE BUILT AT ALL?
+
+**Run this after Stage 0 passes and BEFORE Stage 0.5 and any agent.** Run the REAL-USER GATE from `skills/pipeline/SKILL.md` (Steps A–C) yourself, reading only the plan's `## Summary`, `## Current Behavior`, `## How a Real Person Hits This Today` and `## Provenance` (if present). Write `## Provenance` into the plan before going on. The pipeline sees it there and does not ask a second time.
+
+- If the plan already records a real report, or the owner already said "build it" for this plan in its Provenance, pass in one status line and continue.
+- If the plan has no `## How a Real Person Hits This Today` section, write the line-2 sentence yourself from the code. If you can't write it, that is the answer: recommend not building.
+- This is a sanctioned stop, the same as Stage 0.5.
+
+**Why it's here and not only in the pipeline (2026-11-27, kindra unavailable-addon):** the gate used to live only inside `/pipeline`, which starts after Stage 1. Five finalize rounds, about an hour of agent time, checked a plan for a problem the owner then dismissed in one line: "that is never going to happen." Whether the work is worth doing is the cheapest question, so it goes first.
+
+---
+
 ## Stage 0.5 — Scope Gate: ONE PLAN, ONE PROBLEM
 
 **Run this after Stage 0 passes and BEFORE spawning the Stage 1 finalize agent.** It is the cheapest gate in the system — you read one section of one file and ask at most one question. Every round of every later stage re-reads the whole plan, so a plan carrying three problems costs roughly three times as much at every stage after this one.
@@ -160,7 +172,7 @@ If the critique capped its verdict at CONCERNS because of unverified interaction
 
 ## Rules
 
-**THIS IS AUTOPILOT MODE — one invocation, all stages, no permission asks.** From `/cascade [plan]` to the Stage 4 summary, never ask "shall I proceed?", "want me to run X?", or any variant between stages. The ONLY sanctioned stops are the ones this file scripts: a failed Stage 0 preflight, the Stage 0.5 scope gate, a stale finalize verdict, finalize stalling on a repeated finding or hitting its 5-round ceiling (Rule 4), an uncommitted-changes or cross-repo conflict (Rules 9/10), the pipeline's own internal circuit breakers and safety valves, and a critique verdict of CONCERNS or REJECT. Everything else runs straight through. Announcements (Rule 3, Rule 5's pipeline-choice report) are status updates that do NOT wait for a reply — say it and keep moving; the user can interrupt to override.
+**THIS IS AUTOPILOT MODE — one invocation, all stages, no permission asks.** From `/cascade [plan]` to the Stage 4 summary, never ask "shall I proceed?", "want me to run X?", or any variant between stages. The ONLY sanctioned stops are the ones this file scripts: a failed Stage 0 preflight, the Stage 0.4 real-user gate, the Stage 0.5 scope gate, a stale finalize verdict, finalize stalling on a repeated finding or hitting its 5-round ceiling (Rule 4), an uncommitted-changes or cross-repo conflict (Rules 9/10), the pipeline's own internal circuit breakers and safety valves, and a critique verdict of CONCERNS or REJECT. Everything else runs straight through. Announcements (Rule 3, Rule 5's pipeline-choice report) are status updates that do NOT wait for a reply — say it and keep moving; the user can interrupt to override.
 
 1. **You are an orchestrator.** You do NOT read code, write code, review plans, or make implementation decisions. You invoke skills and agents and pass results between them.
 

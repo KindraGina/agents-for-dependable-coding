@@ -106,25 +106,38 @@ The pipeline ONLY runs on plans that have passed `/finalize-plan`. This is a str
 
 **Why this gate exists:** Plans written from memory contain wrong function names, wrong return types, wrong schema fields, wrong table names — bugs that the pipeline reviewers were never designed to catch (they assume the plan is grounded). The `/finalize-plan` audit catches memory-writing by verifying every code reference has pasted source. Without this gate, memory-written plans burn pipeline cycles and ship bugs.
 
-## OBSERVATION GATE — MANDATORY, RUNS AFTER THE FINALIZE GATE
+## REAL-USER GATE (was "Observation Gate") — MANDATORY, AND IT RUNS FIRST
 
-The finalize gate proves the plan is *accurate*. This gate asks whether the work is *worth doing*. They are different questions and the pipeline has historically only asked the first one.
+The finalize gate proves the plan is *accurate*. This gate asks whether the work is *worth doing*. Ask it **before any agent is spawned and before any plan-checking round**. Under `/cascade` and `/cascade-light` it runs at their Stage 0.4, before finalize. If the plan already has a `## Provenance` section written by that stage in this run, do not ask again; go straight to Phase 2. A standalone `/pipeline` run asks it here.
 
-**Step A — Answer this question in one line, out loud, before Phase 2:**
+**Step A — Write these two lines, out loud, in everyday words:**
 
-> **What did a human observe, and when?**
+> **1. What did a person actually see, and when?** Cite a user report, a bug the owner hit, a screenshot, a Sentry entry, a failing production request, or a support ticket. Otherwise write "Nobody. Found by reading code."
+>
+> **2. How does a real person hit this today?** One sentence: "A [buyer / host / member] hits this when they [ordinary action] on the [website / app] as it ships today." The action must be something the shipping product lets people do. It must not need a request the website or app never sends, a feature that isn't built yet, or two people acting in the same moment.
 
-Acceptable answers name a real-world signal: a user report, a bug the owner hit, a screenshot, a Sentry/error-tracking entry, a failing production request, a support ticket. Cite it.
+If the defect leaves records behind (stuck rows, unpaid tickets, error logs), add a production count. Show the owner the exact read-only command and ask her to approve it first. A count near zero answers line 2.
 
-**Step B — If the honest answer is "nothing — an agent found this by reading code," STOP and ask the user verbatim:**
+**Step B — Decide from those two lines. The default is NOT to build.**
 
-> "[One everyday sentence: what goes wrong, for whom, and what the fix changes — e.g. "A buyer who types a long answer to a ticket question gets an error and cannot buy the ticket; the fix lets long answers be saved."] Nothing in this plan traces back to something anyone observed — it was found by reading code. The defect may well be real, but its impact is unproven. Options: (a) run the pipeline anyway, (b) log it in `docs/TODO.md` as a code-health item instead. Which do you want? STOPPING."
+- **Line 1 names a real report:** pass. Record it in Provenance and continue.
+- **Line 1 is "Nobody," but line 2 is an ordinary everyday action:** STOP and ask (script below). Recommend building it, and give the line-2 sentence as the reason.
+- **Line 1 is "Nobody," and line 2 needs a coincidence, a timing race, a hand-made request, a feature not yet built, or you can't write it at all, OR the production count is near zero:** STOP and ask. Recommend **not building it**: drop it, or a one-line `docs/TODO.md` note if the owner wants a record.
 
-The bracketed sentence is required: the owner decides from this message alone, so it must say what the problem is before asking whether to fix it. (2026-11-27, kindra ticket-checkout-answer-length: the gate showed only the script and the owner had to ask "remind me what the problem is?" before she could answer.)
+**Reasons that NEVER justify building unobserved work.** Do not use these in the recommendation:
+- "The defect is confirmed in the code" or "a test reproduces it." That proves the mechanism exists, not that anyone reaches it.
+- "Another plan (sibling, upcoming, future) will need this." If that other plan makes the problem common, the fix belongs in that plan when it is built. A plan that is drafted but not being built today is a future, not a reason.
+- "It's cheap now that the plan is written." Hours already spent are not a reason to spend more.
 
-Wait for the answer. Do NOT proceed on "yes"/"go ahead" alone — the user must pick (a) or (b). If they pick (b), write the TODO entry and stop; do not launch a single agent.
+**The ask (verbatim shape, plain language):**
 
-**Step C — Record the answer verbatim in a `## Provenance` section at the top of the plan** before Phase 2 launches, so every downstream agent sees the evidentiary status of the thing it is reviewing. If the user chose (a) on an unobserved finding, the Provenance section MUST say so in those words: "Unobserved — found by code reading. Owner elected to proceed. Severity is UNKNOWN and no agent may assert otherwise."
+> "[Everyday sentence: what goes wrong, for whom, and what the fix changes.] Nobody has seen this happen. It was found by reading code. A real person would hit it only when [line 2, or 'I can't name a realistic way']. [Production count, if run.] I recommend [not building it / building it], because [one sentence]. Reply 'build it' or 'drop it'. STOPPING."
+
+Wait for the answer. Do NOT proceed on "yes" / "go ahead" / "ok" alone; the owner must say build or drop. On "drop it," write nothing unless she asks for a TODO note, and launch no agent.
+
+**Why it runs first and asks "how" (2026-11-27, kindra `2026-11-27-unavailable-addon-keeps-ticket.md`):** the old gate ran after `/cascade` had already spent five finalize rounds and about an hour of agent time on the plan. When it ran, it asked only "did anyone observe this?" The answer was "no," and the session still recommended running the pipeline, because "the defect is confirmed in the code" and two sibling plans not yet being built "would need it." Only after the owner asked "how could an add-on for sale be refused?" did the session name the real path: a host edits the add-on while a buyer has the page open. The production count was at most 5 cases ever, none since May 16. Owner: "that is never going to happen… we are not building for the thing that happens once in a million." Line 2 would have ended the run before any agent started.
+
+**Step C — Record the answer verbatim in a `## Provenance` section at the top of the plan** before Phase 2 launches, so every downstream agent sees the evidentiary status of the thing it is reviewing. Paste both Step A lines into it. If the owner said "build it" on an unobserved finding, the Provenance section MUST also say, in these words: "Unobserved — found by code reading. Owner elected to proceed. Severity is UNKNOWN and no agent may assert otherwise."
 
 **Step D — A real-world test that contradicts the code analysis outranks the code analysis.** If at any point during the run a device repro, staging test, or manual check fails to reproduce the described failure, that is evidence AGAINST the finding — not an obstacle to reason around. STOP and surface it to the user immediately, with the contradiction stated plainly. Do not let the pipeline substitute its own unit tests as proof of real-world impact; a test that hand-drives the failure condition proves the mechanism exists, never that any user reaches it.
 
