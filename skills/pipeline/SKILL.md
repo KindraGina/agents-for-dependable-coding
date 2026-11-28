@@ -96,7 +96,8 @@ The pipeline ONLY runs on plans that have passed `/finalize-plan`. This is a str
 
 **Step D — If the audit file exists, read it.** Extract the `## Verdict:` line.
 - If verdict is **READY** → proceed to Phase 2 (Plan Review Loop).
-- If verdict is **NEEDS WORK** → REFUSE verbatim:
+- If verdict is **NEEDS WORK** and this run was started by `/cascade` or `/cascade-light` under their Stage 1 step 6 round-5 rule (round 5's findings all NEW wording/paste/test-description fixes, applied by the Plan Creator, recorded in the plan as `## Revision Notes — Finalize Round 5`): check that heading exists (`grep -c`), say so in one status line, and proceed to Phase 2. The plan reviewers re-check that text. (Added 2026-11-28 with the cascade rule, kindra clear-purchase-errors.)
+- Otherwise, if verdict is **NEEDS WORK** → REFUSE verbatim:
 
 > "The `/finalize-plan` audit at `[audit-path]` has verdict NEEDS WORK. Fix the failed checks listed in that file, re-run `/finalize-plan` until the verdict is READY, then re-invoke `/pipeline`. STOPPING."
 
